@@ -9,6 +9,10 @@ type Queue struct {
 	Items []IItem
 }
 
+func (q Queue) GetItems() []IItem {
+	return q.Items
+}
+
 func (q Queue) Total() int {
 	return len(q.Items)
 }
