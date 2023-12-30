@@ -6,5 +6,22 @@ type IQueue interface {
 }
 
 type Queue struct {
-	Items []IItem
+	Items []Item
+}
+
+func (q Queue) Total() int {
+	return len(q.Items)
+}
+
+func (q Queue) Count(states ...ItemState) int {
+	count := 0
+	for _, item := range q.Items {
+		for _, state := range states {
+			if item.State == state {
+				count = count + 1
+				break
+			}
+		}
+	}
+	return count
 }
