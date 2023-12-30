@@ -35,6 +35,10 @@ func (i *Item) GetState() ItemState {
 	return i.State
 }
 
+func (i *Item) GetReason() string {
+	return i.Reason
+}
+
 func (i *Item) List() ([]resource.Resource, error) {
 	return nil, nil
 }
