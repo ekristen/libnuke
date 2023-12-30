@@ -6,10 +6,10 @@ type IQueue interface {
 }
 
 type Queue struct {
-	Items []IItem
+	Items []*Item
 }
 
-func (q Queue) GetItems() []IItem {
+func (q Queue) GetItems() []*Item {
 	return q.Items
 }
 

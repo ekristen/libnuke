@@ -25,7 +25,7 @@ type Registration struct {
 type ListerOpts struct {
 }
 
-type Lister func(lister ListerOpts) ([]Resource, error)
+type Lister func(lister interface{}) ([]Resource, error)
 
 func Register(r Registration) {
 	if r.Scope == "" {

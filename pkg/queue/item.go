@@ -29,6 +29,8 @@ type Item struct {
 	Resource resource.Resource
 	State    ItemState
 	Reason   string
+	Type     string
+	Owner    string // region/subscription
 }
 
 func (i *Item) GetState() ItemState {

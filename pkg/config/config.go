@@ -16,7 +16,7 @@ type ResourceTypes struct {
 	Excludes types.Collection `yaml:"excludes"`
 }
 
-type Config interface {
+type IConfig interface {
 	ResolveBlocklist() []string
 	HasBlocklist() bool
 	InBlocklist(searchID string) bool
