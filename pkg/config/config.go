@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/ekristen/cloud-nuke-sdk/pkg/filter"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/types"
 )
 
@@ -15,7 +16,7 @@ type ResourceTypes struct {
 	Excludes types.Collection `yaml:"excludes"`
 }
 
-type Nuke interface {
+type Config interface {
 	ResolveBlocklist() []string
 	HasBlocklist() bool
 	InBlocklist(searchID string) bool
