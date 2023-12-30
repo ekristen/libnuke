@@ -7,7 +7,7 @@ import (
 
 	"github.com/fatih/color"
 
-	"github.com/ekristen/azure-nuke/pkg/resource"
+	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
 )
 
 var (
@@ -53,7 +53,7 @@ func Log(scope string, resourceType string, r resource.Resource, c color.Color, 
 		fmt.Printf(" - ")
 	}
 
-	rProp, ok := r.(resource.ResourcePropertyGetter)
+	rProp, ok := r.(resource.PropertyGetter)
 	if ok {
 		ColorResourceProperties.Print(Sorted(rProp.Properties()))
 		fmt.Printf(" - ")
