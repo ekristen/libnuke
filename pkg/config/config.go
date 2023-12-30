@@ -5,9 +5,9 @@ import (
 )
 
 type Account struct {
-	Filters       Filters       `yaml:"filters"`
-	ResourceTypes ResourceTypes `yaml:"resource-types"`
-	Presets       []string      `yaml:"presets"`
+	Filters       filter.Filters `yaml:"filters"`
+	ResourceTypes ResourceTypes  `yaml:"resource-types"`
+	Presets       []string       `yaml:"presets"`
 }
 
 type ResourceTypes struct {
@@ -20,7 +20,7 @@ type Nuke interface {
 	HasBlocklist() bool
 	InBlocklist(searchID string) bool
 	Validate(id string) error
-	Filters(id string) (Filters, error)
+	Filters(id string) (filter.Filters, error)
 	Presets() map[string]PresetDefinitions
 	ResourceTypes() ResourceTypes
 	FeatureFlags() FeatureFlags
@@ -39,5 +39,5 @@ type DisableDeletionProtection struct {
 }
 
 type PresetDefinitions struct {
-	Filters Filters `yaml:"filters"`
+	Filters filter.Filters `yaml:"filters"`
 }

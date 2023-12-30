@@ -1,4 +1,4 @@
-package config
+package filter
 
 import (
 	"fmt"
@@ -10,17 +10,17 @@ import (
 	"github.com/mb0/glob"
 )
 
-type FilterType string
+type Type string
 
 const (
-	FilterTypeEmpty         FilterType = ""
-	FilterTypeExact         FilterType = "exact"
-	FilterTypeGlob          FilterType = "glob"
-	FilterTypeRegex         FilterType = "regex"
-	FilterTypeContains      FilterType = "contains"
-	FilterTypeDateOlderThan FilterType = "dateOlderThan"
-	FilterTypeSuffix        FilterType = "suffix"
-	FilterTypePrefix        FilterType = "prefix"
+	Empty         Type = ""
+	Exact         Type = "exact"
+	Glob          Type = "glob"
+	Regex         Type = "regex"
+	Contains      Type = "contains"
+	DateOlderThan Type = "dateOlderThan"
+	Suffix        Type = "suffix"
+	Prefix        Type = "prefix"
 )
 
 type Filters map[string][]Filter
@@ -33,33 +33,33 @@ func (f Filters) Merge(f2 Filters) {
 
 type Filter struct {
 	Property string
-	Type     FilterType
+	Type     Type
 	Value    string
 	Invert   string
 }
 
 func (f *Filter) Match(o string) (bool, error) {
 	switch f.Type {
-	case FilterTypeEmpty:
+	case Empty:
 		fallthrough
 
-	case FilterTypeExact:
+	case Exact:
 		return f.Value == o, nil
 
-	case FilterTypeContains:
+	case Contains:
 		return strings.Contains(o, f.Value), nil
 
-	case FilterTypeGlob:
+	case Glob:
 		return glob.Match(f.Value, o)
 
-	case FilterTypeRegex:
+	case Regex:
 		re, err := regexp.Compile(f.Value)
 		if err != nil {
 			return false, err
 		}
 		return re.MatchString(o), nil
 
-	case FilterTypeDateOlderThan:
+	case DateOlderThan:
 		if o == "" {
 			return false, nil
 		}
@@ -75,10 +75,10 @@ func (f *Filter) Match(o string) (bool, error) {
 
 		return fieldTimeWithOffset.After(time.Now()), nil
 
-	case FilterTypePrefix:
+	case Prefix:
 		return strings.HasPrefix(o, f.Value), nil
 
-	case FilterTypeSuffix:
+	case Suffix:
 		return strings.HasSuffix(o, f.Value), nil
 
 	default:
@@ -90,7 +90,7 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var value string
 
 	if unmarshal(&value) == nil {
-		f.Type = FilterTypeExact
+		f.Type = Exact
 		f.Value = value
 		return nil
 	}
@@ -101,7 +101,7 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	f.Type = FilterType(m["type"])
+	f.Type = Type(m["type"])
 	f.Value = m["value"]
 	f.Property = m["property"]
 	f.Invert = m["invert"]
@@ -110,7 +110,7 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 func NewExactFilter(value string) Filter {
 	return Filter{
-		Type:  FilterTypeExact,
+		Type:  Exact,
 		Value: value,
 	}
 }

@@ -1,4 +1,4 @@
-package config_test
+package filter_test
 
 import (
 	"strconv"
