@@ -22,10 +22,11 @@ type Registration struct {
 	DependsOn []string
 }
 
-type ListerOpts struct {
+type ListerOpts interface {
+	ID() string
 }
 
-type Lister func(lister interface{}) ([]Resource, error)
+type Lister func(lister ListerOpts) ([]Resource, error)
 
 func Register(r Registration) {
 	if r.Scope == "" {
