@@ -26,7 +26,7 @@ type ListerOpts interface {
 	ID() string
 }
 
-type Lister func(lister interface{}) ([]Resource, error)
+type Lister func(interface{}) ([]Resource, error)
 
 func Register(r Registration) {
 	if r.Scope == "" {
