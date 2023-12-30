@@ -40,7 +40,8 @@ type Nuke struct {
 	Parameters    Parameters
 	Config        config.IConfig
 	ResourceTypes types.Collection
-	items         queue.Queue
+	Queue         queue.Queue
+	scopes        []resource.Scope
 }
 
 func (n *Nuke) Run() error {
@@ -104,7 +105,7 @@ func (n *Nuke) Filter(item *queue.Item) error {
 func (n *Nuke) HandleQueue() {
 	listCache := make(map[string]map[string][]resource.Resource)
 
-	for _, item := range n.items.GetItems() {
+	for _, item := range n.queue.GetItems() {
 		switch item.GetState() {
 		case queue.ItemStateNew:
 			n.HandleRemove(item)
@@ -126,8 +127,8 @@ func (n *Nuke) HandleQueue() {
 
 	fmt.Println()
 	fmt.Printf("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
-		n.items.Count(queue.ItemStateWaiting, queue.ItemStatePending), n.items.Count(queue.ItemStateFailed),
-		n.items.Count(queue.ItemStateFiltered), n.items.Count(queue.ItemStateFinished))
+		n.queue.Count(queue.ItemStateWaiting, queue.ItemStatePending), n.queue.Count(queue.ItemStateFailed),
+		n.queue.Count(queue.ItemStateFiltered), n.queue.Count(queue.ItemStateFinished))
 }
 
 func (n *Nuke) HandleRemove(item *queue.Item) {

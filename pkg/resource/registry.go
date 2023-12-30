@@ -14,6 +14,7 @@ type Listers map[string]Lister
 
 var resourceListers = make(Listers)
 var registrations = make(Registrations)
+var graph = topsort.NewGraph()
 
 type Registration struct {
 	Name      string
@@ -41,6 +42,11 @@ func Register(r Registration) {
 
 	registrations[r.Name] = r
 	resourceListers[r.Name] = r.Lister
+
+	graph.AddNode(r.Name)
+	for _, dep := range r.DependsOn {
+		graph.AddEdge(r.Name, dep)
+	}
 }
 
 func GetListers() (listers Listers) {
@@ -51,20 +57,17 @@ func GetListers() (listers Listers) {
 	return listers
 }
 
-func GetListersTS() {
-	graph := topsort.NewGraph()
+func GetListersV2() (listers Listers) {
+	sorted, err := graph.TopSort("")
+	if err != nil {
+		panic(err)
+	}
+	for _, name := range sorted {
+		r := registrations[name]
+		listers[name] = r.Lister
+	}
 
-	for name := range registrations {
-		graph.AddNode(name)
-	}
-	for name, r := range registrations {
-		//if r.Scope == ResourceGroup {
-		//	graph.AddEdge("ResourceGroup", name)
-		//}
-		for _, dep := range r.DependsOn {
-			graph.AddEdge(name, dep)
-		}
-	}
+	return listers
 }
 
 func GetListersForScope(scope Scope) (listers Listers) {
