@@ -6,7 +6,7 @@ type IQueue interface {
 }
 
 type Queue struct {
-	Items []Item
+	Items []IItem
 }
 
 func (q Queue) Total() int {
@@ -17,7 +17,7 @@ func (q Queue) Count(states ...ItemState) int {
 	count := 0
 	for _, item := range q.Items {
 		for _, state := range states {
-			if item.State == state {
+			if item.GetState() == state {
 				count = count + 1
 				break
 			}

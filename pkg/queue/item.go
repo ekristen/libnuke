@@ -22,12 +22,17 @@ type IItem interface {
 	List() ([]resource.Resource, error)
 	GetProperty(key string) (string, error)
 	Equals(resource.Resource) bool
+	GetState() ItemState
 }
 
 type Item struct {
 	Resource resource.Resource
 	State    ItemState
 	Reason   string
+}
+
+func (i *Item) GetState() ItemState {
+	return i.State
 }
 
 func (i *Item) List() ([]resource.Resource, error) {
