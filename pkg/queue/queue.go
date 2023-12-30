@@ -15,7 +15,7 @@ const (
 	ItemStateFinished
 )
 
-type Item interface {
+type IItem interface {
 	resource.Resource
 	Print()
 	List() ([]resource.Resource, error)
@@ -23,7 +23,17 @@ type Item interface {
 	Equals(resource.Resource) bool
 }
 
-type Queue interface {
+type Item struct {
+	Resource resource.Resource
+	State    ItemState
+	Reason   string
+}
+
+type IQueue interface {
 	Total() int
 	Count(states ...ItemState) int
+}
+
+type Queue struct {
+	Items []IItem
 }
