@@ -2,6 +2,7 @@ package queue
 
 import (
 	"fmt"
+	"github.com/ekristen/cloud-nuke-sdk/pkg/log"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
 )
 
@@ -90,4 +91,19 @@ func (i *Item) Equals(o resource.Resource) bool {
 	return false
 }
 
-func (i *Item) Print() {}
+func (i *Item) Print() {
+	switch i.State {
+	case ItemStateNew:
+		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitPending, "would remove")
+	case ItemStatePending:
+		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitPending, "triggered remove")
+	case ItemStateWaiting:
+		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitPending, "waiting")
+	case ItemStateFailed:
+		log.Log(i.Owner, i.Type, i.Resource, log.ReasonError, "failed")
+	case ItemStateFiltered:
+		log.Log(i.Owner, i.Type, i.Resource, log.ReasonSkip, i.Reason)
+	case ItemStateFinished:
+		log.Log(i.Owner, i.Type, i.Resource, log.ReasonSuccess, "removed")
+	}
+}
