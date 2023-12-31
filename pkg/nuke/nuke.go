@@ -7,6 +7,7 @@ import (
 	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/types"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/utils"
+	"time"
 )
 
 type ListCache map[string]map[string][]resource.Resource
@@ -42,9 +43,36 @@ type Nuke struct {
 	ResourceTypes types.Collection
 	Queue         queue.Queue
 	scopes        []resource.Scope
+
+	ValidateHandlers []func() error
+}
+
+func (n *Nuke) RegisterValidateHandler(handler func() error) {
+	n.ValidateHandlers = append(n.ValidateHandlers, handler)
 }
 
 func (n *Nuke) Run() error {
+	if err := n.Validate(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (n *Nuke) Validate() error {
+	if n.Parameters.ForceSleep < 3 {
+		return fmt.Errorf("value for --force-sleep cannot be less than 3 seconds. This is for your own protection")
+	}
+	forceSleep := time.Duration(n.Parameters.ForceSleep) * time.Second
+
+	_ = forceSleep
+
+	for _, handler := range n.ValidateHandlers {
+		if err := handler(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -105,7 +133,7 @@ func (n *Nuke) Filter(item *queue.Item) error {
 func (n *Nuke) HandleQueue() {
 	listCache := make(map[string]map[string][]resource.Resource)
 
-	for _, item := range n.queue.GetItems() {
+	for _, item := range n.Queue.GetItems() {
 		switch item.GetState() {
 		case queue.ItemStateNew:
 			n.HandleRemove(item)
@@ -127,8 +155,8 @@ func (n *Nuke) HandleQueue() {
 
 	fmt.Println()
 	fmt.Printf("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
-		n.queue.Count(queue.ItemStateWaiting, queue.ItemStatePending), n.queue.Count(queue.ItemStateFailed),
-		n.queue.Count(queue.ItemStateFiltered), n.queue.Count(queue.ItemStateFinished))
+		n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending), n.Queue.Count(queue.ItemStateFailed),
+		n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
 }
 
 func (n *Nuke) HandleRemove(item *queue.Item) {
