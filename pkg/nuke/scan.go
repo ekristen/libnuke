@@ -66,8 +66,7 @@ func (s *Scanner) list(resourceType string, opts interface{}) {
 
 	lister := resource.GetLister(resourceType)
 	var rs []resource.Resource
-	lister.SetOptions(opts)
-	rs, err := lister.List()
+	rs, err := lister.List(opts)
 	if err != nil {
 		var errSkipRequest awsutil.ErrSkipRequest
 		ok := errors.As(err, &errSkipRequest)
