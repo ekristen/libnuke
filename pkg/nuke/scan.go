@@ -24,14 +24,16 @@ type Scanner struct {
 
 	resourceTypes []string
 	options       interface{}
+	owner         string
 }
 
-func NewScanner(resourceTypes []string, opts interface{}) *Scanner {
+func NewScanner(owner string, resourceTypes []string, opts interface{}) *Scanner {
 	return &Scanner{
 		Items:         make(chan *queue.Item, 100),
 		semaphore:     semaphore.NewWeighted(ScannerParallelQueries),
 		resourceTypes: resourceTypes,
 		options:       opts,
+		owner:         owner,
 	}
 }
 
@@ -45,7 +47,7 @@ func (s *Scanner) Run() {
 
 	for _, resourceType := range s.resourceTypes {
 		s.semaphore.Acquire(ctx, 1)
-		go s.list(resourceType, s.options)
+		go s.list(s.owner, resourceType, s.options)
 	}
 
 	// Wait for all routines to finish.
@@ -54,7 +56,7 @@ func (s *Scanner) Run() {
 	close(s.Items)
 }
 
-func (s *Scanner) list(resourceType string, opts interface{}) {
+func (s *Scanner) list(owner, resourceType string, opts interface{}) {
 	defer func() {
 		if r := recover(); r != nil {
 			err := fmt.Errorf("%v\n\n%s", r.(error), string(debug.Stack()))
@@ -93,6 +95,7 @@ func (s *Scanner) list(resourceType string, opts interface{}) {
 			Resource: r,
 			State:    queue.ItemStateNew,
 			Type:     resourceType,
+			Owner:    owner,
 		}
 		s.Items <- i
 	}
