@@ -97,7 +97,7 @@ func (i *Item) Print() {
 	case ItemStateNew:
 		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitPending, "would remove")
 	case ItemStateNewDependency:
-		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitDependency, "waiting for dependencies to be removed")
+		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitDependency, "would remove after dependencies")
 	case ItemStatePending:
 		log.Log(i.Owner, i.Type, i.Resource, log.ReasonRemoveTriggered, "triggered remove")
 	case ItemStateWaiting:
