@@ -1,14 +1,19 @@
 package resource
 
 import (
+	"fmt"
 	"testing"
 )
+
+type TestLister struct{}
+
+func (l TestLister) List(o interface{}) ([]Resource, error) { return nil, nil }
 
 func Test_RegisterResources(t *testing.T) {
 	Register(Registration{
 		Name:   "test",
 		Scope:  "test",
-		Lister: func(lister ListerOpts) ([]Resource, error) { return nil, nil },
+		Lister: TestLister{},
 	})
 
 	if len(registrations) != 1 {
@@ -26,12 +31,50 @@ func Test_RegisterResourcesDouble(t *testing.T) {
 	Register(Registration{
 		Name:   "test",
 		Scope:  "test",
-		Lister: func(lister ListerOpts) ([]Resource, error) { return nil, nil },
+		Lister: TestLister{},
 	})
 
 	Register(Registration{
 		Name:   "test",
 		Scope:  "test",
-		Lister: func(lister ListerOpts) ([]Resource, error) { return nil, nil },
+		Lister: TestLister{},
 	})
+}
+
+func Test_Sorted(t *testing.T) {
+	Register(Registration{
+		Name:   "Second",
+		Scope:  "test",
+		Lister: TestLister{},
+		DependsOn: []string{
+			"First",
+		},
+	})
+
+	Register(Registration{
+		Name:   "First",
+		Scope:  "test",
+		Lister: TestLister{},
+	})
+
+	Register(Registration{
+		Name:   "Third",
+		Scope:  "test",
+		Lister: TestLister{},
+		DependsOn: []string{
+			"Second",
+		},
+	})
+
+	Register(Registration{
+		Name:   "Fourth",
+		Scope:  "test",
+		Lister: TestLister{},
+		DependsOn: []string{
+			"First",
+		},
+	})
+
+	names := GetNames()
+	fmt.Println(names)
 }

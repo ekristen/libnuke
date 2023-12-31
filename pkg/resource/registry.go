@@ -43,8 +43,11 @@ func Register(r Registration) {
 	resourceListers[r.Name] = r.Lister
 
 	graph.AddNode(r.Name)
+	if len(r.DependsOn) == 0 {
+		graph.AddEdge("root", r.Name)
+	}
 	for _, dep := range r.DependsOn {
-		graph.AddEdge(r.Name, dep)
+		graph.AddEdge(dep, r.Name)
 	}
 }
 
@@ -57,11 +60,15 @@ func GetListers() (listers Listers) {
 }
 
 func GetListersV2() (listers Listers) {
-	sorted, err := graph.TopSort("")
+	listers = make(Listers)
+	sorted, err := graph.TopSort("root")
 	if err != nil {
 		panic(err)
 	}
 	for _, name := range sorted {
+		if name == "root" {
+			continue
+		}
 		r := registrations[name]
 		listers[name] = r.Lister
 	}
@@ -81,7 +88,7 @@ func GetListersForScope(scope Scope) (listers Listers) {
 
 func GetNames() []string {
 	var names []string
-	for resourceType := range GetListers() {
+	for resourceType := range GetListersV2() {
 		names = append(names, resourceType)
 	}
 
