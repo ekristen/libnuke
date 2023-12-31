@@ -24,8 +24,7 @@ type Registration struct {
 }
 
 type Lister interface {
-	List() ([]Resource, error)
-	SetOptions(opts interface{})
+	List(opts interface{}) ([]Resource, error)
 }
 
 func Register(r Registration) {
