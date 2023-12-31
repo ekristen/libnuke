@@ -45,7 +45,7 @@ func (s *Scanner) Run() {
 
 	for _, resourceType := range s.resourceTypes {
 		s.semaphore.Acquire(ctx, 1)
-		go s.list(resourceType, s.options)
+		go s.list(resourceType, s.opts)
 	}
 
 	// Wait for all routines to finish.
@@ -66,7 +66,8 @@ func (s *Scanner) list(resourceType string, opts interface{}) {
 
 	lister := resource.GetLister(resourceType)
 	var rs []resource.Resource
-	rs, err := lister.List(opts)
+	lister.SetOptions(opts)
+	rs, err := lister.List()
 	if err != nil {
 		var errSkipRequest awsutil.ErrSkipRequest
 		ok := errors.As(err, &errSkipRequest)
