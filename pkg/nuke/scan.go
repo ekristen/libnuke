@@ -45,7 +45,7 @@ func (s *Scanner) Run() {
 
 	for _, resourceType := range s.resourceTypes {
 		s.semaphore.Acquire(ctx, 1)
-		go s.list(resourceType, s.opts)
+		go s.list(resourceType, s.options)
 	}
 
 	// Wait for all routines to finish.
