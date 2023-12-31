@@ -51,14 +51,26 @@ type Nuke struct {
 }
 
 func (n *Nuke) RegisterValidateHandler(handler func() error) {
+	if n.ValidateHandlers == nil {
+		n.ValidateHandlers = make([]func() error, 0)
+	}
+
 	n.ValidateHandlers = append(n.ValidateHandlers, handler)
 }
 
 func (n *Nuke) RegisterResourceTypes(scope resource.Scope, resourceTypes ...string) {
+	if n.ResourceTypes == nil {
+		n.ResourceTypes = make(map[resource.Scope]types.Collection)
+	}
+
 	n.ResourceTypes[scope] = append(n.ResourceTypes[scope], resourceTypes...)
 }
 
 func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) {
+	if n.Scanners == nil {
+		n.Scanners = make(map[resource.Scope]*Scanner)
+	}
+
 	n.Scanners[scope] = scanner
 }
 
