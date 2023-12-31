@@ -19,13 +19,13 @@ import (
 const ScannerParallelQueries = 16
 
 type Scanner struct {
-	items     chan *queue.Item
+	Items     chan *queue.Item
 	semaphore *semaphore.Weighted
 }
 
 func NewScanner() *Scanner {
 	return &Scanner{
-		items:     make(chan *queue.Item, 100),
+		Items:     make(chan *queue.Item, 100),
 		semaphore: semaphore.NewWeighted(ScannerParallelQueries),
 	}
 }
@@ -46,7 +46,7 @@ func (s *Scanner) run(resourceTypes []string, opts interface{}) {
 	// Wait for all routines to finish.
 	s.semaphore.Acquire(ctx, ScannerParallelQueries)
 
-	close(s.items)
+	close(s.Items)
 }
 
 func (s *Scanner) list(resourceType string, opts interface{}) {
@@ -89,6 +89,6 @@ func (s *Scanner) list(resourceType string, opts interface{}) {
 			State:    queue.ItemStateNew,
 			Type:     resourceType,
 		}
-		s.items <- i
+		s.Items <- i
 	}
 }
