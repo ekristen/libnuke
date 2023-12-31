@@ -74,10 +74,20 @@ func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) {
 	n.Scanners[scope] = scanner
 }
 
+func (n *Nuke) PromptFirst() error {
+	return nil
+}
+
+func (n *Nuke) PromptSecond() error {
+	return nil
+}
+
 func (n *Nuke) Run() error {
 	if err := n.Validate(); err != nil {
 		return err
 	}
+
+	n.PromptFirst()
 
 	if err := n.Scan(); err != nil {
 		return err
@@ -92,6 +102,8 @@ func (n *Nuke) Run() error {
 		fmt.Println("The above resources would be deleted with the supplied configuration. Provide --no-dry-run to actually destroy resources.")
 		return nil
 	}
+
+	n.PromptSecond()
 
 	forceSleep := time.Duration(n.Parameters.ForceSleep) * time.Second
 	time.Sleep(forceSleep)
@@ -144,10 +156,16 @@ func (n *Nuke) Run() error {
 	return nil
 }
 
+func (n *Nuke) Version() {
+
+}
+
 func (n *Nuke) Validate() error {
 	if n.Parameters.ForceSleep < 3 {
 		return fmt.Errorf("value for --force-sleep cannot be less than 3 seconds. This is for your own protection")
 	}
+
+	n.Version()
 
 	for _, handler := range n.ValidateHandlers {
 		if err := handler(); err != nil {
