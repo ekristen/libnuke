@@ -89,7 +89,7 @@ func GetNames() []string {
 	return names
 }
 
-func GetNameForScope(scope Scope) []string {
+func GetNamesForScope(scope Scope) []string {
 	var names []string
 	for resourceType := range GetListersForScope(scope) {
 		names = append(names, resourceType)
