@@ -39,17 +39,27 @@ type INuke interface {
 }
 
 type Nuke struct {
-	Parameters    Parameters
-	Config        config.IConfig
-	ResourceTypes types.Collection
-	Queue         queue.Queue
-	scopes        []resource.Scope
+	Parameters Parameters
+	Config     config.IConfig
+	Queue      queue.Queue
+	scopes     []resource.Scope
 
 	ValidateHandlers []func() error
+
+	ResourceTypes map[resource.Scope]types.Collection
+	Scanners      map[resource.Scope]Scanner
 }
 
 func (n *Nuke) RegisterValidateHandler(handler func() error) {
 	n.ValidateHandlers = append(n.ValidateHandlers, handler)
+}
+
+func (n *Nuke) RegisterResourceTypes(scope resource.Scope, resourceTypes ...string) {
+	n.ResourceTypes[scope] = append(n.ResourceTypes[scope], resourceTypes...)
+}
+
+func (n *Nuke) RegisterScanner(scope resource.Scope, scanner Scanner) {
+	n.Scanners[scope] = scanner
 }
 
 func (n *Nuke) Run() error {
@@ -137,6 +147,28 @@ func (n *Nuke) Validate() error {
 }
 
 func (n *Nuke) Scan() error {
+	itemQueue := queue.Queue{}
+
+	for _, scanner := range n.Scanners {
+		scanner.Run()
+		for item := range scanner.Items {
+			itemQueue.Items = append(itemQueue.Items, item)
+			err := n.Filter(item)
+			if err != nil {
+				return err
+			}
+
+			if item.State != queue.ItemStateFiltered || !n.Parameters.Quiet {
+				item.Print()
+			}
+		}
+	}
+
+	fmt.Printf("Scan complete: %d total, %d nukeable, %d filtered.\n\n",
+		itemQueue.Count(), itemQueue.Count(queue.ItemStateNew), itemQueue.Count(queue.ItemStateFiltered))
+
+	n.Queue = itemQueue
+
 	return nil
 }
 

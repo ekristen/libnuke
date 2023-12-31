@@ -21,12 +21,17 @@ const ScannerParallelQueries = 16
 type Scanner struct {
 	Items     chan *queue.Item
 	semaphore *semaphore.Weighted
+
+	resourceTypes []string
+	options       interface{}
 }
 
-func NewScanner() *Scanner {
+func NewScanner(resourceTypes []string, opts interface{}) *Scanner {
 	return &Scanner{
-		Items:     make(chan *queue.Item, 100),
-		semaphore: semaphore.NewWeighted(ScannerParallelQueries),
+		Items:         make(chan *queue.Item, 100),
+		semaphore:     semaphore.NewWeighted(ScannerParallelQueries),
+		resourceTypes: resourceTypes,
+		options:       opts,
 	}
 }
 
@@ -35,12 +40,12 @@ type IScanner interface {
 	list(resourceType string)
 }
 
-func (s *Scanner) Run(resourceTypes []string, opts interface{}) {
+func (s *Scanner) Run() {
 	ctx := context.Background()
 
-	for _, resourceType := range resourceTypes {
+	for _, resourceType := range s.resourceTypes {
 		s.semaphore.Acquire(ctx, 1)
-		go s.list(resourceType, opts)
+		go s.list(resourceType, s.options)
 	}
 
 	// Wait for all routines to finish.
