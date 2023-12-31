@@ -133,7 +133,7 @@ func (n *Nuke) Run() error {
 	for {
 		n.HandleQueue()
 
-		if n.Queue.Count(queue.ItemStatePending, queue.ItemStateWaiting, queue.ItemStateNew) == 0 && n.Queue.Count(queue.ItemStateFailed) > 0 {
+		if n.Queue.Count(queue.ItemStatePending, queue.ItemStateWaiting, queue.ItemStateNew, queue.ItemStateNewDependency) == 0 && n.Queue.Count(queue.ItemStateFailed) > 0 {
 			if failCount >= 2 {
 				logrus.Errorf("There are resources in failed state, but none are ready for deletion, anymore.")
 				fmt.Println()
@@ -154,7 +154,7 @@ func (n *Nuke) Run() error {
 		} else {
 			failCount = 0
 		}
-		if n.Parameters.MaxWaitRetries != 0 && n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending) > 0 && n.Queue.Count(queue.ItemStateNew) == 0 {
+		if n.Parameters.MaxWaitRetries != 0 && n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending) > 0 && n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency) == 0 {
 			if waitingCount >= n.Parameters.MaxWaitRetries {
 				return fmt.Errorf("Max wait retries of %d exceeded.\n\n", n.Parameters.MaxWaitRetries)
 			}
@@ -162,7 +162,7 @@ func (n *Nuke) Run() error {
 		} else {
 			waitingCount = 0
 		}
-		if n.Queue.Count(queue.ItemStateNew, queue.ItemStatePending, queue.ItemStateFailed, queue.ItemStateWaiting) == 0 {
+		if n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency, queue.ItemStatePending, queue.ItemStateFailed, queue.ItemStateWaiting) == 0 {
 			break
 		}
 
@@ -299,7 +299,7 @@ func (n *Nuke) HandleQueue() {
 
 	fmt.Println()
 	fmt.Printf("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
-		n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending), n.Queue.Count(queue.ItemStateFailed),
+		n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending, queue.ItemStateNewDependency), n.Queue.Count(queue.ItemStateFailed),
 		n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
 }
 
