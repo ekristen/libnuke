@@ -48,6 +48,8 @@ type Nuke struct {
 
 	ResourceTypes map[resource.Scope]types.Collection
 	Scanners      map[resource.Scope]*Scanner
+
+	prompts map[string]func() error
 }
 
 func (n *Nuke) RegisterValidateHandler(handler func() error) {
@@ -74,11 +76,27 @@ func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) {
 	n.Scanners[scope] = scanner
 }
 
+func (n *Nuke) RegisterPrompt(name string, prompt func() error) {
+	if n.prompts == nil {
+		n.prompts = make(map[string]func() error)
+	}
+
+	n.prompts[name] = prompt
+}
+
 func (n *Nuke) PromptFirst() error {
+	if prompt, ok := n.prompts["first"]; ok {
+		return prompt()
+	}
+
 	return nil
 }
 
 func (n *Nuke) PromptSecond() error {
+	if prompt, ok := n.prompts["second"]; ok {
+		return prompt()
+	}
+
 	return nil
 }
 
@@ -87,7 +105,9 @@ func (n *Nuke) Run() error {
 		return err
 	}
 
-	n.PromptFirst()
+	if err := n.PromptFirst(); err != nil {
+		return err
+	}
 
 	if err := n.Scan(); err != nil {
 		return err
@@ -103,7 +123,9 @@ func (n *Nuke) Run() error {
 		return nil
 	}
 
-	n.PromptSecond()
+	if err := n.PromptSecond(); err != nil {
+		return err
+	}
 
 	forceSleep := time.Duration(n.Parameters.ForceSleep) * time.Second
 	time.Sleep(forceSleep)
