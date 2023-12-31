@@ -23,6 +23,13 @@ type Scanner struct {
 	semaphore *semaphore.Weighted
 }
 
+func NewScanner() *Scanner {
+	return &Scanner{
+		items:     make(chan *queue.Item, 100),
+		semaphore: semaphore.NewWeighted(ScannerParallelQueries),
+	}
+}
+
 type IScanner interface {
 	run(resourceTypes []string)
 	list(resourceType string)
