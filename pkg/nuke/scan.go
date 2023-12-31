@@ -31,11 +31,11 @@ func NewScanner() *Scanner {
 }
 
 type IScanner interface {
-	run(resourceTypes []string)
+	Run(resourceTypes []string)
 	list(resourceType string)
 }
 
-func (s *Scanner) run(resourceTypes []string, opts interface{}) {
+func (s *Scanner) Run(resourceTypes []string, opts interface{}) {
 	ctx := context.Background()
 
 	for _, resourceType := range resourceTypes {
