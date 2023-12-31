@@ -279,6 +279,9 @@ func (n *Nuke) HandleQueue() {
 		case queue.ItemStateNew:
 			n.HandleRemove(item)
 			item.Print()
+		case queue.ItemStateNewDependency:
+			n.HandleWaitDependency(item)
+			item.Print()
 		case queue.ItemStateFailed:
 			n.HandleRemove(item)
 			n.HandleWait(item, listCache)
@@ -310,6 +313,20 @@ func (n *Nuke) HandleRemove(item *queue.Item) {
 
 	item.State = queue.ItemStatePending
 	item.Reason = ""
+}
+
+func (n *Nuke) HandleWaitDependency(item *queue.Item) {
+	reg := resource.GetRegistration(item.Type)
+	depCount := 0
+	for _, dep := range reg.DependsOn {
+		cnt := n.Queue.CountByType(dep, queue.ItemStateNew, queue.ItemStatePending, queue.ItemStateWaiting)
+		depCount = depCount + cnt
+	}
+
+	if depCount == 0 {
+		item.State = queue.ItemStateNew
+		item.Reason = ""
+	}
 }
 
 func (n *Nuke) HandleWait(item *queue.Item, cache ListCache) {

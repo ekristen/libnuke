@@ -10,6 +10,7 @@ type ItemState int
 
 const (
 	ItemStateNew ItemState = iota
+	ItemStateNewDependency
 	ItemStatePending
 	ItemStateWaiting
 	ItemStateFailed
@@ -95,8 +96,10 @@ func (i *Item) Print() {
 	switch i.State {
 	case ItemStateNew:
 		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitPending, "would remove")
+	case ItemStateNewDependency:
+		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitDependency, "waiting for dependencies to be removed")
 	case ItemStatePending:
-		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitPending, "triggered remove")
+		log.Log(i.Owner, i.Type, i.Resource, log.ReasonRemoveTriggered, "triggered remove")
 	case ItemStateWaiting:
 		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitPending, "waiting")
 	case ItemStateFailed:

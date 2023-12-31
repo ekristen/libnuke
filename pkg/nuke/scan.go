@@ -9,8 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/semaphore"
 
-	"github.com/rebuy-de/aws-nuke/pkg/awsutil"
-
+	sdkerrors "github.com/ekristen/cloud-nuke-sdk/pkg/errors"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/queue"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/utils"
@@ -29,7 +28,7 @@ type Scanner struct {
 
 func NewScanner(owner string, resourceTypes []string, opts interface{}) *Scanner {
 	return &Scanner{
-		Items:         make(chan *queue.Item, 100),
+		Items:         make(chan *queue.Item),
 		semaphore:     semaphore.NewWeighted(ScannerParallelQueries),
 		resourceTypes: resourceTypes,
 		options:       opts,
@@ -71,14 +70,14 @@ func (s *Scanner) list(owner, resourceType string, opts interface{}) {
 
 	rs, err := lister.List(opts)
 	if err != nil {
-		var errSkipRequest awsutil.ErrSkipRequest
+		var errSkipRequest sdkerrors.ErrSkipRequest
 		ok := errors.As(err, &errSkipRequest)
 		if ok {
 			log.Debugf("skipping request: %v", err)
 			return
 		}
 
-		var errUnknownEndpoint awsutil.ErrUnknownEndpoint
+		var errUnknownEndpoint sdkerrors.ErrUnknownEndpoint
 		ok = errors.As(err, &errUnknownEndpoint)
 		if ok {
 			log.Warnf("skipping request: %v", err)
@@ -91,9 +90,15 @@ func (s *Scanner) list(owner, resourceType string, opts interface{}) {
 	}
 
 	for _, r := range rs {
+		state := queue.ItemStateNew
+		reg := resource.GetRegistration(resourceType)
+		if len(reg.DependsOn) > 0 {
+			state = queue.ItemStateNewDependency
+		}
+
 		i := &queue.Item{
 			Resource: r,
-			State:    queue.ItemStateNew,
+			State:    state,
 			Type:     resourceType,
 			Owner:    owner,
 		}

@@ -44,10 +44,16 @@ func Register(r Registration) {
 
 	graph.AddNode(r.Name)
 	if len(r.DependsOn) == 0 {
-		graph.AddEdge("root", r.Name)
+		err := graph.AddEdge("root", r.Name)
+		if err != nil {
+			panic(err)
+		}
 	}
 	for _, dep := range r.DependsOn {
-		graph.AddEdge(dep, r.Name)
+		err := graph.AddEdge(dep, r.Name)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -57,6 +63,10 @@ func GetListers() (listers Listers) {
 		listers[name] = r.Lister
 	}
 	return listers
+}
+
+func GetRegistration(name string) Registration {
+	return registrations[name]
 }
 
 func GetListersV2() (listers Listers) {

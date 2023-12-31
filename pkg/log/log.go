@@ -15,6 +15,7 @@ var (
 	ReasonError           = *color.New(color.FgRed)
 	ReasonRemoveTriggered = *color.New(color.FgGreen)
 	ReasonWaitPending     = *color.New(color.FgBlue)
+	ReasonWaitDependency  = *color.New(color.FgCyan)
 	ReasonSuccess         = *color.New(color.FgGreen)
 )
 
