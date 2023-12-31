@@ -127,9 +127,6 @@ func (n *Nuke) Run() error {
 		return err
 	}
 
-	forceSleep := time.Duration(n.Parameters.ForceSleep) * time.Second
-	time.Sleep(forceSleep)
-
 	failCount := 0
 	waitingCount := 0
 
