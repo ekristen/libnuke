@@ -22,9 +22,9 @@ type IConfig interface {
 	InBlocklist(searchID string) bool
 	Validate(id string) error
 	Filters(id string) (filter.Filters, error)
-	Presets() map[string]PresetDefinitions
-	ResourceTypes() ResourceTypes
-	FeatureFlags() FeatureFlags
+	GetPresets() map[string]PresetDefinitions
+	GetResourceTypes() ResourceTypes
+	GetFeatureFlags() FeatureFlags
 	ResolveDeprecations() error
 }
 
