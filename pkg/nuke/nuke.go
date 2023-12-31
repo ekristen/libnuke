@@ -7,6 +7,7 @@ import (
 	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/types"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/utils"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -56,6 +57,68 @@ func (n *Nuke) Run() error {
 		return err
 	}
 
+	if err := n.Scan(); err != nil {
+		return err
+	}
+
+	if n.Queue.Count(queue.ItemStateNew) == 0 {
+		fmt.Println("No resource to delete.")
+		return nil
+	}
+
+	if !n.Parameters.NoDryRun {
+		fmt.Println("The above resources would be deleted with the supplied configuration. Provide --no-dry-run to actually destroy resources.")
+		return nil
+	}
+
+	forceSleep := time.Duration(n.Parameters.ForceSleep) * time.Second
+	time.Sleep(forceSleep)
+
+	failCount := 0
+	waitingCount := 0
+
+	for {
+		n.HandleQueue()
+
+		if n.Queue.Count(queue.ItemStatePending, queue.ItemStateWaiting, queue.ItemStateNew) == 0 && n.Queue.Count(queue.ItemStateFailed) > 0 {
+			if failCount >= 2 {
+				logrus.Errorf("There are resources in failed state, but none are ready for deletion, anymore.")
+				fmt.Println()
+
+				for _, item := range n.Queue.GetItems() {
+					if item.GetState() != queue.ItemStateFailed {
+						continue
+					}
+
+					item.Print()
+					logrus.Error(item.GetReason())
+				}
+
+				return fmt.Errorf("failed")
+			}
+
+			failCount = failCount + 1
+		} else {
+			failCount = 0
+		}
+		if n.Parameters.MaxWaitRetries != 0 && n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending) > 0 && n.Queue.Count(queue.ItemStateNew) == 0 {
+			if waitingCount >= n.Parameters.MaxWaitRetries {
+				return fmt.Errorf("Max wait retries of %d exceeded.\n\n", n.Parameters.MaxWaitRetries)
+			}
+			waitingCount = waitingCount + 1
+		} else {
+			waitingCount = 0
+		}
+		if n.Queue.Count(queue.ItemStateNew, queue.ItemStatePending, queue.ItemStateFailed, queue.ItemStateWaiting) == 0 {
+			break
+		}
+
+		time.Sleep(5 * time.Second)
+	}
+
+	fmt.Printf("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
+		n.Queue.Count(queue.ItemStateFailed), n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
+
 	return nil
 }
 
@@ -63,9 +126,6 @@ func (n *Nuke) Validate() error {
 	if n.Parameters.ForceSleep < 3 {
 		return fmt.Errorf("value for --force-sleep cannot be less than 3 seconds. This is for your own protection")
 	}
-	forceSleep := time.Duration(n.Parameters.ForceSleep) * time.Second
-
-	_ = forceSleep
 
 	for _, handler := range n.ValidateHandlers {
 		if err := handler(); err != nil {
