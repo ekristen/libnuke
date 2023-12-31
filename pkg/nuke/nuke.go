@@ -47,7 +47,7 @@ type Nuke struct {
 	ValidateHandlers []func() error
 
 	ResourceTypes map[resource.Scope]types.Collection
-	Scanners      map[resource.Scope]Scanner
+	Scanners      map[resource.Scope]*Scanner
 }
 
 func (n *Nuke) RegisterValidateHandler(handler func() error) {
@@ -58,7 +58,7 @@ func (n *Nuke) RegisterResourceTypes(scope resource.Scope, resourceTypes ...stri
 	n.ResourceTypes[scope] = append(n.ResourceTypes[scope], resourceTypes...)
 }
 
-func (n *Nuke) RegisterScanner(scope resource.Scope, scanner Scanner) {
+func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) {
 	n.Scanners[scope] = scanner
 }
 
