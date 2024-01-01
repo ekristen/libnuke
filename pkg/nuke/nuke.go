@@ -3,6 +3,7 @@ package nuke
 import (
 	"fmt"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/config"
+	"github.com/ekristen/cloud-nuke-sdk/pkg/filter"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/queue"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/types"
@@ -17,10 +18,6 @@ type Parameters struct {
 	ConfigPath string
 
 	ID string
-
-	Targets      []string
-	Excludes     []string
-	CloudControl []string
 
 	NoDryRun   bool
 	Force      bool
@@ -43,7 +40,7 @@ type Nuke struct {
 	Parameters Parameters
 	Config     config.IConfig
 	Queue      queue.Queue
-	scopes     []resource.Scope
+	Filters    filter.Filters
 
 	ValidateHandlers []func() error
 
