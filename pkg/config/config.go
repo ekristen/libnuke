@@ -12,8 +12,9 @@ type Account struct {
 }
 
 type ResourceTypes struct {
-	Targets  types.Collection `yaml:"targets"`
-	Excludes types.Collection `yaml:"excludes"`
+	Targets      types.Collection `yaml:"targets"`
+	Excludes     types.Collection `yaml:"excludes"`
+	CloudControl types.Collection `yaml:"cloud-control"`
 }
 
 type IConfig interface {

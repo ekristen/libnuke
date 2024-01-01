@@ -2,7 +2,6 @@ package resource
 
 import (
 	"fmt"
-
 	"github.com/sirupsen/logrus"
 	"github.com/stevenle/topsort"
 )
