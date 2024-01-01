@@ -1,7 +1,7 @@
 package resource
 
 import (
-	"github.com/ekristen/cloud-nuke-sdk/pkg/config"
+	"github.com/ekristen/cloud-nuke-sdk/pkg/featureflag"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/types"
 )
 
@@ -26,5 +26,5 @@ type PropertyGetter interface {
 
 type FeatureFlagGetter interface {
 	Resource
-	FeatureFlags(config.FeatureFlags)
+	FeatureFlags(*featureflag.FeatureFlags)
 }

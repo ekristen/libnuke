@@ -209,7 +209,11 @@ func (n *Nuke) Scan() error {
 	for _, scanner := range n.Scanners {
 		scanner.Run()
 		for item := range scanner.Items {
-			item.FeatureFlags = n.FeatureFlags
+			ffGetter, ok := item.Resource.(resource.FeatureFlagGetter)
+			if ok {
+				ffGetter.FeatureFlags(n.FeatureFlags)
+			}
+
 			itemQueue.Items = append(itemQueue.Items, item)
 			err := n.Filter(item)
 			if err != nil {
