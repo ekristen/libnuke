@@ -38,7 +38,7 @@ type Nuke struct {
 	Parameters   Parameters
 	Queue        queue.Queue
 	Filters      filter.Filters
-	FeatureFlags featureflag.FeatureFlags
+	FeatureFlags *featureflag.FeatureFlags
 
 	ValidateHandlers []func() error
 
@@ -46,6 +46,12 @@ type Nuke struct {
 	Scanners      map[resource.Scope]*Scanner
 
 	prompts map[string]func() error
+
+	version string
+}
+
+func (n *Nuke) RegisterVersion(version string) {
+	n.version = version
 }
 
 func (n *Nuke) RegisterFeatureFlags(flag string, defaultValue *bool) {
@@ -176,7 +182,7 @@ func (n *Nuke) Run() error {
 }
 
 func (n *Nuke) Version() {
-
+	fmt.Println(n.version)
 }
 
 func (n *Nuke) Validate() error {
@@ -203,6 +209,7 @@ func (n *Nuke) Scan() error {
 	for _, scanner := range n.Scanners {
 		scanner.Run()
 		for item := range scanner.Items {
+			item.FeatureFlags = n.FeatureFlags
 			itemQueue.Items = append(itemQueue.Items, item)
 			err := n.Filter(item)
 			if err != nil {

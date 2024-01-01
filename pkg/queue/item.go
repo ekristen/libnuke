@@ -2,6 +2,7 @@ package queue
 
 import (
 	"fmt"
+	"github.com/ekristen/cloud-nuke-sdk/pkg/featureflag"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/log"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
 )
@@ -28,12 +29,13 @@ type IItem interface {
 }
 
 type Item struct {
-	Resource resource.Resource
-	State    ItemState
-	Reason   string
-	Type     string
-	Owner    string // region/subscription
-	Opts     interface{}
+	Resource     resource.Resource
+	State        ItemState
+	FeatureFlags *featureflag.FeatureFlags
+	Reason       string
+	Type         string
+	Owner        string // region/subscription
+	Opts         interface{}
 }
 
 func (i *Item) GetState() ItemState {
