@@ -2,7 +2,6 @@ package nuke
 
 import (
 	"fmt"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/config"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/filter"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/queue"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
@@ -16,8 +15,6 @@ type ListCache map[string]map[string][]resource.Resource
 
 type Parameters struct {
 	ConfigPath string
-
-	ID string
 
 	NoDryRun   bool
 	Force      bool
@@ -38,7 +35,6 @@ type INuke interface {
 
 type Nuke struct {
 	Parameters Parameters
-	Config     config.IConfig
 	Queue      queue.Queue
 	Filters    filter.Filters
 
@@ -236,28 +232,25 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		}
 	}
 
-	accountFilters, err := n.Config.Filters(n.Parameters.ID)
-	if err != nil {
-		return err
-	}
+	accountFilters := n.Filters
 
 	itemFilters, ok := accountFilters[item.Type]
 	if !ok {
 		return nil
 	}
 
-	for _, filter := range itemFilters {
-		prop, err := item.GetProperty(filter.Property)
+	for _, f := range itemFilters {
+		prop, err := item.GetProperty(f.Property)
 		if err != nil {
 			return err
 		}
 
-		match, err := filter.Match(prop)
+		match, err := f.Match(prop)
 		if err != nil {
 			return err
 		}
 
-		if utils.IsTrue(filter.Invert) {
+		if utils.IsTrue(f.Invert) {
 			match = !match
 		}
 
