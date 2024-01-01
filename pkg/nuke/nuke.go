@@ -324,8 +324,7 @@ func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 	}
 
 	if depCount == 0 {
-		item.State = queue.ItemStateNew
-		item.Reason = ""
+		n.HandleRemove(item)
 	}
 }
 
