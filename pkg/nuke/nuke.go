@@ -196,7 +196,9 @@ func (n *Nuke) Validate() error {
 }
 
 func (n *Nuke) Scan() error {
-	itemQueue := queue.Queue{}
+	itemQueue := queue.Queue{
+		Items: make([]*queue.Item, 0),
+	}
 
 	for _, scanner := range n.Scanners {
 		scanner.Run()

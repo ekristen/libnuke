@@ -28,7 +28,7 @@ type Scanner struct {
 
 func NewScanner(owner string, resourceTypes []string, opts interface{}) *Scanner {
 	return &Scanner{
-		Items:         make(chan *queue.Item, 100),
+		Items:         make(chan *queue.Item, 500),
 		semaphore:     semaphore.NewWeighted(ScannerParallelQueries),
 		resourceTypes: resourceTypes,
 		options:       opts,
