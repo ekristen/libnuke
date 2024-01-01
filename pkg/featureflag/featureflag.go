@@ -35,7 +35,7 @@ type FeatureFlags struct {
 }
 
 // New creates a new feature flag
-func (ffc *FeatureFlags) New(key string, defaultValue *bool) *FeatureFlag {
+func (ffc *FeatureFlags) New(key string, defaultValue *bool, value *bool) *FeatureFlag {
 	ffc.flagsMutex.Lock()
 	defer ffc.flagsMutex.Unlock()
 
@@ -53,6 +53,10 @@ func (ffc *FeatureFlags) New(key string, defaultValue *bool) *FeatureFlag {
 
 	if fl.defaultValue == nil {
 		fl.defaultValue = defaultValue
+	}
+
+	if value == Bool(true) {
+		fl.enabled = value
 	}
 
 	return fl
