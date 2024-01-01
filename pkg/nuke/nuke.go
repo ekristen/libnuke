@@ -2,6 +2,7 @@ package nuke
 
 import (
 	"fmt"
+	"github.com/ekristen/cloud-nuke-sdk/pkg/featureflag"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/filter"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/queue"
 	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
@@ -34,9 +35,10 @@ type INuke interface {
 }
 
 type Nuke struct {
-	Parameters Parameters
-	Queue      queue.Queue
-	Filters    filter.Filters
+	Parameters   Parameters
+	Queue        queue.Queue
+	Filters      filter.Filters
+	FeatureFlags featureflag.FeatureFlags
 
 	ValidateHandlers []func() error
 
@@ -44,6 +46,10 @@ type Nuke struct {
 	Scanners      map[resource.Scope]*Scanner
 
 	prompts map[string]func() error
+}
+
+func (n *Nuke) RegisterFeatureFlags(flag string, defaultValue *bool) {
+	n.FeatureFlags.New(flag, defaultValue)
 }
 
 func (n *Nuke) RegisterValidateHandler(handler func() error) {
