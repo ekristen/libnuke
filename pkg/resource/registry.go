@@ -27,7 +27,9 @@ type Lister interface {
 	List(opts interface{}) ([]Resource, error)
 }
 
-func Register(r Registration) {
+type RegisterOption func(name string, lister Lister)
+
+func Register(r Registration, opts ...RegisterOption) {
 	if r.Scope == "" {
 		panic(fmt.Errorf("scope must be set"))
 	}
@@ -54,6 +56,10 @@ func Register(r Registration) {
 		if err != nil {
 			panic(err)
 		}
+	}
+
+	for _, opt := range opts {
+		opt(r.Name, r.Lister)
 	}
 }
 
