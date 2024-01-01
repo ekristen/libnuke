@@ -39,6 +39,10 @@ func (ffc *FeatureFlags) New(key string, defaultValue *bool) *FeatureFlag {
 	ffc.flagsMutex.Lock()
 	defer ffc.flagsMutex.Unlock()
 
+	if ffc.flags == nil {
+		ffc.flags = make(map[string]*FeatureFlag)
+	}
+
 	fl := ffc.flags[key]
 	if fl == nil {
 		fl = &FeatureFlag{
