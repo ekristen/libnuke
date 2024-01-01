@@ -337,7 +337,7 @@ func (n *Nuke) HandleWait(item *queue.Item, cache ListCache) {
 	}
 	left, ok := cache[ownerId][item.Type]
 	if !ok {
-		left, err = item.List()
+		left, err = item.List(item.Opts)
 		if err != nil {
 			item.State = queue.ItemStateFailed
 			item.Reason = err.Error()
