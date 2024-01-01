@@ -18,8 +18,9 @@ type Parameters struct {
 
 	ID string
 
-	Targets  []string
-	Excludes []string
+	Targets      []string
+	Excludes     []string
+	CloudControl []string
 
 	NoDryRun   bool
 	Force      bool
