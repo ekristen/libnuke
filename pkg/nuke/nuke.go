@@ -54,8 +54,8 @@ func (n *Nuke) RegisterVersion(version string) {
 	n.version = version
 }
 
-func (n *Nuke) RegisterFeatureFlags(flag string, defaultValue *bool) {
-	n.FeatureFlags.New(flag, defaultValue)
+func (n *Nuke) RegisterFeatureFlags(flag string, defaultValue *bool, value *bool) {
+	n.FeatureFlags.New(flag, defaultValue, value)
 }
 
 func (n *Nuke) RegisterValidateHandler(handler func() error) {
