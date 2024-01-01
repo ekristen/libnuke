@@ -101,6 +101,7 @@ func (s *Scanner) list(owner, resourceType string, opts interface{}) {
 			State:    state,
 			Type:     resourceType,
 			Owner:    owner,
+			Opts:     opts,
 		}
 		s.Items <- i
 	}

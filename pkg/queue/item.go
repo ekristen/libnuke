@@ -33,6 +33,7 @@ type Item struct {
 	Reason   string
 	Type     string
 	Owner    string // region/subscription
+	Opts     interface{}
 }
 
 func (i *Item) GetState() ItemState {
@@ -43,8 +44,9 @@ func (i *Item) GetReason() string {
 	return i.Reason
 }
 
-func (i *Item) List() ([]resource.Resource, error) {
-	return nil, nil
+func (i *Item) List(opts interface{}) ([]resource.Resource, error) {
+	lister := resource.GetLister(i.Type)
+	return lister.List(opts)
 }
 
 func (i *Item) GetProperty(key string) (string, error) {
