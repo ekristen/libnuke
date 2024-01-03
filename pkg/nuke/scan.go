@@ -21,22 +21,21 @@ type Scanner struct {
 	Items     chan *queue.Item
 	semaphore *semaphore.Weighted
 
-	resourceTypes []string
-	options       interface{}
-	owner         string
-	morphOpts     ScannerOpts
+	resourceTypes  []string
+	options        interface{}
+	owner          string
+	mutateOptsFunc MutateOptsFunc
 }
 
-type ScannerOpts func(opts interface{}, resourceType string) interface{}
+type MutateOptsFunc func(opts interface{}, resourceType string) interface{}
 
-func NewScanner(owner string, resourceTypes []string, opts interface{}, morph ScannerOpts) *Scanner {
+func NewScanner(owner string, resourceTypes []string, opts interface{}) *Scanner {
 	return &Scanner{
 		Items:         make(chan *queue.Item, 10000),
 		semaphore:     semaphore.NewWeighted(ScannerParallelQueries),
 		resourceTypes: resourceTypes,
 		options:       opts,
 		owner:         owner,
-		morphOpts:     morph,
 	}
 }
 
@@ -45,14 +44,22 @@ type IScanner interface {
 	list(resourceType string)
 }
 
+func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) {
+	if s.mutateOptsFunc != nil {
+		panic("mutateOptsFunc already registered")
+	}
+
+	s.mutateOptsFunc = morph
+}
+
 func (s *Scanner) Run() {
 	ctx := context.Background()
 
 	for _, resourceType := range s.resourceTypes {
 		s.semaphore.Acquire(ctx, 1)
 		opts := s.options
-		if s.morphOpts != nil {
-			opts = s.morphOpts(opts, resourceType)
+		if s.mutateOptsFunc != nil {
+			opts = s.mutateOptsFunc(opts, resourceType)
 		}
 
 		go s.list(s.owner, resourceType, opts)
