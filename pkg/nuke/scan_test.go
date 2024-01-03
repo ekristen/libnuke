@@ -109,7 +109,7 @@ func Test_NewScannerWithDependsOn(t *testing.T) {
 		SessionOne: "testing",
 	}
 
-	scanner := NewScanner("owner", []string{testResourceType, testResourceType2}, opts, nil)
+	scanner := NewScanner("owner", []string{testResourceType, testResourceType2}, opts)
 
 	scanner.Run()
 
@@ -143,7 +143,8 @@ func Test_NewScannerWithMorphOpts(t *testing.T) {
 		return o1
 	}
 
-	scanner := NewScanner("owner", []string{testResourceType}, opts, morphOpts)
+	scanner := NewScanner("owner", []string{testResourceType}, opts)
+	scanner.RegisterMutateOptsFunc(morphOpts)
 
 	scanner.Run()
 
@@ -176,7 +177,7 @@ func Test_NewScannerWithResourceListerError(t *testing.T) {
 		ThrowError: true,
 	}
 
-	scanner := NewScanner("owner", []string{testResourceType}, opts, nil)
+	scanner := NewScanner("owner", []string{testResourceType}, opts)
 	scanner.Run()
 
 	assert.Len(t, scanner.Items, 0)
@@ -208,7 +209,7 @@ func Test_NewScannerWithResourceListerErrorSkip(t *testing.T) {
 		ThrowSkipError: true,
 	}
 
-	scanner := NewScanner("owner", []string{testResourceType}, opts, nil)
+	scanner := NewScanner("owner", []string{testResourceType}, opts)
 	scanner.Run()
 
 	assert.Len(t, scanner.Items, 0)
@@ -240,7 +241,7 @@ func Test_NewScannerWithResourceListerErrorUnknownEndpoint(t *testing.T) {
 		ThrowEndpointError: true,
 	}
 
-	scanner := NewScanner("owner", []string{testResourceType}, opts, nil)
+	scanner := NewScanner("owner", []string{testResourceType}, opts)
 	scanner.Run()
 
 	assert.Len(t, scanner.Items, 0)
