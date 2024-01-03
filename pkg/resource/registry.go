@@ -62,6 +62,14 @@ func Register(r Registration, opts ...RegisterOption) {
 	}
 }
 
+// ClearRegistry clears the registry of all registrations
+// Designed for use for unit tests, not for production code. Only use if you know what you are doing.
+func ClearRegistry() {
+	registrations = make(Registrations)
+	resourceListers = make(Listers)
+	graph = topsort.NewGraph()
+}
+
 func GetListers() (listers Listers) {
 	listers = make(Listers)
 	for name, r := range registrations {

@@ -1,11 +1,86 @@
+Status: Alpha/Beta - Everything works, but is still being abstracted and tailored to aws-nuke and azure-nuke, as such
+func signatures and other things may change in breaking ways until things stabilize.
+
 # Cloud Nuke SDK
 
-This is an attempt to consolide the commonalities between [aws-nuke](https://github.com/ekristen/aws-nuke) and
+This is an attempt to consolidate the commonalities between [aws-nuke](https://github.com/ekristen/aws-nuke) and
 [azure-nuke](https://github.com/ekristen/azure-nuke) into a single library that can be used between them and for future
-tooling.
+tooling, for example [gcp-nuke](https://github.com/ekristen/gcp-nuke)
+
+## Note about the Original Code
+
+The code that was originally written for [aws-nuke](https://github.com/rebuy-de/aws-nuke) for iterating over and clearing
+out resources was very well written and I wanted to be able to use it for other cloud providers. Originally I simply
+copied it for [azure-nuke,](https://github.com/ekristen/azure-nuke) but I didn't want to have to keep on maintaining multiple
+copies.
+
+There are a few shortcomings with the original code base, for example, there's no way to do dependency management. For 
+example there are some resources that must be cleared before other resources can be cleared, or it will end in error. Now
+the retry mechanism is **usually** sufficient for this, but not always.
+
+The queue code in my opinion was very novel in it's approach and I wanted to keep that, but I wanted to make sure it was
+agnostic to the system using it. As such, the queue package can be used for just about anything in which you want to queue
+and retry items. However, it is still geared towards the removal of said it, it's primary interface has to have the
+`Remove` method still available.
+
+The goal of this library is to be able to be used for any cloud provider, but really anything that wants to use a similar
+pattern for iterating over and removing resources.
+
+## License
+
+MIT
 
 ## Sources
+
+Most of this code originated from the original [aws-nuke](https://github.com/rebuy-de/aws-nuke) project.
 
 - [aws-nuke](https://github.com/ekristen/aws-nuke) (managed fork)
 - [aws-nuke original](https://github.com/rebuy-de/aws-nuke)
 - [azure-nuke](https://github.com/ekristen/azure-nuke)
+
+## Versioning
+
+This library will follow the semver model. However, it is still in alpha/beta and as such the API is subject to change
+until it is stable and will remain on the `0.y.z` model until then.
+
+## Packages
+
+I strongly dislike the use of the `internal` directory in any open source golang project. Therefore everything is in `pkg`
+and exported wherever possible to allow others to use it.
+
+### errors
+
+These are common errors that need to be handled by the library.
+
+### featureflag
+
+This allows for arbitrary settings to be passed into the library to enable/disable certain features.
+
+### filter
+
+This allows resources to be filtered on a number of different scenarios.
+
+### log
+
+This is a simple wrapper around `fmt.Println` that formats resource cleanup messages nicely.
+
+### nuke
+
+This is the primary package that is used to iterate over and remove resources.
+
+### queue
+
+This is a queue package that can be used for just about anything, but is geared towards the removal of resources.
+
+### resource
+
+This is the primary resource package that is used to define resources and their dependencies. To be used by the `nuke` 
+package and the `queue` package.
+
+### types
+
+This is a collection of common types that are used throughout the library.
+
+### utils
+
+This is a collection of common utilities that are used throughout the library.

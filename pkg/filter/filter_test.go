@@ -1,11 +1,11 @@
 package filter_test
 
 import (
+	"github.com/ekristen/cloud-nuke-sdk/pkg/filter"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/ekristen/azure-nuke/pkg/config"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -78,15 +78,15 @@ func TestUnmarshalFilter(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.yaml, func(t *testing.T) {
-			var filter config.Filter
+			var f filter.Filter
 
-			err := yaml.Unmarshal([]byte(tc.yaml), &filter)
+			err := yaml.Unmarshal([]byte(tc.yaml), &f)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			for _, o := range tc.match {
-				match, err := filter.Match(o)
+				match, err := f.Match(o)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -97,7 +97,7 @@ func TestUnmarshalFilter(t *testing.T) {
 			}
 
 			for _, o := range tc.mismatch {
-				match, err := filter.Match(o)
+				match, err := f.Match(o)
 				if err != nil {
 					t.Fatal(err)
 				}

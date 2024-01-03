@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/semaphore"
 
 	sdkerrors "github.com/ekristen/cloud-nuke-sdk/pkg/errors"
@@ -24,15 +24,19 @@ type Scanner struct {
 	resourceTypes []string
 	options       interface{}
 	owner         string
+	morphOpts     ScannerOpts
 }
 
-func NewScanner(owner string, resourceTypes []string, opts interface{}) *Scanner {
+type ScannerOpts func(opts interface{}, resourceType string) interface{}
+
+func NewScanner(owner string, resourceTypes []string, opts interface{}, morph ScannerOpts) *Scanner {
 	return &Scanner{
 		Items:         make(chan *queue.Item, 10000),
 		semaphore:     semaphore.NewWeighted(ScannerParallelQueries),
 		resourceTypes: resourceTypes,
 		options:       opts,
 		owner:         owner,
+		morphOpts:     morph,
 	}
 }
 
@@ -46,7 +50,12 @@ func (s *Scanner) Run() {
 
 	for _, resourceType := range s.resourceTypes {
 		s.semaphore.Acquire(ctx, 1)
-		go s.list(s.owner, resourceType, s.options)
+		opts := s.options
+		if s.morphOpts != nil {
+			opts = s.morphOpts(opts, resourceType)
+		}
+
+		go s.list(s.owner, resourceType, opts)
 	}
 
 	// Wait for all routines to finish.
@@ -60,7 +69,7 @@ func (s *Scanner) list(owner, resourceType string, opts interface{}) {
 		if r := recover(); r != nil {
 			err := fmt.Errorf("%v\n\n%s", r.(error), string(debug.Stack()))
 			dump := utils.Indent(fmt.Sprintf("%v", err), "    ")
-			log.Errorf("Listing %s failed:\n%s", resourceType, dump)
+			logrus.Errorf("Listing %s failed:\n%s", resourceType, dump)
 		}
 	}()
 	defer s.semaphore.Release(1)
@@ -73,19 +82,19 @@ func (s *Scanner) list(owner, resourceType string, opts interface{}) {
 		var errSkipRequest sdkerrors.ErrSkipRequest
 		ok := errors.As(err, &errSkipRequest)
 		if ok {
-			log.Debugf("skipping request: %v", err)
+			logrus.Debugf("skipping request: %v", err)
 			return
 		}
 
 		var errUnknownEndpoint sdkerrors.ErrUnknownEndpoint
 		ok = errors.As(err, &errUnknownEndpoint)
 		if ok {
-			log.Warnf("skipping request: %v", err)
+			logrus.Warnf("skipping request: %v", err)
 			return
 		}
 
 		dump := utils.Indent(fmt.Sprintf("%v", err), "    ")
-		log.Errorf("Listing %s failed:\n%s", resourceType, dump)
+		logrus.Errorf("Listing %s failed:\n%s", resourceType, dump)
 		return
 	}
 
