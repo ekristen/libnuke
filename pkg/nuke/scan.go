@@ -52,11 +52,14 @@ func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) {
 	s.mutateOptsFunc = morph
 }
 
-func (s *Scanner) Run() {
+func (s *Scanner) Run() error {
 	ctx := context.Background()
 
 	for _, resourceType := range s.resourceTypes {
-		s.semaphore.Acquire(ctx, 1)
+		err := s.semaphore.Acquire(ctx, 1)
+		if err != nil {
+			return err
+		}
 		opts := s.options
 		if s.mutateOptsFunc != nil {
 			opts = s.mutateOptsFunc(opts, resourceType)
@@ -66,9 +69,14 @@ func (s *Scanner) Run() {
 	}
 
 	// Wait for all routines to finish.
-	s.semaphore.Acquire(ctx, ScannerParallelQueries)
+	err := s.semaphore.Acquire(ctx, ScannerParallelQueries)
+	if err != nil {
+		return err
+	}
 
 	close(s.Items)
+
+	return nil
 }
 
 func (s *Scanner) list(owner, resourceType string, opts interface{}) {

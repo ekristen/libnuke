@@ -207,7 +207,11 @@ func (n *Nuke) Scan() error {
 	}
 
 	for _, scanner := range n.Scanners {
-		scanner.Run()
+		err := scanner.Run()
+		if err != nil {
+			return err
+		}
+
 		for item := range scanner.Items {
 			ffGetter, ok := item.Resource.(resource.FeatureFlagGetter)
 			if ok {
@@ -227,7 +231,7 @@ func (n *Nuke) Scan() error {
 	}
 
 	fmt.Printf("Scan complete: %d total, %d nukeable, %d filtered.\n\n",
-		itemQueue.Count(), itemQueue.Count(queue.ItemStateNew), itemQueue.Count(queue.ItemStateFiltered))
+		itemQueue.Total(), itemQueue.Count(queue.ItemStateNew, queue.ItemStateNewDependency), itemQueue.Count(queue.ItemStateFiltered))
 
 	n.Queue = itemQueue
 

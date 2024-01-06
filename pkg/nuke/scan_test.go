@@ -65,7 +65,6 @@ func (l TestResourceLister) List(o interface{}) ([]resource.Resource, error) {
 
 	if opts.Panic {
 		panic(fmt.Errorf("panic error for testing"))
-		return nil, nil
 	}
 
 	return []resource.Resource{
@@ -111,7 +110,8 @@ func Test_NewScannerWithDependsOn(t *testing.T) {
 
 	scanner := NewScanner("owner", []string{testResourceType, testResourceType2}, opts)
 
-	scanner.Run()
+	err := scanner.Run()
+	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 2)
 
@@ -146,7 +146,8 @@ func Test_NewScannerWithMorphOpts(t *testing.T) {
 	scanner := NewScanner("owner", []string{testResourceType}, opts)
 	scanner.RegisterMutateOptsFunc(morphOpts)
 
-	scanner.Run()
+	err := scanner.Run()
+	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 1)
 
@@ -178,7 +179,8 @@ func Test_NewScannerWithResourceListerError(t *testing.T) {
 	}
 
 	scanner := NewScanner("owner", []string{testResourceType}, opts)
-	scanner.Run()
+	err := scanner.Run()
+	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 0)
 }
@@ -210,7 +212,8 @@ func Test_NewScannerWithResourceListerErrorSkip(t *testing.T) {
 	}
 
 	scanner := NewScanner("owner", []string{testResourceType}, opts)
-	scanner.Run()
+	err := scanner.Run()
+	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 0)
 }
@@ -242,7 +245,8 @@ func Test_NewScannerWithResourceListerErrorUnknownEndpoint(t *testing.T) {
 	}
 
 	scanner := NewScanner("owner", []string{testResourceType}, opts)
-	scanner.Run()
+	err := scanner.Run()
+	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 0)
 }
