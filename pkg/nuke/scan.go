@@ -104,7 +104,7 @@ func (s *Scanner) list(owner, resourceType string, opts interface{}) {
 		var errUnknownEndpoint sdkerrors.ErrUnknownEndpoint
 		ok = errors.As(err, &errUnknownEndpoint)
 		if ok {
-			logrus.Warnf("skipping request: %v", err)
+			logrus.Debugf("skipping request: %v", err)
 			return
 		}
 
