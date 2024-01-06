@@ -43,7 +43,7 @@ type Nuke struct {
 	ValidateHandlers []func() error
 
 	ResourceTypes map[resource.Scope]types.Collection
-	Scanners      map[resource.Scope]*Scanner
+	Scanners      map[resource.Scope][]*Scanner
 
 	prompts map[string]func() error
 
@@ -76,10 +76,12 @@ func (n *Nuke) RegisterResourceTypes(scope resource.Scope, resourceTypes ...stri
 
 func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) {
 	if n.Scanners == nil {
-		n.Scanners = make(map[resource.Scope]*Scanner)
+		n.Scanners = make(map[resource.Scope][]*Scanner)
 	}
 
-	n.Scanners[scope] = scanner
+	// TODO: register them by hashing the scanner object to detect duplicates
+
+	n.Scanners[scope] = append(n.Scanners[scope], scanner)
 }
 
 func (n *Nuke) RegisterPrompt(name string, prompt func() error) {
@@ -206,26 +208,28 @@ func (n *Nuke) Scan() error {
 		Items: make([]*queue.Item, 0),
 	}
 
-	for _, scanner := range n.Scanners {
-		err := scanner.Run()
-		if err != nil {
-			return err
-		}
-
-		for item := range scanner.Items {
-			ffGetter, ok := item.Resource.(resource.FeatureFlagGetter)
-			if ok {
-				ffGetter.FeatureFlags(n.FeatureFlags)
-			}
-
-			itemQueue.Items = append(itemQueue.Items, item)
-			err := n.Filter(item)
+	for _, scanners := range n.Scanners {
+		for _, scanner := range scanners {
+			err := scanner.Run()
 			if err != nil {
 				return err
 			}
 
-			if item.State != queue.ItemStateFiltered || !n.Parameters.Quiet {
-				item.Print()
+			for item := range scanner.Items {
+				ffGetter, ok := item.Resource.(resource.FeatureFlagGetter)
+				if ok {
+					ffGetter.FeatureFlags(n.FeatureFlags)
+				}
+
+				itemQueue.Items = append(itemQueue.Items, item)
+				err := n.Filter(item)
+				if err != nil {
+					return err
+				}
+
+				if item.State != queue.ItemStateFiltered || !n.Parameters.Quiet {
+					item.Print()
+				}
 			}
 		}
 	}
