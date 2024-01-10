@@ -2,7 +2,7 @@
 
 [![GoDoc](https://godoc.org/github.com/ekristen/libnuke?status.svg)](https://godoc.org/github.com/ekristen/libnuke)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ekristen/libnuke)](https://goreportcard.com/report/github.com/ekristen/libnuke)
-gs[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 **Status: Alpha/Beta** - Everything works, but is still being abstracted and tailored to aws-nuke and azure-nuke,
 as such func signatures and other things may change in breaking ways until things stabilize.
