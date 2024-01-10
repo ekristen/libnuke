@@ -9,10 +9,10 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/semaphore"
 
-	sdkerrors "github.com/ekristen/cloud-nuke-sdk/pkg/errors"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/queue"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/utils"
+	sdkerrors "github.com/ekristen/libnuke/pkg/errors"
+	"github.com/ekristen/libnuke/pkg/queue"
+	"github.com/ekristen/libnuke/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/utils"
 )
 
 const ScannerParallelQueries = 16

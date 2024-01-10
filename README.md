@@ -1,24 +1,30 @@
-Status: Alpha/Beta - Everything works, but is still being abstracted and tailored to aws-nuke and azure-nuke, as such
-func signatures and other things may change in breaking ways until things stabilize.
+# libnuke
 
-# Cloud Nuke SDK
+[![GoDoc](https://godoc.org/github.com/ekristen/libnuke?status.svg)](https://godoc.org/github.com/ekristen/libnuke)
+[![Go Report Card](https://goreportcard.com/badge/github.com/ekristen/libnuke)](https://goreportcard.com/report/github.com/ekristen/libnuke)
+[![Build Status](https://travis-ci.org/ekristen/libnuke.svg?branch=master)](https://travis-ci.org/ekristen/libnuke)
+[![codecov](https://codecov.io/gh/ekristen/libnuke/branch/master/graph/badge.svg)](https://codecov.io/gh/ekristen/libnuke)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-This is an attempt to consolidate the commonalities between [aws-nuke](https://github.com/ekristen/aws-nuke) and
-[azure-nuke](https://github.com/ekristen/azure-nuke) into a single library that can be used between them and for future
-tooling, for example [gcp-nuke](https://github.com/ekristen/gcp-nuke)
+**Status: Alpha/Beta** - Everything works, but is still being abstracted and tailored to aws-nuke and azure-nuke,
+as such func signatures and other things may change in breaking ways until things stabilize.
+
+## Overview
+
+This is an attempt to consolidate the commonalities between [aws-nuke](https://github.com/ekristen/aws-nuke) and [azure-nuke](https://github.com/ekristen/azure-nuke) into a single library
+that can be used between them and for future tooling, for example [gcp-nuke](https://github.com/ekristen/gcp-nuke)
 
 ## Note about the Original Code
 
-The code that was originally written for [aws-nuke](https://github.com/rebuy-de/aws-nuke) for iterating over and clearing
-out resources was very well written and I wanted to be able to use it for other cloud providers. Originally I simply
-copied it for [azure-nuke,](https://github.com/ekristen/azure-nuke) but I didn't want to have to keep on maintaining multiple
-copies.
+The code that was originally written for [aws-nuke](https://github.com/rebuy-de/aws-nuke) for iterating over and clearing out resources was well 
+written and I wanted to be able to use it for other cloud providers. Originally I simply copied it for [azure-nuke,](https://github.com/ekristen/azure-nuke) 
+but I didn't want to have to keep on maintaining multiple copies.
 
 There are a few shortcomings with the original code base, for example, there's no way to do dependency management. For 
 example there are some resources that must be cleared before other resources can be cleared, or it will end in error. Now
 the retry mechanism is **usually** sufficient for this, but not always.
 
-The queue code in my opinion was very novel in it's approach and I wanted to keep that, but I wanted to make sure it was
+The queue code in my opinion was very novel in its approach and I wanted to keep that, but I wanted to make sure it was
 agnostic to the system using it. As such, the queue package can be used for just about anything in which you want to queue
 and retry items. However, it is still geared towards the removal of said it, it's primary interface has to have the
 `Remove` method still available.

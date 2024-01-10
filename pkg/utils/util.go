@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/ekristen/cloud-nuke-sdk/pkg/types"
+	"github.com/ekristen/libnuke/pkg/types"
 )
 
 func Prompt(expect string) error {

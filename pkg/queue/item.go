@@ -2,9 +2,9 @@ package queue
 
 import (
 	"fmt"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/featureflag"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/log"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/featureflag"
+	"github.com/ekristen/libnuke/pkg/log"
+	"github.com/ekristen/libnuke/pkg/resource"
 )
 
 type ItemState int

@@ -1,4 +1,4 @@
-module github.com/ekristen/cloud-nuke-sdk
+module github.com/ekristen/libnuke
 
 go 1.21.0
 

@@ -1,8 +1,8 @@
 package resource
 
 import (
-	"github.com/ekristen/cloud-nuke-sdk/pkg/featureflag"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/types"
+	"github.com/ekristen/libnuke/pkg/featureflag"
+	"github.com/ekristen/libnuke/pkg/types"
 )
 
 type Resource interface {

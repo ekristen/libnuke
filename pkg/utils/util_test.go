@@ -5,8 +5,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/ekristen/cloud-nuke-sdk/pkg/types"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/utils"
+	"github.com/ekristen/libnuke/pkg/types"
+	"github.com/ekristen/libnuke/pkg/utils"
 )
 
 func TestResolveResourceTypes(t *testing.T) {

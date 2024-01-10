@@ -7,7 +7,7 @@ import (
 
 	"github.com/fatih/color"
 
-	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/resource"
 )
 
 var (

@@ -2,12 +2,12 @@ package nuke
 
 import (
 	"fmt"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/featureflag"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/filter"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/queue"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/types"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/utils"
+	"github.com/ekristen/libnuke/pkg/featureflag"
+	"github.com/ekristen/libnuke/pkg/filter"
+	"github.com/ekristen/libnuke/pkg/queue"
+	"github.com/ekristen/libnuke/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/types"
+	"github.com/ekristen/libnuke/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"time"
 )

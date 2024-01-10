@@ -3,9 +3,9 @@ package nuke
 import (
 	"flag"
 	"fmt"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/errors"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/queue"
-	"github.com/ekristen/cloud-nuke-sdk/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/errors"
+	"github.com/ekristen/libnuke/pkg/queue"
+	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"io"

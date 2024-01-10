@@ -6,7 +6,7 @@ import (
 
 	"github.com/gotidy/ptr"
 
-	"github.com/ekristen/cloud-nuke-sdk/pkg/types"
+	"github.com/ekristen/libnuke/pkg/types"
 )
 
 func TestPropertiesEquals(t *testing.T) {

@@ -1,7 +1,7 @@
 package filter_test
 
 import (
-	"github.com/ekristen/cloud-nuke-sdk/pkg/filter"
+	"github.com/ekristen/libnuke/pkg/filter"
 	"strconv"
 	"testing"
 	"time"
