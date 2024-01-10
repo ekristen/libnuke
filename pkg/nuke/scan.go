@@ -15,8 +15,11 @@ import (
 	"github.com/ekristen/libnuke/pkg/utils"
 )
 
+// ScannerParallelQueries is the number of parallel queries to run at any given time for a scanner.
 const ScannerParallelQueries = 16
 
+// Scanner is collection of resource types that will be scanned for existing resources and added to the
+// item queue for processing. These items will be filtered and then processed.
 type Scanner struct {
 	Items     chan *queue.Item
 	semaphore *semaphore.Weighted
@@ -27,8 +30,12 @@ type Scanner struct {
 	mutateOptsFunc MutateOptsFunc
 }
 
+// MutateOptsFunc is a function that can mutate the options for a given resource type. This is useful for when you
+// need to pass in a different set of options for a given resource type. For example, AWS nuke needs to be able to
+// populate the region and session for a given resource type give that it might only exist in us-east-1.
 type MutateOptsFunc func(opts interface{}, resourceType string) interface{}
 
+// NewScanner creates a new scanner for the given resource types.
 func NewScanner(owner string, resourceTypes []string, opts interface{}) *Scanner {
 	return &Scanner{
 		Items:         make(chan *queue.Item, 10000),
@@ -44,6 +51,8 @@ type IScanner interface {
 	list(resourceType string)
 }
 
+// RegisterMutateOptsFunc registers a mutate options function for the scanner. The mutate options function is called
+// for each resource type that is being scanned. This allows you to mutate the options for a given resource type.
 func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) {
 	if s.mutateOptsFunc != nil {
 		panic("mutateOptsFunc already registered")
@@ -52,6 +61,7 @@ func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) {
 	s.mutateOptsFunc = morph
 }
 
+// Run starts the scanner and runs the lister for each resource type.
 func (s *Scanner) Run() error {
 	ctx := context.Background()
 

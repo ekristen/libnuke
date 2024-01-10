@@ -1,3 +1,5 @@
+// Package nuke provides a framework for removing resources by providing commands to register resource scanners,
+// validation handlers, resource types and filters.
 package nuke
 
 import (
@@ -12,8 +14,10 @@ import (
 	"time"
 )
 
+// ListCache is used to cache the list of resources that are returned from the API.
 type ListCache map[string]map[string][]resource.Resource
 
+// Parameters is a collection of common variables used to configure the before of the Nuke instance.
 type Parameters struct {
 	ConfigPath string
 
@@ -34,6 +38,8 @@ type INuke interface {
 	HandleWait(item *queue.Item, cache ListCache)
 }
 
+// Nuke is the main struct for the library. It is used to register resource types, scanners, filters and validation
+// handlers.
 type Nuke struct {
 	Parameters   Parameters
 	Queue        queue.Queue
@@ -50,14 +56,20 @@ type Nuke struct {
 	version string
 }
 
+// RegisterVersion allows the tool instantiating the library to register its version so there's consist output
+// of the version information across all tools. It is optional.
 func (n *Nuke) RegisterVersion(version string) {
 	n.version = version
 }
 
+// RegisterFeatureFlags allows the tool instantiating the library to register a boolean flag. For example, aws nuke
+// needs to be able to register if disabling of instance deletion protection is allowed, this provides a generic method
+// for doing that.
 func (n *Nuke) RegisterFeatureFlags(flag string, defaultValue *bool, value *bool) {
 	n.FeatureFlags.New(flag, defaultValue, value)
 }
 
+// RegisterValidateHandler allows the tool instantiating the library to register a validation handler. It is optional.
 func (n *Nuke) RegisterValidateHandler(handler func() error) {
 	if n.ValidateHandlers == nil {
 		n.ValidateHandlers = make([]func() error, 0)
@@ -66,6 +78,9 @@ func (n *Nuke) RegisterValidateHandler(handler func() error) {
 	n.ValidateHandlers = append(n.ValidateHandlers, handler)
 }
 
+// RegisterResourceTypes is used to register resource types against a scope. A scope is a string that is used to
+// group resource types together. For example, you could have a scope of "aws" and register all AWS resource types.
+// For Azure, you have to register resources by tenant or subscription or even resource group.
 func (n *Nuke) RegisterResourceTypes(scope resource.Scope, resourceTypes ...string) {
 	if n.ResourceTypes == nil {
 		n.ResourceTypes = make(map[resource.Scope]types.Collection)
@@ -74,6 +89,9 @@ func (n *Nuke) RegisterResourceTypes(scope resource.Scope, resourceTypes ...stri
 	n.ResourceTypes[scope] = append(n.ResourceTypes[scope], resourceTypes...)
 }
 
+// RegisterScanner is used to register a scanner against a scope. A scope is a string that is used to group resource
+// types together. A scanner is what is responsible for actually querying the API for resources and adding them to
+// the queue for processing.
 func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) {
 	if n.Scanners == nil {
 		n.Scanners = make(map[resource.Scope][]*Scanner)
@@ -108,6 +126,8 @@ func (n *Nuke) PromptSecond() error {
 	return nil
 }
 
+// Run is the main entry point for the library. It will run the validation handlers, prompt the user, scan for
+// resources, filter them and then process them.
 func (n *Nuke) Run() error {
 	if err := n.Validate(); err != nil {
 		return err
@@ -183,10 +203,12 @@ func (n *Nuke) Run() error {
 	return nil
 }
 
+// Version prints the version that was registered with the library by the invoking tool.
 func (n *Nuke) Version() {
 	fmt.Println(n.version)
 }
 
+// Validate is used to run the validation handlers that were registered with the library by the invoking tool.
 func (n *Nuke) Validate() error {
 	if n.Parameters.ForceSleep < 3 {
 		return fmt.Errorf("value for --force-sleep cannot be less than 3 seconds. This is for your own protection")
@@ -203,6 +225,9 @@ func (n *Nuke) Validate() error {
 	return nil
 }
 
+// Scan is used to scan for resources. It will run the scanners that were registered with the library by the invoking
+// tool. It will also filter the resources based on the filters that were registered. It will also print the current
+// status of the resources.
 func (n *Nuke) Scan() error {
 	itemQueue := queue.Queue{
 		Items: make([]*queue.Item, 0),
@@ -242,6 +267,8 @@ func (n *Nuke) Scan() error {
 	return nil
 }
 
+// Filter is used to filter resources. It will run the filters that were registered with the instance of Nuke
+// and set the state of the resource to filtered if it matches the filter.
 func (n *Nuke) Filter(item *queue.Item) error {
 	checker, ok := item.Resource.(resource.Filter)
 	if ok {
@@ -289,6 +316,8 @@ func (n *Nuke) Filter(item *queue.Item) error {
 	return nil
 }
 
+// HandleQueue is used to handle the queue of resources. It will iterate over the queue and trigger the appropriate
+// handlers based on the state of the resource.
 func (n *Nuke) HandleQueue() {
 	listCache := make(map[string]map[string][]resource.Resource)
 
@@ -321,6 +350,8 @@ func (n *Nuke) HandleQueue() {
 		n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
 }
 
+// HandleRemove is used to handle the removal of a resource. It will remove the resource and set the state of the
+// resource to pending if it was successful or failed if it was not.
 func (n *Nuke) HandleRemove(item *queue.Item) {
 	err := item.Resource.Remove()
 	if err != nil {
@@ -333,6 +364,8 @@ func (n *Nuke) HandleRemove(item *queue.Item) {
 	item.Reason = ""
 }
 
+// HandleWaitDependency is used to handle the waiting of a resource. It will check if the resource has any dependencies
+// and if it does, it will check if the dependencies have been removed. If they have, it will trigger the remove handler.
 func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 	reg := resource.GetRegistration(item.Type)
 	depCount := 0
@@ -346,6 +379,8 @@ func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 	}
 }
 
+// HandleWait is used to handle the waiting of a resource. It will check if the resource has been removed. If it has,
+// it will set the state of the resource to finished. If it has not, it will set the state of the resource to waiting.
 func (n *Nuke) HandleWait(item *queue.Item, cache ListCache) {
 	var err error
 	ownerId := item.Owner
