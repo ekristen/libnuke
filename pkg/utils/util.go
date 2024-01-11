@@ -9,6 +9,7 @@ import (
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
+// Prompt creates a prompt for direct user interaction to receive input
 func Prompt(expect string) error {
 	fmt.Print("> ")
 	reader := bufio.NewReader(os.Stdin)
