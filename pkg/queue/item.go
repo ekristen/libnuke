@@ -2,6 +2,7 @@ package queue
 
 import (
 	"fmt"
+
 	"github.com/ekristen/libnuke/pkg/featureflag"
 	"github.com/ekristen/libnuke/pkg/log"
 	"github.com/ekristen/libnuke/pkg/resource"

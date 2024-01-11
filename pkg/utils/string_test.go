@@ -2,11 +2,12 @@ package utils
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-var theslice = []string{"alpha", "bravo", "charlie"}
+var testSlice = []string{"alpha", "bravo", "charlie"}
 
 func TestContains(t *testing.T) {
 	cases := []struct {
@@ -26,7 +27,7 @@ func TestContains(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(fmt.Sprintf("%t", tc.result), func(t *testing.T) {
-			actual := StringSliceContains(theslice, tc.expected)
+			actual := StringSliceContains(testSlice, tc.expected)
 			assert.Equal(t, tc.result, actual)
 		})
 	}

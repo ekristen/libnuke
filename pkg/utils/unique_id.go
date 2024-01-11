@@ -7,7 +7,7 @@ import (
 )
 
 const Base62Chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
-const UniqueIdLength = 6 // Should be good for 62^6 = 56+ billion combinations
+const UniqueIDLength = 6 // Should be good for 62^6 = 56+ billion combinations
 
 // UniqueID - Returns a unique (ish) id we can attach to resources and tfstate files, so they don't conflict
 // with each other. Uses base 62 to generate a 6 character string that's unlikely to collide with the handful
@@ -15,8 +15,8 @@ const UniqueIdLength = 6 // Should be good for 62^6 = 56+ billion combinations
 func UniqueID() string {
 	var out bytes.Buffer
 
-	randVal := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < UniqueIdLength; i++ {
+	randVal := rand.New(rand.NewSource(time.Now().UnixNano())) //nolint: gosec
+	for i := 0; i < UniqueIDLength; i++ {
 		out.WriteByte(Base62Chars[randVal.Intn(len(Base62Chars))])
 	}
 

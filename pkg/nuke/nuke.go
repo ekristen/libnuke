@@ -1,17 +1,17 @@
-// Package nuke provides a framework for removing resources by providing commands to register resource scanners,
-// validation handlers, resource types and filters.
 package nuke
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/sirupsen/logrus"
+
 	"github.com/ekristen/libnuke/pkg/featureflag"
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
 	"github.com/ekristen/libnuke/pkg/utils"
-	"github.com/sirupsen/logrus"
-	"time"
 )
 
 // ListCache is used to cache the list of resources that are returned from the API.
@@ -65,7 +65,7 @@ func (n *Nuke) RegisterVersion(version string) {
 // RegisterFeatureFlags allows the tool instantiating the library to register a boolean flag. For example, aws nuke
 // needs to be able to register if disabling of instance deletion protection is allowed, this provides a generic method
 // for doing that.
-func (n *Nuke) RegisterFeatureFlags(flag string, defaultValue *bool, value *bool) {
+func (n *Nuke) RegisterFeatureFlags(flag string, defaultValue, value *bool) {
 	n.FeatureFlags.New(flag, defaultValue, value)
 }
 
@@ -155,13 +155,29 @@ func (n *Nuke) Run() error {
 		return err
 	}
 
+	if err := n.run(); err != nil {
+		return err
+	}
+
+	fmt.Printf("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
+		n.Queue.Count(queue.ItemStateFailed), n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
+
+	return nil
+}
+
+func (n *Nuke) run() error {
 	failCount := 0
 	waitingCount := 0
 
 	for {
 		n.HandleQueue()
 
-		if n.Queue.Count(queue.ItemStatePending, queue.ItemStateWaiting, queue.ItemStateNew, queue.ItemStateNewDependency) == 0 && n.Queue.Count(queue.ItemStateFailed) > 0 {
+		if n.Queue.Count(
+			queue.ItemStatePending,
+			queue.ItemStateWaiting,
+			queue.ItemStateNew,
+			queue.ItemStateNewDependency,
+		) == 0 && n.Queue.Count(queue.ItemStateFailed) > 0 {
 			if failCount >= 2 {
 				logrus.Errorf("There are resources in failed state, but none are ready for deletion, anymore.")
 				fmt.Println()
@@ -178,27 +194,32 @@ func (n *Nuke) Run() error {
 				return fmt.Errorf("failed")
 			}
 
-			failCount = failCount + 1
+			failCount++
 		} else {
 			failCount = 0
 		}
-		if n.Parameters.MaxWaitRetries != 0 && n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending) > 0 && n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency) == 0 {
+		if n.Parameters.MaxWaitRetries != 0 &&
+			n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending) > 0 &&
+			n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency) == 0 {
 			if waitingCount >= n.Parameters.MaxWaitRetries {
-				return fmt.Errorf("Max wait retries of %d exceeded.\n\n", n.Parameters.MaxWaitRetries)
+				return fmt.Errorf("max wait retries of %d exceeded", n.Parameters.MaxWaitRetries)
 			}
-			waitingCount = waitingCount + 1
+			waitingCount++
 		} else {
 			waitingCount = 0
 		}
-		if n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency, queue.ItemStatePending, queue.ItemStateFailed, queue.ItemStateWaiting) == 0 {
+		if n.Queue.Count(
+			queue.ItemStateNew,
+			queue.ItemStateNewDependency,
+			queue.ItemStatePending,
+			queue.ItemStateFailed,
+			queue.ItemStateWaiting,
+		) == 0 {
 			break
 		}
 
 		time.Sleep(5 * time.Second)
 	}
-
-	fmt.Printf("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
-		n.Queue.Count(queue.ItemStateFailed), n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
 
 	return nil
 }
@@ -341,7 +362,6 @@ func (n *Nuke) HandleQueue() {
 			n.HandleWait(item, listCache)
 			item.Print()
 		}
-
 	}
 
 	fmt.Println()
@@ -371,7 +391,7 @@ func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 	depCount := 0
 	for _, dep := range reg.DependsOn {
 		cnt := n.Queue.CountByType(dep, queue.ItemStateNew, queue.ItemStatePending, queue.ItemStateWaiting)
-		depCount = depCount + cnt
+		depCount += cnt
 	}
 
 	if depCount == 0 {
@@ -383,12 +403,12 @@ func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 // it will set the state of the resource to finished. If it has not, it will set the state of the resource to waiting.
 func (n *Nuke) HandleWait(item *queue.Item, cache ListCache) {
 	var err error
-	ownerId := item.Owner
-	_, ok := cache[ownerId]
+	ownerID := item.Owner
+	_, ok := cache[ownerID]
 	if !ok {
-		cache[ownerId] = make(map[string][]resource.Resource)
+		cache[ownerID] = make(map[string][]resource.Resource)
 	}
-	left, ok := cache[ownerId][item.Type]
+	left, ok := cache[ownerID][item.Type]
 	if !ok {
 		left, err = item.List(item.Opts)
 		if err != nil {
@@ -396,7 +416,7 @@ func (n *Nuke) HandleWait(item *queue.Item, cache ListCache) {
 			item.Reason = err.Error()
 			return
 		}
-		cache[ownerId][item.Type] = left
+		cache[ownerID][item.Type] = left
 	}
 
 	for _, r := range left {

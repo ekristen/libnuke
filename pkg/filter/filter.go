@@ -40,10 +40,7 @@ type Filter struct {
 
 func (f *Filter) Match(o string) (bool, error) {
 	switch f.Type {
-	case Empty:
-		fallthrough
-
-	case Exact:
+	case Empty, Exact:
 		return f.Value == o, nil
 
 	case Contains:

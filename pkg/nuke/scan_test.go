@@ -3,14 +3,16 @@ package nuke
 import (
 	"flag"
 	"fmt"
-	"github.com/ekristen/libnuke/pkg/errors"
-	"github.com/ekristen/libnuke/pkg/queue"
-	"github.com/ekristen/libnuke/pkg/resource"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/ekristen/libnuke/pkg/errors"
+	"github.com/ekristen/libnuke/pkg/queue"
+	"github.com/ekristen/libnuke/pkg/resource"
 )
 
 func init() {
@@ -230,7 +232,7 @@ func Test_NewScannerWithResourceListerErrorUnknownEndpoint(t *testing.T) {
 			}
 
 			if strings.HasSuffix(e.Caller.File, "pkg/nuke/scan.go") {
-				assert.Equal(t, logrus.WarnLevel, e.Level)
+				assert.Equal(t, logrus.DebugLevel, e.Level)
 				assert.Equal(t, "skipping request: unknown endpoint error for testing", e.Message)
 			}
 		},

@@ -22,7 +22,7 @@ func (q Queue) Count(states ...ItemState) int {
 	for _, item := range q.Items {
 		for _, state := range states {
 			if item.GetState() == state {
-				count = count + 1
+				count++
 				break
 			}
 		}
@@ -36,7 +36,7 @@ func (q Queue) CountByType(resourceType string, states ...ItemState) int {
 		if item.Type == resourceType {
 			for _, state := range states {
 				if item.GetState() == state {
-					count = count + 1
+					count++
 					break
 				}
 			}

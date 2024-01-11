@@ -1,12 +1,13 @@
 package filter_test
 
 import (
-	"github.com/ekristen/libnuke/pkg/filter"
 	"strconv"
 	"testing"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
+
+	"github.com/ekristen/libnuke/pkg/filter"
 )
 
 func TestUnmarshalFilter(t *testing.T) {
@@ -108,5 +109,4 @@ func TestUnmarshalFilter(t *testing.T) {
 			}
 		})
 	}
-
 }
