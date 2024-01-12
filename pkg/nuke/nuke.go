@@ -329,6 +329,12 @@ func (n *Nuke) Filter(item *queue.Item) error {
 	}
 
 	for _, f := range itemFilters {
+		log.
+			WithField("prop", f.Property).
+			WithField("type", f.Type).
+			WithField("value", f.Value).
+			Trace("filter details")
+
 		prop, err := item.GetProperty(f.Property)
 		if err != nil {
 			return err
@@ -340,6 +346,8 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		if err != nil {
 			return err
 		}
+
+		log.Tracef("match: %t", match)
 
 		if utils.IsTrue(f.Invert) {
 			log.WithField("orig", match).WithField("new", !match).Trace("filter inverted")
