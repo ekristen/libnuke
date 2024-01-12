@@ -9,6 +9,19 @@ type TestLister struct{}
 
 func (l TestLister) List(o interface{}) ([]Resource, error) { return nil, nil }
 
+func Test_RegisterNoScope(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+
+	Register(Registration{
+		Name:   "test",
+		Lister: TestLister{},
+	})
+}
+
 func Test_RegisterResources(t *testing.T) {
 	Register(Registration{
 		Name:   "test",

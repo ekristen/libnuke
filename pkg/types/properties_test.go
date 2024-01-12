@@ -2,10 +2,10 @@ package types_test
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
 
 	"github.com/gotidy/ptr"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/types"
 )

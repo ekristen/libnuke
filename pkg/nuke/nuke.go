@@ -19,14 +19,11 @@ type ListCache map[string]map[string][]resource.Resource
 
 // Parameters is a collection of common variables used to configure the before of the Nuke instance.
 type Parameters struct {
-	ConfigPath string
-
-	NoDryRun   bool
-	Force      bool
-	ForceSleep int
-	Quiet      bool
-
-	MaxWaitRetries int
+	NoDryRun       bool // NoDryRun instructs Run to actually perform the remove function
+	Force          bool // Force instructs Run to proceed without confirmation from user
+	ForceSleep     int  // ForceSleep indicates how long of a delay before proceeding with confirmation
+	Quiet          bool // Quiet will hide resources if they have been filtered
+	MaxWaitRetries int  // MaxWaitRetries is the total number of times a resource will be retried during wait state
 }
 
 type INuke interface {
@@ -47,13 +44,11 @@ type Nuke struct {
 	FeatureFlags *featureflag.FeatureFlags
 
 	ValidateHandlers []func() error
+	ResourceTypes    map[resource.Scope]types.Collection
+	Scanners         map[resource.Scope][]*Scanner
 
-	ResourceTypes map[resource.Scope]types.Collection
-	Scanners      map[resource.Scope][]*Scanner
-
-	prompts map[string]func() error
-
-	version string
+	prompt  func() error // prompt is what is shown to the user for confirmation
+	version string       // version is what is shown at the beginning of a run
 }
 
 // RegisterVersion allows the tool instantiating the library to register its version so there's consist output
@@ -102,25 +97,16 @@ func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) {
 	n.Scanners[scope] = append(n.Scanners[scope], scanner)
 }
 
-func (n *Nuke) RegisterPrompt(name string, prompt func() error) {
-	if n.prompts == nil {
-		n.prompts = make(map[string]func() error)
-	}
-
-	n.prompts[name] = prompt
+// RegisterPrompt is used to register the prompt function that used to prompt the user for input, usually to confirm
+// if the nuke process should continue or not.
+func (n *Nuke) RegisterPrompt(prompt func() error) {
+	n.prompt = prompt
 }
 
-func (n *Nuke) PromptFirst() error {
-	if prompt, ok := n.prompts["first"]; ok {
-		return prompt()
-	}
-
-	return nil
-}
-
-func (n *Nuke) PromptSecond() error {
-	if prompt, ok := n.prompts["second"]; ok {
-		return prompt()
+// Prompt actually calls the registered prompt function as part of the run
+func (n *Nuke) Prompt() error {
+	if n.prompt != nil {
+		return n.prompt()
 	}
 
 	return nil
@@ -129,11 +115,13 @@ func (n *Nuke) PromptSecond() error {
 // Run is the main entry point for the library. It will run the validation handlers, prompt the user, scan for
 // resources, filter them and then process them.
 func (n *Nuke) Run() error {
+	n.Version()
+
 	if err := n.Validate(); err != nil {
 		return err
 	}
 
-	if err := n.PromptFirst(); err != nil {
+	if err := n.Prompt(); err != nil {
 		return err
 	}
 
@@ -151,7 +139,7 @@ func (n *Nuke) Run() error {
 		return nil
 	}
 
-	if err := n.PromptSecond(); err != nil {
+	if err := n.Prompt(); err != nil {
 		return err
 	}
 
@@ -165,6 +153,7 @@ func (n *Nuke) Run() error {
 	return nil
 }
 
+// run handles the processing and loop of the queue of items
 func (n *Nuke) run() error {
 	failCount := 0
 	waitingCount := 0
@@ -234,8 +223,6 @@ func (n *Nuke) Validate() error {
 	if n.Parameters.ForceSleep < 3 {
 		return fmt.Errorf("value for --force-sleep cannot be less than 3 seconds. This is for your own protection")
 	}
-
-	n.Version()
 
 	for _, handler := range n.ValidateHandlers {
 		if err := handler(); err != nil {
@@ -403,11 +390,13 @@ func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 // it will set the state of the resource to finished. If it has not, it will set the state of the resource to waiting.
 func (n *Nuke) HandleWait(item *queue.Item, cache ListCache) {
 	var err error
+
 	ownerID := item.Owner
 	_, ok := cache[ownerID]
 	if !ok {
 		cache[ownerID] = make(map[string][]resource.Resource)
 	}
+
 	left, ok := cache[ownerID][item.Type]
 	if !ok {
 		left, err = item.List(item.Opts)

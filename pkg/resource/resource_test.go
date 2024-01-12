@@ -2,11 +2,13 @@ package resource
 
 import (
 	"fmt"
-	"github.com/ekristen/libnuke/pkg/featureflag"
-	"github.com/ekristen/libnuke/pkg/types"
+	"testing"
+
 	"github.com/gotidy/ptr"
 	"github.com/stretchr/testify/assert"
-	"testing"
+
+	"github.com/ekristen/libnuke/pkg/featureflag"
+	"github.com/ekristen/libnuke/pkg/types"
 )
 
 type TestResource struct {

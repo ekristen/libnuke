@@ -11,8 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/errors"
+	"github.com/ekristen/libnuke/pkg/featureflag"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/types"
 )
 
 func init() {
@@ -42,13 +44,64 @@ var (
 	}
 )
 
-type TestResource struct{}
+type TestResource struct {
+	Filtered    bool
+	RemoveError bool
+}
 
-func (r TestResource) Remove() error {
+func (r TestResource) Filter() error {
+	if r.Filtered {
+		return fmt.Errorf("cannot remove default")
+	}
+
 	return nil
 }
 
-type TestResourceLister struct{}
+func (r TestResource) Remove() error {
+	if r.RemoveError {
+		return fmt.Errorf("remove error")
+	}
+	return nil
+}
+
+func (r TestResource) FeatureFlags(ff *featureflag.FeatureFlags) {
+
+}
+
+type TestResource2 struct {
+	Filtered    bool
+	RemoveError bool
+}
+
+func (r TestResource2) Filter() error {
+	if r.Filtered {
+		return fmt.Errorf("cannot remove default")
+	}
+
+	return nil
+}
+
+func (r TestResource2) Remove() error {
+	if r.RemoveError {
+		return fmt.Errorf("remove error")
+	}
+	return nil
+}
+
+func (r TestResource2) FeatureFlags(ff *featureflag.FeatureFlags) {
+
+}
+
+func (r TestResource2) Properties() types.Properties {
+	props := types.NewProperties()
+	props.Set("test", "testing")
+	return props
+}
+
+type TestResourceLister struct {
+	Filtered    bool
+	RemoveError bool
+}
 
 func (l TestResourceLister) List(o interface{}) ([]resource.Resource, error) {
 	opts := o.(TestOpts)
@@ -69,8 +122,20 @@ func (l TestResourceLister) List(o interface{}) ([]resource.Resource, error) {
 		panic(fmt.Errorf("panic error for testing"))
 	}
 
+	if opts.SecondResource {
+		return []resource.Resource{
+			&TestResource2{
+				Filtered:    l.Filtered,
+				RemoveError: l.RemoveError,
+			},
+		}, nil
+	}
+
 	return []resource.Resource{
-		TestResource{},
+		&TestResource{
+			Filtered:    l.Filtered,
+			RemoveError: l.RemoveError,
+		},
 	}, nil
 }
 
@@ -81,6 +146,7 @@ type TestOpts struct {
 	ThrowSkipError     bool
 	ThrowEndpointError bool
 	Panic              bool
+	SecondResource     bool
 }
 
 type TestGlobalHook struct {

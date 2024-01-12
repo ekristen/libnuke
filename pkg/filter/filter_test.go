@@ -1,13 +1,14 @@
 package filter_test
 
 import (
-	"github.com/stretchr/testify/assert"
 	"reflect"
 	"strconv"
 	"testing"
 	"time"
 
 	"gopkg.in/yaml.v2"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/filter"
 )

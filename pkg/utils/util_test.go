@@ -2,10 +2,11 @@ package utils_test
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/types"
 	"github.com/ekristen/libnuke/pkg/utils"
@@ -50,7 +51,7 @@ func TestPrompt(t *testing.T) {
 			os.Stdin = r
 
 			// Write our input into the pipe
-			_, _ = w.Write([]byte(fmt.Sprintf("%s\n", tc.want)))
+			_, _ = fmt.Fprintf(w, "%s\n", tc.want)
 			_ = w.Close()
 
 			// Call the function
@@ -91,7 +92,7 @@ func TestPromptTrimSpace(t *testing.T) {
 	os.Stdin = r
 
 	// Write our input into the pipe
-	_, _ = w.Write([]byte("a expected input \n"))
+	_, _ = w.WriteString("a expected input \n")
 	_ = w.Close()
 
 	// Call the function
