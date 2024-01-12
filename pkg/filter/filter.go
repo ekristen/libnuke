@@ -95,6 +95,7 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	m := map[string]string{}
 	err := unmarshal(m)
 	if err != nil {
+		fmt.Println("%%%%%%%%")
 		return err
 	}
 

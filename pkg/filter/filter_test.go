@@ -1,6 +1,8 @@
 package filter_test
 
 import (
+	"github.com/stretchr/testify/assert"
+	"reflect"
 	"strconv"
 	"testing"
 	"time"
@@ -10,12 +12,28 @@ import (
 	"github.com/ekristen/libnuke/pkg/filter"
 )
 
+func TestNewExactFilter(t *testing.T) {
+	f := filter.NewExactFilter("testing")
+
+	assert.Equal(t, f.Type, filter.Exact)
+
+	b1, err := f.Match("testing")
+	assert.NoError(t, err)
+	assert.True(t, b1)
+
+	b2, err := f.Match("test")
+	assert.NoError(t, err)
+	assert.False(t, b2)
+}
+
 func TestUnmarshalFilter(t *testing.T) {
 	past := time.Now().UTC().Add(-24 * time.Hour)
 	future := time.Now().UTC().Add(24 * time.Hour)
 	cases := []struct {
+		name            string
 		yaml            string
 		match, mismatch []string
+		error           bool
 	}{
 		{
 			yaml:     `foo`,
@@ -43,6 +61,12 @@ func TestUnmarshalFilter(t *testing.T) {
 			mismatch: []string{"woooosh", "fooo", "o", "fo", "boooooosh", "bsh", "bush"},
 		},
 		{
+			name:  "regex-invalid",
+			yaml:  `{"type":"regex","value":"b([iao]sh"}`,
+			match: []string{"bish", "bash", "bosh"},
+			error: true,
+		},
+		{
 			yaml:     `{"type":"contains","value":"mba"}`,
 			match:    []string{"bimbaz", "mba", "bi mba z"},
 			mismatch: []string{"bim-baz"},
@@ -66,6 +90,22 @@ func TestUnmarshalFilter(t *testing.T) {
 			},
 		},
 		{
+			name: "dateOlderThan-invalid-input",
+			yaml: `{"type":"dateOlderThan","value":"-360d4h"}`,
+			match: []string{strconv.Itoa(int(future.Unix())),
+				future.Format("2006-01-02"),
+			},
+			error: true,
+		},
+		{
+			name: "dateOlderThan-invalid-match",
+			yaml: `{"type":"dateOlderThan","value":"0"}`,
+			match: []string{
+				"31-12-2023",
+			},
+			error: true,
+		},
+		{
 			yaml:     `{"type":"prefix","value":"someprefix-"}`,
 			match:    []string{"someprefix-1234", "someprefix-someprefix", "someprefix-asdafd"},
 			mismatch: []string{"not-someprefix-1234", "not-someprefix-asfda"},
@@ -74,6 +114,12 @@ func TestUnmarshalFilter(t *testing.T) {
 			yaml:     `{"type":"suffix","value":"-somesuffix"}`,
 			match:    []string{"12345-somesuffix", "someprefix-somesuffix", "asdfdsa-somesuffix"},
 			mismatch: []string{"1235-somesuffix-not", "asdf-not-somesuffix-not"},
+		},
+		{
+			name:  "unknown-filter-type",
+			yaml:  `{"type":"custom","value":"does-not-matter"}`,
+			match: []string{"12345-somesuffix"},
+			error: true,
 		},
 	}
 
@@ -89,6 +135,11 @@ func TestUnmarshalFilter(t *testing.T) {
 			for _, o := range tc.match {
 				match, err := f.Match(o)
 				if err != nil {
+					if tc.error {
+						assert.Error(t, err, "received expected error")
+						continue
+					}
+
 					t.Fatal(err)
 				}
 
@@ -108,5 +159,41 @@ func TestUnmarshalFilter(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestMerge(t *testing.T) {
+	// Create two Filters objects
+	f1 := filter.Filters{
+		"resource1": []filter.Filter{
+			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+		},
+	}
+	f2 := filter.Filters{
+		"resource1": []filter.Filter{
+			{Property: "prop2", Type: filter.Glob, Value: "value2"},
+		},
+		"resource2": []filter.Filter{
+			{Property: "prop3", Type: filter.Regex, Value: "value3"},
+		},
+	}
+
+	// Merge the two Filters objects
+	f1.Merge(f2)
+
+	// Create the expected result
+	expected := filter.Filters{
+		"resource1": []filter.Filter{
+			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+			{Property: "prop2", Type: filter.Glob, Value: "value2"},
+		},
+		"resource2": []filter.Filter{
+			{Property: "prop3", Type: filter.Regex, Value: "value3"},
+		},
+	}
+
+	// Check if the result is as expected
+	if !reflect.DeepEqual(f1, expected) {
+		t.Errorf("Merge() = %v, want %v", f1, expected)
 	}
 }
