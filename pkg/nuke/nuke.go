@@ -2,6 +2,7 @@ package nuke
 
 import (
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -49,6 +50,25 @@ type Nuke struct {
 
 	prompt  func() error // prompt is what is shown to the user for confirmation
 	version string       // version is what is shown at the beginning of a run
+	log     *logrus.Entry
+}
+
+// New returns an instance of nuke that is properly configured for initial use
+func New(params Parameters, filters filter.Filters) *Nuke {
+	logger := logrus.New()
+	logger.SetOutput(io.Discard)
+
+	return &Nuke{
+		Parameters:   params,
+		Filters:      filters,
+		Queue:        queue.Queue{},
+		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logger.WithField("component", "nuke"),
+	}
+}
+
+func (n *Nuke) SetLogger(logger *logrus.Entry) {
+	n.log = logger
 }
 
 // RegisterVersion allows the tool instantiating the library to register its version so there's consist output
@@ -278,10 +298,16 @@ func (n *Nuke) Scan() error {
 // Filter is used to filter resources. It will run the filters that were registered with the instance of Nuke
 // and set the state of the resource to filtered if it matches the filter.
 func (n *Nuke) Filter(item *queue.Item) error {
+	log := n.log.
+		WithField("handler", "Filter").
+		WithField("type", item.Type)
+
 	checker, ok := item.Resource.(resource.Filter)
 	if ok {
+		log.Trace("resource had filter function")
 		err := checker.Filter()
 		if err != nil {
+			log.Trace("resource was filtered by resource filter")
 			item.State = queue.ItemStateFiltered
 			item.Reason = err.Error()
 
@@ -292,10 +318,9 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		}
 	}
 
-	accountFilters := n.Filters
-
-	itemFilters, ok := accountFilters[item.Type]
+	itemFilters, ok := n.Filters[item.Type]
 	if !ok {
+		log.Tracef("no filters found for type: %s", item.Type)
 		return nil
 	}
 
@@ -305,16 +330,20 @@ func (n *Nuke) Filter(item *queue.Item) error {
 			return err
 		}
 
+		log.Tracef("property: %s", prop)
+
 		match, err := f.Match(prop)
 		if err != nil {
 			return err
 		}
 
 		if utils.IsTrue(f.Invert) {
+			log.WithField("orig", match).WithField("new", !match).Trace("filter inverted")
 			match = !match
 		}
 
 		if match {
+			log.Trace("filter matched")
 			item.State = queue.ItemStateFiltered
 			item.Reason = "filtered by config"
 			return nil

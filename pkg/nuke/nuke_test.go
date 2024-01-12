@@ -2,6 +2,8 @@ package nuke
 
 import (
 	"fmt"
+	"github.com/ekristen/libnuke/pkg/types"
+	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"strings"
@@ -28,6 +30,7 @@ func Test_Nuke_Version(t *testing.T) {
 	n := &Nuke{
 		Parameters: testParameters,
 		Queue:      queue.Queue{},
+		log:        logrus.WithField("test", true),
 	}
 
 	n.RegisterVersion("1.0.0-test")
@@ -59,6 +62,7 @@ func Test_Nuke_FeatureFlag(t *testing.T) {
 		Parameters:   testParameters,
 		Queue:        queue.Queue{},
 		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
 	}
 
 	n.RegisterFeatureFlags("test", ptr.Bool(true), ptr.Bool(true))
@@ -77,6 +81,7 @@ func Test_Nuke_Validators_Default(t *testing.T) {
 		Parameters:   testParameters,
 		Queue:        queue.Queue{},
 		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
 	}
 
 	err := n.Validate()
@@ -88,6 +93,7 @@ func Test_Nuke_Validators_Register1(t *testing.T) {
 		Parameters:   testParameters,
 		Queue:        queue.Queue{},
 		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
 	}
 
 	n.RegisterValidateHandler(func() error {
@@ -104,6 +110,7 @@ func Test_Nuke_Validators_Register2(t *testing.T) {
 		Parameters:   testParameters,
 		Queue:        queue.Queue{},
 		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
 	}
 
 	n.RegisterValidateHandler(func() error {
@@ -126,6 +133,7 @@ func Test_Nuke_Validators_Error(t *testing.T) {
 		},
 		Queue:        queue.Queue{},
 		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
 	}
 
 	err := n.Validate()
@@ -138,6 +146,7 @@ func Test_Nuke_ResourceTypes(t *testing.T) {
 		Parameters:   testParameters,
 		Queue:        queue.Queue{},
 		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
 	}
 
 	n.RegisterResourceTypes(testScope, "TestResource")
@@ -150,6 +159,7 @@ func Test_Nuke_Scanners(t *testing.T) {
 		Parameters:   testParameters,
 		Queue:        queue.Queue{},
 		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
 	}
 
 	opts := struct {
@@ -170,6 +180,7 @@ func Test_Nuke_RegisterPrompt(t *testing.T) {
 		Parameters:   testParameters,
 		Queue:        queue.Queue{},
 		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
 	}
 
 	n.RegisterPrompt(func() error {
@@ -198,6 +209,7 @@ func Test_Nuke_Scan(t *testing.T) {
 		Parameters:   testParameters,
 		Queue:        queue.Queue{},
 		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
 	}
 
 	opts := TestOpts{
@@ -232,6 +244,7 @@ func Test_Nuke_Filters_Match(t *testing.T) {
 				},
 			},
 		},
+		log: logrus.WithField("test", true),
 	}
 
 	opts := TestOpts{
@@ -265,6 +278,7 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 				},
 			},
 		},
+		log: logrus.WithField("test", true),
 	}
 
 	opts := TestOpts{
@@ -298,6 +312,7 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 				},
 			},
 		},
+		log: logrus.WithField("test", true),
 	}
 
 	opts := TestOpts{
@@ -311,6 +326,48 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 	assert.Error(t, err)
 	assert.Equal(t, "*nuke.TestResource does not support custom properties", err.Error())
 }
+
+type TestResourceFilter struct {
+}
+
+func (r TestResourceFilter) Properties() types.Properties {
+	props := types.NewProperties()
+	props.SetTag(ptr.String("aws:cloudformation:stack-name"), "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081")
+	return props
+}
+
+func (r TestResourceFilter) Remove() error {
+	return nil
+}
+
+func Test_Nuke_Filters_Extra(t *testing.T) {
+	n := &Nuke{
+		Parameters:   testParameters,
+		Queue:        queue.Queue{},
+		FeatureFlags: &featureflag.FeatureFlags{},
+		Filters: filter.Filters{
+			testResourceType2: []filter.Filter{
+				{
+					Type:     filter.Glob,
+					Property: "tag:aws:cloudformation:stack-name",
+					Value:    "StackSet-AWSControlTowerBP*",
+				},
+			},
+		},
+		log: logrus.WithField("test", true),
+	}
+
+	i := &queue.Item{
+		Resource: &TestResourceFilter{},
+		Type:     testResourceType2,
+	}
+
+	err := n.Filter(i)
+	assert.NoError(t, err)
+	assert.Equal(t, i.Reason, "filtered by config")
+}
+
+// ---------------------------------------------------------------------
 
 type TestResource3 struct {
 	Error bool
@@ -327,6 +384,7 @@ func Test_Nuke_HandleRemove(t *testing.T) {
 	n := &Nuke{
 		Parameters: testParameters,
 		Queue:      queue.Queue{},
+		log:        logrus.WithField("test", true),
 	}
 
 	i := &queue.Item{
@@ -342,6 +400,7 @@ func Test_Nuke_HandleRemoveError(t *testing.T) {
 	n := &Nuke{
 		Parameters: testParameters,
 		Queue:      queue.Queue{},
+		log:        logrus.WithField("test", true),
 	}
 
 	i := &queue.Item{
@@ -370,6 +429,7 @@ func Test_Nuke_Run(t *testing.T) {
 		},
 		Queue:        queue.Queue{},
 		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
 	}
 
 	opts := TestOpts{
@@ -402,6 +462,7 @@ func Test_Nuke_Run_Error(t *testing.T) {
 		},
 		Queue:        queue.Queue{},
 		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
 	}
 
 	opts := TestOpts{
