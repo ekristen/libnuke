@@ -42,6 +42,7 @@ func Sorted(m map[string]string) string {
 	return fmt.Sprintf("[%s]", strings.Join(sorted, ", "))
 }
 
+// Log prints the line to screen with the appropriate coloring and formatting for readability
 func Log(scope, resourceType string, r resource.Resource, c color.Color, msg string) {
 	ColorRegion.Printf("%s", scope)
 	fmt.Printf(" - ")

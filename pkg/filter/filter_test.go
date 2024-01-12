@@ -27,6 +27,41 @@ func TestNewExactFilter(t *testing.T) {
 	assert.False(t, b2)
 }
 
+func TestValidation(t *testing.T) {
+	cases := []struct {
+		name  string
+		yaml  string
+		error bool
+	}{
+		{
+			yaml: `{"type":"exact","value":"foo"}`,
+		},
+		{
+			yaml:  `{"type":"exact"}`,
+			error: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.yaml, func(t *testing.T) {
+			var f filter.Filter
+
+			err := yaml.Unmarshal([]byte(tc.yaml), &f)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			errValidate := f.Validate()
+			if tc.error {
+				assert.Error(t, errValidate)
+			} else {
+				assert.NoError(t, errValidate)
+			}
+
+		})
+	}
+}
+
 func TestUnmarshalFilter(t *testing.T) {
 	past := time.Now().UTC().Add(-24 * time.Hour)
 	future := time.Now().UTC().Add(24 * time.Hour)

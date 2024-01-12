@@ -25,6 +25,18 @@ const (
 
 type Filters map[string][]Filter
 
+func (f Filters) Validate() error {
+	for resourceType, filters := range f {
+		for _, filter := range filters {
+			if err := filter.Validate(); err != nil {
+				return fmt.Errorf("%s: has an invalid filter: %+v", resourceType, filter)
+			}
+		}
+	}
+
+	return nil
+}
+
 func (f Filters) Merge(f2 Filters) {
 	for resourceType, filter := range f2 {
 		f[resourceType] = append(f[resourceType], filter...)
@@ -36,6 +48,14 @@ type Filter struct {
 	Type     Type
 	Value    string
 	Invert   string
+}
+
+func (f *Filter) Validate() error {
+	if f.Property == "" && f.Value == "" {
+		return fmt.Errorf("property and value cannot be empty")
+	}
+
+	return nil
 }
 
 func (f *Filter) Match(o string) (bool, error) {

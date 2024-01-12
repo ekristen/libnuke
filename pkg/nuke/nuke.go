@@ -183,6 +183,7 @@ func (n *Nuke) run() error {
 
 		if n.Queue.Count(
 			queue.ItemStatePending,
+			queue.ItemStatePendingDependency,
 			queue.ItemStateWaiting,
 			queue.ItemStateNew,
 			queue.ItemStateNewDependency,
@@ -208,7 +209,7 @@ func (n *Nuke) run() error {
 			failCount = 0
 		}
 		if n.Parameters.MaxWaitRetries != 0 &&
-			n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending) > 0 &&
+			n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending, queue.ItemStatePendingDependency) > 0 &&
 			n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency) == 0 {
 			if waitingCount >= n.Parameters.MaxWaitRetries {
 				return fmt.Errorf("max wait retries of %d exceeded", n.Parameters.MaxWaitRetries)
@@ -221,6 +222,7 @@ func (n *Nuke) run() error {
 			queue.ItemStateNew,
 			queue.ItemStateNewDependency,
 			queue.ItemStatePending,
+			queue.ItemStatePendingDependency,
 			queue.ItemStateFailed,
 			queue.ItemStateWaiting,
 		) == 0 {
@@ -375,7 +377,7 @@ func (n *Nuke) HandleQueue() {
 		case queue.ItemStateNew:
 			n.HandleRemove(item)
 			item.Print()
-		case queue.ItemStateNewDependency:
+		case queue.ItemStateNewDependency, queue.ItemStatePendingDependency:
 			n.HandleWaitDependency(item)
 			item.Print()
 		case queue.ItemStateFailed:
@@ -394,7 +396,7 @@ func (n *Nuke) HandleQueue() {
 
 	fmt.Println()
 	fmt.Printf("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
-		n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending, queue.ItemStateNewDependency), n.Queue.Count(queue.ItemStateFailed),
+		n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending, queue.ItemStatePendingDependency, queue.ItemStateNewDependency), n.Queue.Count(queue.ItemStateFailed),
 		n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
 }
 
@@ -425,6 +427,8 @@ func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 	if depCount == 0 {
 		n.HandleRemove(item)
 	}
+
+	item.State = queue.ItemStatePendingDependency
 }
 
 // HandleWait is used to handle the waiting of a resource. It will check if the resource has been removed. If it has,
