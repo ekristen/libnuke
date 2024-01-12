@@ -57,7 +57,6 @@ func TestValidation(t *testing.T) {
 			} else {
 				assert.NoError(t, errValidate)
 			}
-
 		})
 	}
 }

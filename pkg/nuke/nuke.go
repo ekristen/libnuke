@@ -394,10 +394,19 @@ func (n *Nuke) HandleQueue() {
 		}
 	}
 
+	countWaiting := n.Queue.Count(
+		queue.ItemStateWaiting,
+		queue.ItemStatePending,
+		queue.ItemStatePendingDependency,
+		queue.ItemStateNewDependency,
+	)
+	countFailed := n.Queue.Count(queue.ItemStateFailed)
+	countSkipped := n.Queue.Count(queue.ItemStateFiltered)
+	countFinished := n.Queue.Count(queue.ItemStateFinished)
+
 	fmt.Println()
 	fmt.Printf("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
-		n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending, queue.ItemStatePendingDependency, queue.ItemStateNewDependency), n.Queue.Count(queue.ItemStateFailed),
-		n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
+		countWaiting, countFailed, countSkipped, countFinished)
 }
 
 // HandleRemove is used to handle the removal of a resource. It will remove the resource and set the state of the

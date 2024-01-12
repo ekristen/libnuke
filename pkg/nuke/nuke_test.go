@@ -2,20 +2,20 @@ package nuke
 
 import (
 	"fmt"
-	"github.com/ekristen/libnuke/pkg/types"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/gotidy/ptr"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/featureflag"
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/types"
 )
 
 var testParameters = Parameters{
@@ -332,7 +332,11 @@ type TestResourceFilter struct {
 
 func (r TestResourceFilter) Properties() types.Properties {
 	props := types.NewProperties()
-	props.SetTag(ptr.String("aws:cloudformation:stack-name"), "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081")
+
+	tagName := ptr.String("aws:cloudformation:stack-name")
+	tagVal := "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081"
+
+	props.SetTag(tagName, tagVal)
 	return props
 }
 

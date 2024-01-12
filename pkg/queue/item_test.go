@@ -1,9 +1,11 @@
 package queue
 
 import (
-	"github.com/ekristen/libnuke/pkg/types"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+
+	"github.com/ekristen/libnuke/pkg/types"
 )
 
 type TestItemResource struct{}
