@@ -246,6 +246,10 @@ func (n *Nuke) Validate() error {
 		return fmt.Errorf("value for --force-sleep cannot be less than 3 seconds. This is for your own protection")
 	}
 
+	if err := n.Filters.Validate(); err != nil {
+		return err
+	}
+
 	for _, handler := range n.ValidateHandlers {
 		if err := handler(); err != nil {
 			return err
