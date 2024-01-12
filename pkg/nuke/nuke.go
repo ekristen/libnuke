@@ -302,6 +302,10 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		WithField("handler", "Filter").
 		WithField("type", item.Type)
 
+	if r, ok := item.Resource.(resource.LegacyStringer); ok {
+		log = log.WithField("item", r.String())
+	}
+
 	checker, ok := item.Resource.(resource.Filter)
 	if ok {
 		log.Trace("resource had filter function")
