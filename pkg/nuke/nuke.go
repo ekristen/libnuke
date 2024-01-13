@@ -128,8 +128,8 @@ func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) error {
 	if err != nil {
 		return err
 	}
-	hashString := fmt.Sprintf("%d", hash)
 
+	hashString := fmt.Sprintf("%s-%d", scope, hash)
 	if slices.Contains(n.hashedScanners, hashString) {
 		return fmt.Errorf("scanner is already registered, you cannot register it twice")
 	}
@@ -138,8 +138,7 @@ func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) error {
 		n.hashedScanners = make([]string, 0)
 	}
 
-	n.hashedScanners = append(n.hashedScanners, fmt.Sprintf("%d", hash))
-
+	n.hashedScanners = append(n.hashedScanners, hashString)
 	n.Scanners[scope] = append(n.Scanners[scope], scanner)
 
 	return nil
