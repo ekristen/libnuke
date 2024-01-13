@@ -21,8 +21,8 @@ const ScannerParallelQueries = 16
 // Scanner is collection of resource types that will be scanned for existing resources and added to the
 // item queue for processing. These items will be filtered and then processed.
 type Scanner struct {
-	Items     chan *queue.Item
-	semaphore *semaphore.Weighted
+	Items     chan *queue.Item    `hash:"ignore"`
+	semaphore *semaphore.Weighted `hash:"ignore"`
 
 	resourceTypes  []string
 	options        interface{}
