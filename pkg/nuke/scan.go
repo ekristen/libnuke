@@ -124,15 +124,9 @@ func (s *Scanner) list(owner, resourceType string, opts interface{}) {
 	}
 
 	for _, r := range rs {
-		state := queue.ItemStateNew
-		reg := resource.GetRegistration(resourceType)
-		if len(reg.DependsOn) > 0 {
-			state = queue.ItemStateNewDependency
-		}
-
 		i := &queue.Item{
 			Resource: r,
-			State:    state,
+			State:    queue.ItemStateNew,
 			Type:     resourceType,
 			Owner:    owner,
 			Opts:     opts,

@@ -12,7 +12,6 @@ import (
 
 	"github.com/ekristen/libnuke/pkg/errors"
 	"github.com/ekristen/libnuke/pkg/featureflag"
-	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
 )
@@ -164,37 +163,6 @@ func (h *TestGlobalHook) Fire(e *logrus.Entry) error {
 	}
 
 	return nil
-}
-
-func Test_NewScannerWithDependsOn(t *testing.T) {
-	resource.ClearRegistry()
-
-	resource.Register(testResourceRegistration)
-	resource.Register(testResourceRegistration2)
-
-	opts := TestOpts{
-		SessionOne: "testing",
-	}
-
-	scanner := NewScanner("owner", []string{testResourceType, testResourceType2}, opts)
-
-	err := scanner.Run()
-	assert.NoError(t, err)
-
-	assert.Len(t, scanner.Items, 2)
-
-	x := 0
-	for item := range scanner.Items {
-		switch item.Type {
-		case testResourceType:
-			assert.Equal(t, testResourceType, item.Type)
-			assert.Equal(t, queue.ItemStateNew, item.State)
-		case testResourceType2:
-			assert.Equal(t, testResourceType2, item.Type)
-			assert.Equal(t, queue.ItemStateNewDependency, item.State)
-		}
-		x++
-	}
 }
 
 func Test_NewScannerWithMorphOpts(t *testing.T) {
