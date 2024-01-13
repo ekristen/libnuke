@@ -7,8 +7,13 @@ import (
 	"github.com/stevenle/topsort"
 )
 
-// Scope is a string in which resources are grouped against
+// Scope is a string in which resources are grouped against, this is meant for upstream tools to define their
+// own scopes if the DefaultScope is not sufficient. For example Azure has multiple levels of scoping for resources,
+// whereas AWS does not.
 type Scope string
+
+// DefaultScope is the default scope which resources are registered against if no other scope is provided
+const DefaultScope Scope = "default"
 
 // Registrations is a map of resource type to registration
 type Registrations map[string]Registration
@@ -45,11 +50,10 @@ type RegisterOption func(name string, lister Lister)
 // Register registers a resource lister with the registry
 func Register(r Registration, opts ...RegisterOption) {
 	if r.Scope == "" {
-		panic(fmt.Errorf("scope must be set"))
+		r.Scope = DefaultScope
 	}
 
-	_, exists := registrations[r.Name]
-	if exists {
+	if _, exists := registrations[r.Name]; exists {
 		panic(fmt.Sprintf("a resource with the name %s already exists", r.Name))
 	}
 

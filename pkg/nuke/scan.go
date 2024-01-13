@@ -119,7 +119,7 @@ func (s *Scanner) list(owner, resourceType string, opts interface{}) {
 		}
 
 		dump := utils.Indent(fmt.Sprintf("%v", err), "    ")
-		logrus.Errorf("Listing %s failed:\n%s", resourceType, dump)
+		logrus.WithError(err).Errorf("Listing %s failed:\n%s", resourceType, dump)
 		return
 	}
 
