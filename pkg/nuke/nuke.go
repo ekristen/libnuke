@@ -4,7 +4,9 @@ package nuke
 
 import (
 	"fmt"
+	"github.com/mitchellh/hashstructure/v2"
 	"io"
+	"slices"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -55,6 +57,8 @@ type Nuke struct {
 	ValidateHandlers []func() error
 	ResourceTypes    map[resource.Scope]types.Collection
 	Scanners         map[resource.Scope][]*Scanner
+
+	hashedScanners []string
 
 	prompt  func() error // prompt is what is shown to the user for confirmation
 	version string       // version is what is shown at the beginning of a run
@@ -115,14 +119,30 @@ func (n *Nuke) RegisterResourceTypes(scope resource.Scope, resourceTypes ...stri
 // RegisterScanner is used to register a scanner against a scope. A scope is a string that is used to group resource
 // types together. A scanner is what is responsible for actually querying the API for resources and adding them to
 // the queue for processing.
-func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) {
+func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) error {
 	if n.Scanners == nil {
 		n.Scanners = make(map[resource.Scope][]*Scanner)
 	}
 
-	// TODO: register them by hashing the scanner object to detect duplicates
+	hash, err := hashstructure.Hash(scanner, hashstructure.FormatV2, nil)
+	if err != nil {
+		return err
+	}
+	hashString := fmt.Sprintf("%d", hash)
+
+	if slices.Contains(n.hashedScanners, hashString) {
+		return fmt.Errorf("scanner is already registered, you cannot register it twice")
+	}
+
+	if n.hashedScanners == nil {
+		n.hashedScanners = make([]string, 0)
+	}
+
+	n.hashedScanners = append(n.hashedScanners, fmt.Sprintf("%d", hash))
 
 	n.Scanners[scope] = append(n.Scanners[scope], scanner)
+
+	return nil
 }
 
 // RegisterPrompt is used to register the prompt function that used to prompt the user for input, usually to confirm

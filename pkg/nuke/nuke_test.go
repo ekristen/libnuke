@@ -27,11 +27,8 @@ var testParameters = Parameters{
 const testScope resource.Scope = "test"
 
 func Test_Nuke_Version(t *testing.T) {
-	n := &Nuke{
-		Parameters: testParameters,
-		Queue:      queue.Queue{},
-		log:        logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
 
 	n.RegisterVersion("1.0.0-test")
 
@@ -170,7 +167,33 @@ func Test_Nuke_Scanners(t *testing.T) {
 
 	s := NewScanner("test", []string{"TestResource"}, opts)
 
-	n.RegisterScanner(testScope, s)
+	err := n.RegisterScanner(testScope, s)
+	assert.NoError(t, err)
+
+	assert.Len(t, n.Scanners[testScope], 1)
+}
+
+func Test_Nuke_Scanners_Duplicate(t *testing.T) {
+	n := &Nuke{
+		Parameters:   testParameters,
+		Queue:        queue.Queue{},
+		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logrus.WithField("test", true),
+	}
+
+	opts := struct {
+		name string
+	}{
+		name: "test",
+	}
+
+	s := NewScanner("test", []string{"TestResource"}, opts)
+
+	err := n.RegisterScanner(testScope, s)
+	assert.NoError(t, err)
+
+	sErr := n.RegisterScanner(testScope, s)
+	assert.Error(t, sErr)
 
 	assert.Len(t, n.Scanners[testScope], 1)
 }
@@ -217,7 +240,8 @@ func Test_Nuke_Scan(t *testing.T) {
 	}
 	scanner := NewScanner("owner", []string{testResourceType, testResourceType2}, opts)
 
-	n.RegisterScanner(testScope, scanner)
+	sErr := n.RegisterScanner(testScope, scanner)
+	assert.NoError(t, sErr)
 
 	err := n.Scan()
 	assert.NoError(t, err)
@@ -253,7 +277,8 @@ func Test_Nuke_Filters_Match(t *testing.T) {
 	}
 	scanner := NewScanner("owner", []string{testResourceType2}, opts)
 
-	n.RegisterScanner(testScope, scanner)
+	sErr := n.RegisterScanner(testScope, scanner)
+	assert.NoError(t, sErr)
 
 	err := n.Scan()
 	assert.NoError(t, err)
@@ -287,7 +312,8 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 	}
 	scanner := NewScanner("owner", []string{testResourceType2}, opts)
 
-	n.RegisterScanner(testScope, scanner)
+	sErr := n.RegisterScanner(testScope, scanner)
+	assert.NoError(t, sErr)
 
 	err := n.Scan()
 	assert.NoError(t, err)
@@ -320,7 +346,8 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 	}
 	scanner := NewScanner("owner", []string{testResourceType}, opts)
 
-	n.RegisterScanner(testScope, scanner)
+	sErr := n.RegisterScanner(testScope, scanner)
+	assert.NoError(t, sErr)
 
 	err := n.Scan()
 	assert.Error(t, err)
@@ -441,7 +468,8 @@ func Test_Nuke_Run(t *testing.T) {
 	}
 	scanner := NewScanner("owner", []string{testResourceType}, opts)
 
-	n.RegisterScanner(testScope, scanner)
+	sErr := n.RegisterScanner(testScope, scanner)
+	assert.NoError(t, sErr)
 
 	err := n.Run()
 	assert.NoError(t, err)
@@ -474,7 +502,8 @@ func Test_Nuke_Run_Error(t *testing.T) {
 	}
 	scanner := NewScanner("owner", []string{testResourceType2}, opts)
 
-	n.RegisterScanner(testScope, scanner)
+	sErr := n.RegisterScanner(testScope, scanner)
+	assert.NoError(t, sErr)
 
 	err := n.Run()
 	assert.NoError(t, err)
