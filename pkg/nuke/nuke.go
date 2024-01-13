@@ -283,7 +283,6 @@ func (n *Nuke) Scan() error {
 			}
 
 			for item := range scanner.Items {
-
 				// Experimental Feature
 				if n.Parameters.WaitOnDependencies {
 					reg := resource.GetRegistration(item.Type)
