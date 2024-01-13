@@ -1,3 +1,5 @@
+// Package nuke provides the framework for scanning for resources and then iterating over said resources to determine
+// if they should be removed or not and in what order.
 package nuke
 
 import (

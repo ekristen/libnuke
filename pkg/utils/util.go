@@ -1,3 +1,5 @@
+// Package utils provides several helper functions used throughout the library or useful to the upstream tools
+// that implement the primary parts of the library
 package utils
 
 import (

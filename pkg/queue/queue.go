@@ -1,3 +1,5 @@
+// Package queue provides a simple list mechanism with some helper functions to determine current counts based on
+// resource type or state.
 package queue
 
 type IQueue interface {
