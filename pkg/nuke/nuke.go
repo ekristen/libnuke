@@ -4,11 +4,11 @@ package nuke
 
 import (
 	"fmt"
-	"github.com/mitchellh/hashstructure/v2"
 	"io"
 	"slices"
 	"time"
 
+	"github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
 
 	"github.com/ekristen/libnuke/pkg/featureflag"
