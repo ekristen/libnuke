@@ -433,15 +433,20 @@ func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 	reg := resource.GetRegistration(item.Type)
 	depCount := 0
 	for _, dep := range reg.DependsOn {
-		cnt := n.Queue.CountByType(dep, queue.ItemStateNew, queue.ItemStatePending, queue.ItemStateWaiting)
+		cnt := n.Queue.CountByType(dep,
+			queue.ItemStateNew, queue.ItemStateNewDependency,
+			queue.ItemStatePending, queue.ItemStatePendingDependency,
+			queue.ItemStateWaiting)
 		depCount += cnt
 	}
 
 	if depCount == 0 {
 		n.HandleRemove(item)
+		return
 	}
 
 	item.State = queue.ItemStatePendingDependency
+	item.Reason = fmt.Sprintf("left: %d", depCount)
 }
 
 // HandleWait is used to handle the waiting of a resource. It will check if the resource has been removed. If it has,
