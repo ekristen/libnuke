@@ -2,6 +2,7 @@ package queue
 
 import (
 	"fmt"
+
 	"github.com/ekristen/libnuke/pkg/featureflag"
 	"github.com/ekristen/libnuke/pkg/log"
 	"github.com/ekristen/libnuke/pkg/resource"
@@ -13,6 +14,7 @@ const (
 	ItemStateNew ItemState = iota
 	ItemStateNewDependency
 	ItemStatePending
+	ItemStatePendingDependency
 	ItemStateWaiting
 	ItemStateFailed
 	ItemStateFiltered
@@ -28,6 +30,7 @@ type IItem interface {
 	GetState() ItemState
 }
 
+// Item is used to represent a specific resource, and it's current ItemState in the Queue
 type Item struct {
 	Resource     resource.Resource
 	State        ItemState
@@ -38,19 +41,23 @@ type Item struct {
 	Opts         interface{}
 }
 
+// GetState returns the current State of the Item
 func (i *Item) GetState() ItemState {
 	return i.State
 }
 
+// GetReason returns the current Reason for the Item which is usually coupled with an error
 func (i *Item) GetReason() string {
 	return i.Reason
 }
 
+// List calls the List method for the lister for the Type that belongs to the Item which returns
+// a list of resources or an error. This primarily is used for the HandleWait function.
 func (i *Item) List(opts interface{}) ([]resource.Resource, error) {
-	lister := resource.GetLister(i.Type)
-	return lister.List(opts)
+	return resource.GetLister(i.Type).List(opts)
 }
 
+// GetProperty retrieves the string value of a property on the Item's Resource if it exists.
 func (i *Item) GetProperty(key string) (string, error) {
 	if key == "" {
 		stringer, ok := i.Resource.(resource.LegacyStringer)
@@ -68,6 +75,7 @@ func (i *Item) GetProperty(key string) (string, error) {
 	return getter.Properties().Get(key), nil
 }
 
+// Equals checks if the current Item is identical to the argument Item in the Queue.
 func (i *Item) Equals(o resource.Resource) bool {
 	iType := fmt.Sprintf("%T", i.Resource)
 	oType := fmt.Sprintf("%T", o)
@@ -96,6 +104,7 @@ func (i *Item) Equals(o resource.Resource) bool {
 	return false
 }
 
+// Print displays the current status of an Item based on it's State
 func (i *Item) Print() {
 	switch i.State {
 	case ItemStateNew:
@@ -104,6 +113,8 @@ func (i *Item) Print() {
 		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitDependency, "would remove after dependencies")
 	case ItemStatePending:
 		log.Log(i.Owner, i.Type, i.Resource, log.ReasonRemoveTriggered, "triggered remove")
+	case ItemStatePendingDependency:
+		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitDependency, "waiting on dependencies")
 	case ItemStateWaiting:
 		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitPending, "waiting")
 	case ItemStateFailed:

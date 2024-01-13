@@ -37,12 +37,13 @@ func Sorted(m map[string]string) string {
 	sort.Strings(keys)
 	sorted := make([]string, 0, len(m))
 	for k := range keys {
-		sorted = append(sorted, fmt.Sprintf("%s: \"%s\"", keys[k], m[keys[k]]))
+		sorted = append(sorted, fmt.Sprintf("%s: %q", keys[k], m[keys[k]]))
 	}
 	return fmt.Sprintf("[%s]", strings.Join(sorted, ", "))
 }
 
-func Log(scope string, resourceType string, r resource.Resource, c color.Color, msg string) {
+// Log prints the line to screen with the appropriate coloring and formatting for readability
+func Log(scope, resourceType string, r resource.Resource, c color.Color, msg string) {
 	ColorRegion.Printf("%s", scope)
 	fmt.Printf(" - ")
 	ColorResourceType.Print(resourceType)

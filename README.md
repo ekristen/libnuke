@@ -12,7 +12,20 @@ as such func signatures and other things may change in breaking ways until thing
 This is an attempt to consolidate the commonalities between [aws-nuke](https://github.com/ekristen/aws-nuke) and [azure-nuke](https://github.com/ekristen/azure-nuke) into a single library
 that can be used between them and for future tooling, for example [gcp-nuke](https://github.com/ekristen/gcp-nuke)
 
-## Note about the Original Code
+## History of the Library
+
+This all started when I created a managed fork of [aws-nuke](https://github.com/ekristen/aws-nuke) from the [original aws nuke](https://github.com/rebuy-de/aws-nuke).
+The fork become necessary after attempting to make contributions and respond to issues to learn that the current 
+maintainers only have time to work on the project about once a month and while receptive to bringing in other people
+to help maintain, made it clear it would take time. Considering the feedback cycle was already weeks on initial
+communications, I had to make the hard decision to fork and maintain myself.
+
+After the fork, I created [azure-nuke](https://github.com/ekristen/azure-nuke) to fulfill a missing need there and 
+quickly realized that it would be great to pull all the common code into a common library that could be shared by the
+two tools with the realization I would be also be making [gcp-nuke](https://github.com/ekristen/gcp-nuke) in the near
+future.
+
+### A Few Note About the Original Code
 
 The code that was originally written for [aws-nuke](https://github.com/rebuy-de/aws-nuke) for iterating over and clearing out resources was well 
 written and I wanted to be able to use it for other cloud providers. Originally I simply copied it for [azure-nuke,](https://github.com/ekristen/azure-nuke) 

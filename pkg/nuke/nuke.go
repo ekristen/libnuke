@@ -1,17 +1,18 @@
-// Package nuke provides a framework for removing resources by providing commands to register resource scanners,
-// validation handlers, resource types and filters.
 package nuke
 
 import (
 	"fmt"
+	"io"
+	"time"
+
+	"github.com/sirupsen/logrus"
+
 	"github.com/ekristen/libnuke/pkg/featureflag"
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
 	"github.com/ekristen/libnuke/pkg/utils"
-	"github.com/sirupsen/logrus"
-	"time"
 )
 
 // ListCache is used to cache the list of resources that are returned from the API.
@@ -19,14 +20,11 @@ type ListCache map[string]map[string][]resource.Resource
 
 // Parameters is a collection of common variables used to configure the before of the Nuke instance.
 type Parameters struct {
-	ConfigPath string
-
-	NoDryRun   bool
-	Force      bool
-	ForceSleep int
-	Quiet      bool
-
-	MaxWaitRetries int
+	NoDryRun       bool // NoDryRun instructs Run to actually perform the remove function
+	Force          bool // Force instructs Run to proceed without confirmation from user
+	ForceSleep     int  // ForceSleep indicates how long of a delay before proceeding with confirmation
+	Quiet          bool // Quiet will hide resources if they have been filtered
+	MaxWaitRetries int  // MaxWaitRetries is the total number of times a resource will be retried during wait state
 }
 
 type INuke interface {
@@ -47,13 +45,30 @@ type Nuke struct {
 	FeatureFlags *featureflag.FeatureFlags
 
 	ValidateHandlers []func() error
+	ResourceTypes    map[resource.Scope]types.Collection
+	Scanners         map[resource.Scope][]*Scanner
 
-	ResourceTypes map[resource.Scope]types.Collection
-	Scanners      map[resource.Scope][]*Scanner
+	prompt  func() error // prompt is what is shown to the user for confirmation
+	version string       // version is what is shown at the beginning of a run
+	log     *logrus.Entry
+}
 
-	prompts map[string]func() error
+// New returns an instance of nuke that is properly configured for initial use
+func New(params Parameters, filters filter.Filters) *Nuke {
+	logger := logrus.New()
+	logger.SetOutput(io.Discard)
 
-	version string
+	return &Nuke{
+		Parameters:   params,
+		Filters:      filters,
+		Queue:        queue.Queue{},
+		FeatureFlags: &featureflag.FeatureFlags{},
+		log:          logger.WithField("component", "nuke"),
+	}
+}
+
+func (n *Nuke) SetLogger(logger *logrus.Entry) {
+	n.log = logger
 }
 
 // RegisterVersion allows the tool instantiating the library to register its version so there's consist output
@@ -65,7 +80,7 @@ func (n *Nuke) RegisterVersion(version string) {
 // RegisterFeatureFlags allows the tool instantiating the library to register a boolean flag. For example, aws nuke
 // needs to be able to register if disabling of instance deletion protection is allowed, this provides a generic method
 // for doing that.
-func (n *Nuke) RegisterFeatureFlags(flag string, defaultValue *bool, value *bool) {
+func (n *Nuke) RegisterFeatureFlags(flag string, defaultValue, value *bool) {
 	n.FeatureFlags.New(flag, defaultValue, value)
 }
 
@@ -102,25 +117,16 @@ func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) {
 	n.Scanners[scope] = append(n.Scanners[scope], scanner)
 }
 
-func (n *Nuke) RegisterPrompt(name string, prompt func() error) {
-	if n.prompts == nil {
-		n.prompts = make(map[string]func() error)
-	}
-
-	n.prompts[name] = prompt
+// RegisterPrompt is used to register the prompt function that used to prompt the user for input, usually to confirm
+// if the nuke process should continue or not.
+func (n *Nuke) RegisterPrompt(prompt func() error) {
+	n.prompt = prompt
 }
 
-func (n *Nuke) PromptFirst() error {
-	if prompt, ok := n.prompts["first"]; ok {
-		return prompt()
-	}
-
-	return nil
-}
-
-func (n *Nuke) PromptSecond() error {
-	if prompt, ok := n.prompts["second"]; ok {
-		return prompt()
+// Prompt actually calls the registered prompt function as part of the run
+func (n *Nuke) Prompt() error {
+	if n.prompt != nil {
+		return n.prompt()
 	}
 
 	return nil
@@ -129,11 +135,13 @@ func (n *Nuke) PromptSecond() error {
 // Run is the main entry point for the library. It will run the validation handlers, prompt the user, scan for
 // resources, filter them and then process them.
 func (n *Nuke) Run() error {
+	n.Version()
+
 	if err := n.Validate(); err != nil {
 		return err
 	}
 
-	if err := n.PromptFirst(); err != nil {
+	if err := n.Prompt(); err != nil {
 		return err
 	}
 
@@ -151,17 +159,35 @@ func (n *Nuke) Run() error {
 		return nil
 	}
 
-	if err := n.PromptSecond(); err != nil {
+	if err := n.Prompt(); err != nil {
 		return err
 	}
 
+	if err := n.run(); err != nil {
+		return err
+	}
+
+	fmt.Printf("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
+		n.Queue.Count(queue.ItemStateFailed), n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
+
+	return nil
+}
+
+// run handles the processing and loop of the queue of items
+func (n *Nuke) run() error {
 	failCount := 0
 	waitingCount := 0
 
 	for {
 		n.HandleQueue()
 
-		if n.Queue.Count(queue.ItemStatePending, queue.ItemStateWaiting, queue.ItemStateNew, queue.ItemStateNewDependency) == 0 && n.Queue.Count(queue.ItemStateFailed) > 0 {
+		if n.Queue.Count(
+			queue.ItemStatePending,
+			queue.ItemStatePendingDependency,
+			queue.ItemStateWaiting,
+			queue.ItemStateNew,
+			queue.ItemStateNewDependency,
+		) == 0 && n.Queue.Count(queue.ItemStateFailed) > 0 {
 			if failCount >= 2 {
 				logrus.Errorf("There are resources in failed state, but none are ready for deletion, anymore.")
 				fmt.Println()
@@ -178,27 +204,33 @@ func (n *Nuke) Run() error {
 				return fmt.Errorf("failed")
 			}
 
-			failCount = failCount + 1
+			failCount++
 		} else {
 			failCount = 0
 		}
-		if n.Parameters.MaxWaitRetries != 0 && n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending) > 0 && n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency) == 0 {
+		if n.Parameters.MaxWaitRetries != 0 &&
+			n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending, queue.ItemStatePendingDependency) > 0 &&
+			n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency) == 0 {
 			if waitingCount >= n.Parameters.MaxWaitRetries {
-				return fmt.Errorf("Max wait retries of %d exceeded.\n\n", n.Parameters.MaxWaitRetries)
+				return fmt.Errorf("max wait retries of %d exceeded", n.Parameters.MaxWaitRetries)
 			}
-			waitingCount = waitingCount + 1
+			waitingCount++
 		} else {
 			waitingCount = 0
 		}
-		if n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency, queue.ItemStatePending, queue.ItemStateFailed, queue.ItemStateWaiting) == 0 {
+		if n.Queue.Count(
+			queue.ItemStateNew,
+			queue.ItemStateNewDependency,
+			queue.ItemStatePending,
+			queue.ItemStatePendingDependency,
+			queue.ItemStateFailed,
+			queue.ItemStateWaiting,
+		) == 0 {
 			break
 		}
 
 		time.Sleep(5 * time.Second)
 	}
-
-	fmt.Printf("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
-		n.Queue.Count(queue.ItemStateFailed), n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
 
 	return nil
 }
@@ -214,7 +246,9 @@ func (n *Nuke) Validate() error {
 		return fmt.Errorf("value for --force-sleep cannot be less than 3 seconds. This is for your own protection")
 	}
 
-	n.Version()
+	if err := n.Filters.Validate(); err != nil {
+		return err
+	}
 
 	for _, handler := range n.ValidateHandlers {
 		if err := handler(); err != nil {
@@ -270,10 +304,20 @@ func (n *Nuke) Scan() error {
 // Filter is used to filter resources. It will run the filters that were registered with the instance of Nuke
 // and set the state of the resource to filtered if it matches the filter.
 func (n *Nuke) Filter(item *queue.Item) error {
+	log := n.log.
+		WithField("handler", "Filter").
+		WithField("type", item.Type)
+
+	if r, ok := item.Resource.(resource.LegacyStringer); ok {
+		log = log.WithField("item", r.String())
+	}
+
 	checker, ok := item.Resource.(resource.Filter)
 	if ok {
+		log.Trace("resource had filter function")
 		err := checker.Filter()
 		if err != nil {
+			log.Trace("resource was filtered by resource filter")
 			item.State = queue.ItemStateFiltered
 			item.Reason = err.Error()
 
@@ -284,29 +328,40 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		}
 	}
 
-	accountFilters := n.Filters
-
-	itemFilters, ok := accountFilters[item.Type]
+	itemFilters, ok := n.Filters[item.Type]
 	if !ok {
+		log.Tracef("no filters found for type: %s", item.Type)
 		return nil
 	}
 
 	for _, f := range itemFilters {
+		log.
+			WithField("prop", f.Property).
+			WithField("type", f.Type).
+			WithField("value", f.Value).
+			Trace("filter details")
+
 		prop, err := item.GetProperty(f.Property)
 		if err != nil {
 			return err
 		}
+
+		log.Tracef("property: %s", prop)
 
 		match, err := f.Match(prop)
 		if err != nil {
 			return err
 		}
 
+		log.Tracef("match: %t", match)
+
 		if utils.IsTrue(f.Invert) {
+			log.WithField("orig", match).WithField("new", !match).Trace("filter inverted")
 			match = !match
 		}
 
 		if match {
+			log.Trace("filter matched")
 			item.State = queue.ItemStateFiltered
 			item.Reason = "filtered by config"
 			return nil
@@ -326,7 +381,7 @@ func (n *Nuke) HandleQueue() {
 		case queue.ItemStateNew:
 			n.HandleRemove(item)
 			item.Print()
-		case queue.ItemStateNewDependency:
+		case queue.ItemStateNewDependency, queue.ItemStatePendingDependency:
 			n.HandleWaitDependency(item)
 			item.Print()
 		case queue.ItemStateFailed:
@@ -341,13 +396,21 @@ func (n *Nuke) HandleQueue() {
 			n.HandleWait(item, listCache)
 			item.Print()
 		}
-
 	}
+
+	countWaiting := n.Queue.Count(
+		queue.ItemStateWaiting,
+		queue.ItemStatePending,
+		queue.ItemStatePendingDependency,
+		queue.ItemStateNewDependency,
+	)
+	countFailed := n.Queue.Count(queue.ItemStateFailed)
+	countSkipped := n.Queue.Count(queue.ItemStateFiltered)
+	countFinished := n.Queue.Count(queue.ItemStateFinished)
 
 	fmt.Println()
 	fmt.Printf("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
-		n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending, queue.ItemStateNewDependency), n.Queue.Count(queue.ItemStateFailed),
-		n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
+		countWaiting, countFailed, countSkipped, countFinished)
 }
 
 // HandleRemove is used to handle the removal of a resource. It will remove the resource and set the state of the
@@ -371,24 +434,28 @@ func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 	depCount := 0
 	for _, dep := range reg.DependsOn {
 		cnt := n.Queue.CountByType(dep, queue.ItemStateNew, queue.ItemStatePending, queue.ItemStateWaiting)
-		depCount = depCount + cnt
+		depCount += cnt
 	}
 
 	if depCount == 0 {
 		n.HandleRemove(item)
 	}
+
+	item.State = queue.ItemStatePendingDependency
 }
 
 // HandleWait is used to handle the waiting of a resource. It will check if the resource has been removed. If it has,
 // it will set the state of the resource to finished. If it has not, it will set the state of the resource to waiting.
 func (n *Nuke) HandleWait(item *queue.Item, cache ListCache) {
 	var err error
-	ownerId := item.Owner
-	_, ok := cache[ownerId]
+
+	ownerID := item.Owner
+	_, ok := cache[ownerID]
 	if !ok {
-		cache[ownerId] = make(map[string][]resource.Resource)
+		cache[ownerID] = make(map[string][]resource.Resource)
 	}
-	left, ok := cache[ownerId][item.Type]
+
+	left, ok := cache[ownerID][item.Type]
 	if !ok {
 		left, err = item.List(item.Opts)
 		if err != nil {
@@ -396,7 +463,7 @@ func (n *Nuke) HandleWait(item *queue.Item, cache ListCache) {
 			item.Reason = err.Error()
 			return
 		}
-		cache[ownerId][item.Type] = left
+		cache[ownerID][item.Type] = left
 	}
 
 	for _, r := range left {
