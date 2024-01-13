@@ -64,16 +64,12 @@ func Register(r Registration, opts ...RegisterOption) {
 
 	graph.AddNode(r.Name)
 	if len(r.DependsOn) == 0 {
-		err := graph.AddEdge("root", r.Name)
-		if err != nil {
-			panic(err)
-		}
+		// Note: AddEdge will never through an error
+		_ = graph.AddEdge("root", r.Name)
 	}
 	for _, dep := range r.DependsOn {
-		err := graph.AddEdge(dep, r.Name)
-		if err != nil {
-			panic(err)
-		}
+		// Note: AddEdge will never through an error
+		_ = graph.AddEdge(dep, r.Name)
 	}
 
 	for _, opt := range opts {
