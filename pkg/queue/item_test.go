@@ -20,12 +20,30 @@ func (r TestItemResource) Remove() error {
 	return nil
 }
 
+func (r TestItemResource) String() string {
+	return "test"
+}
+
+type TestItemResource2 struct{}
+
+func (r TestItemResource2) Remove() error {
+	return nil
+}
+
+var testItem = Item{
+	Resource: &TestItemResource{},
+	State:    ItemStateNew,
+	Reason:   "brand new",
+}
+
+var testItem2 = Item{
+	Resource: &TestItemResource2{},
+	State:    ItemStateNew,
+	Reason:   "brand new",
+}
+
 func Test_Item(t *testing.T) {
-	i := Item{
-		Resource: &TestItemResource{},
-		State:    ItemStateNew,
-		Reason:   "brand new",
-	}
+	i := testItem
 
 	assert.Equal(t, ItemStateNew, i.GetState())
 	assert.Equal(t, "brand new", i.GetReason())
@@ -35,6 +53,29 @@ func Test_Item(t *testing.T) {
 	assert.Equal(t, "testing", propVal)
 
 	assert.True(t, i.Equals(i.Resource))
+
+	assert.False(t, i.Equals(testItem2.Resource))
+}
+
+func Test_Item_LegacyStringer(t *testing.T) {
+	i := testItem
+	val, err := i.GetProperty("")
+	assert.NoError(t, err)
+	assert.Equal(t, "test", val)
+}
+
+func Test_Item_LegacyStringer_NoSupport(t *testing.T) {
+	i := testItem2
+	_, err := i.GetProperty("")
+	assert.Error(t, err)
+	assert.Equal(t, "*queue.TestItemResource2 does not support legacy IDs", err.Error())
+}
+
+func Test_Item_Properties_NoSupport(t *testing.T) {
+	i := testItem2
+	_, err := i.GetProperty("test-prop")
+	assert.Error(t, err)
+	assert.Equal(t, "*queue.TestItemResource2 does not support custom properties", err.Error())
 }
 
 func Test_ItemPrint(t *testing.T) {

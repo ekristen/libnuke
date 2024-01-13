@@ -119,20 +119,14 @@ func (s *Scanner) list(owner, resourceType string, opts interface{}) {
 		}
 
 		dump := utils.Indent(fmt.Sprintf("%v", err), "    ")
-		logrus.Errorf("Listing %s failed:\n%s", resourceType, dump)
+		logrus.WithError(err).Errorf("Listing %s failed:\n%s", resourceType, dump)
 		return
 	}
 
 	for _, r := range rs {
-		state := queue.ItemStateNew
-		reg := resource.GetRegistration(resourceType)
-		if len(reg.DependsOn) > 0 {
-			state = queue.ItemStateNewDependency
-		}
-
 		i := &queue.Item{
 			Resource: r,
-			State:    state,
+			State:    queue.ItemStateNew,
 			Type:     resourceType,
 			Owner:    owner,
 			Opts:     opts,

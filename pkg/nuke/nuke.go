@@ -27,6 +27,12 @@ type Parameters struct {
 	ForceSleep     int  // ForceSleep indicates how long of a delay before proceeding with confirmation
 	Quiet          bool // Quiet will hide resources if they have been filtered
 	MaxWaitRetries int  // MaxWaitRetries is the total number of times a resource will be retried during wait state
+
+	// WaitOnDependencies controls whether resources will be removed after their dependencies. It is important to note
+	// that it does not currently track direct dependencies but instead dependent resources. For example if ResourceA
+	// depends on ResourceB, all ResourceB has to be in a completed state (removed or failed) before ResourceA will be
+	// processed
+	WaitOnDependencies bool
 }
 
 type INuke interface {
@@ -277,6 +283,14 @@ func (n *Nuke) Scan() error {
 			}
 
 			for item := range scanner.Items {
+				// Experimental Feature
+				if n.Parameters.WaitOnDependencies {
+					reg := resource.GetRegistration(item.Type)
+					if len(reg.DependsOn) > 0 {
+						item.State = queue.ItemStateNewDependency
+					}
+				}
+
 				ffGetter, ok := item.Resource.(resource.FeatureFlagGetter)
 				if ok {
 					ffGetter.FeatureFlags(n.FeatureFlags)
