@@ -1,6 +1,7 @@
 package nuke
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -27,7 +28,7 @@ func Test_NukeFiltersBad(t *testing.T) {
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
-	err := n.Run()
+	err := n.Run(context.TODO())
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "testResourceType: has an invalid filter")
 }
@@ -59,7 +60,7 @@ func Test_NukeFiltersMatch(t *testing.T) {
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan()
+	err := n.Scan(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, n.Queue.Total())
 	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFiltered))
@@ -93,7 +94,7 @@ func Test_NukeFiltersMatchInverted(t *testing.T) {
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan()
+	err := n.Scan(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, n.Queue.Total())
 	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFiltered))
@@ -126,7 +127,7 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan()
+	err := n.Scan(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, n.Queue.Total())
 	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFiltered))
@@ -158,7 +159,7 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan()
+	err := n.Scan(context.TODO())
 	assert.Error(t, err)
 	assert.Equal(t, "*nuke.TestResource does not support custom properties", err.Error())
 }

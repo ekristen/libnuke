@@ -1,6 +1,7 @@
 package nuke
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -102,7 +103,7 @@ type TestResourceLister struct {
 	RemoveError bool
 }
 
-func (l TestResourceLister) List(o interface{}) ([]resource.Resource, error) {
+func (l TestResourceLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
 	opts := o.(TestOpts)
 
 	if opts.ThrowError {
@@ -183,7 +184,7 @@ func Test_NewScannerWithMorphOpts(t *testing.T) {
 	mutateErr := scanner.RegisterMutateOptsFunc(morphOpts)
 	assert.NoError(t, mutateErr)
 
-	err := scanner.Run()
+	err := scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 1)
@@ -238,7 +239,7 @@ func Test_NewScannerWithResourceListerError(t *testing.T) {
 	}
 
 	scanner := NewScanner("owner", []string{testResourceType}, opts)
-	err := scanner.Run()
+	err := scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 0)
@@ -271,7 +272,7 @@ func Test_NewScannerWithResourceListerErrorSkip(t *testing.T) {
 	}
 
 	scanner := NewScanner("owner", []string{testResourceType}, opts)
-	err := scanner.Run()
+	err := scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 0)
@@ -304,7 +305,7 @@ func Test_NewScannerWithResourceListerErrorUnknownEndpoint(t *testing.T) {
 	}
 
 	scanner := NewScanner("owner", []string{testResourceType}, opts)
-	err := scanner.Run()
+	err := scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 0)

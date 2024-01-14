@@ -1,6 +1,7 @@
 package queue
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/ekristen/libnuke/pkg/featureflag"
@@ -54,8 +55,8 @@ func (i *Item) GetReason() string {
 
 // List calls the List method for the lister for the Type that belongs to the Item which returns
 // a list of resources or an error. This primarily is used for the HandleWait function.
-func (i *Item) List(opts interface{}) ([]resource.Resource, error) {
-	return resource.GetLister(i.Type).List(opts)
+func (i *Item) List(ctx context.Context, opts interface{}) ([]resource.Resource, error) {
+	return resource.GetLister(i.Type).List(ctx, opts)
 }
 
 // GetProperty retrieves the string value of a property on the Item's Resource if it exists.

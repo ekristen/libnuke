@@ -1,6 +1,7 @@
 package nuke
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -21,7 +22,7 @@ type TestResourceSuccessLister struct {
 	listed bool
 }
 
-func (l *TestResourceSuccessLister) List(o interface{}) ([]resource.Resource, error) {
+func (l *TestResourceSuccessLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
 	if l.listed {
 		return []resource.Resource{}, nil
 	}
@@ -36,13 +37,13 @@ func (r *TestResourceFailure) String() string { return "TestResourceFailure" }
 
 type TestResourceFailureLister struct{}
 
-func (l *TestResourceFailureLister) List(o interface{}) ([]resource.Resource, error) {
+func (l *TestResourceFailureLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
 	return []resource.Resource{&TestResourceFailure{}}, nil
 }
 
 type TestResourceWaitLister struct{}
 
-func (l *TestResourceWaitLister) List(o interface{}) ([]resource.Resource, error) {
+func (l *TestResourceWaitLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
 	return []resource.Resource{&TestResourceSuccess{}}, nil
 }
 
@@ -55,7 +56,7 @@ func Test_Nuke_Run_SimpleWithNoDryRun(t *testing.T) {
 	scannerErr := n.RegisterScanner(testScope, NewScanner("owner", []string{"TestResource4"}, nil))
 	assert.NoError(t, scannerErr)
 
-	runErr := n.Run()
+	runErr := n.Run(context.TODO())
 	assert.NoError(t, runErr)
 
 	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFinished))
@@ -83,7 +84,7 @@ func Test_Nuke_Run_Failure(t *testing.T) {
 	scannerErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, scannerErr)
 
-	runErr := n.Run()
+	runErr := n.Run(context.TODO())
 	assert.Error(t, runErr)
 
 	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFinished))
@@ -113,7 +114,7 @@ func Test_NukeRunWithMaxWaitRetries(t *testing.T) {
 	scannerErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, scannerErr)
 
-	runErr := n.Run()
+	runErr := n.Run(context.TODO())
 	assert.Error(t, runErr)
 	assert.Equal(t, "max wait retries of 3 exceeded", runErr.Error())
 	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateWaiting))
