@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -9,7 +10,7 @@ import (
 
 type TestLister struct{}
 
-func (l TestLister) List(o interface{}) ([]Resource, error) { return nil, nil }
+func (l TestLister) List(_ context.Context, o interface{}) ([]Resource, error) { return nil, nil }
 
 func Test_RegisterNoScope(t *testing.T) {
 	ClearRegistry()

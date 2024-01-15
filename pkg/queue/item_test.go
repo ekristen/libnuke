@@ -1,10 +1,12 @@
 package queue
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
@@ -30,10 +32,17 @@ func (r TestItemResource2) Remove() error {
 	return nil
 }
 
+type TestItemResourceLister struct{}
+
+func (l *TestItemResourceLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
+	return []resource.Resource{&TestItemResource{id: "test"}}, nil
+}
+
 var testItem = Item{
 	Resource: &TestItemResource{id: "test"},
 	State:    ItemStateNew,
 	Reason:   "brand new",
+	Type:     "TestResource",
 }
 
 var testItem2 = Item{
@@ -54,6 +63,19 @@ func Test_Item(t *testing.T) {
 
 	assert.True(t, i.Equals(i.Resource))
 	assert.False(t, i.Equals(testItem2.Resource))
+}
+
+func Test_ItemList(t *testing.T) {
+	resource.ClearRegistry()
+	resource.Register(resource.Registration{
+		Name:   "TestResource",
+		Lister: &TestItemResourceLister{},
+	})
+
+	i := testItem
+	list, err := i.List(context.TODO(), nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(list))
 }
 
 func Test_Item_LegacyStringer(t *testing.T) {
@@ -141,4 +163,75 @@ func Test_ItemPrint(t *testing.T) {
 			i.Print()
 		})
 	}
+}
+
+// ------------------------------------------------------------------------
+
+type TestItemResourceProperties struct{}
+
+func (r *TestItemResourceProperties) Remove() error {
+	return nil
+}
+func (r *TestItemResourceProperties) Properties() types.Properties {
+	return types.NewProperties().Set("test", "testing")
+}
+
+func Test_ItemEqualProperties(t *testing.T) {
+	i := &Item{
+		Resource: &TestItemResourceProperties{},
+		State:    ItemStateNew,
+		Reason:   "brand new",
+		Type:     "TestResource",
+	}
+
+	assert.True(t, i.Equals(i.Resource))
+}
+
+// ------------------------------------------------------------------------
+
+type TestItemResourceStringer struct{}
+
+func (r *TestItemResourceStringer) Remove() error {
+	return nil
+}
+func (r *TestItemResourceStringer) String() string {
+	return "test"
+}
+
+func Test_ItemEqualStringer(t *testing.T) {
+	i := &Item{
+		Resource: &TestItemResourceStringer{},
+		State:    ItemStateNew,
+		Reason:   "brand new",
+		Type:     "TestResource",
+	}
+
+	ni := &Item{
+		Resource: &TestItemResourceNothing{},
+		State:    ItemStateNew,
+		Reason:   "brand new",
+		Type:     "TestResource",
+	}
+
+	assert.True(t, i.Equals(i.Resource))
+	assert.False(t, i.Equals(ni.Resource))
+}
+
+// ------------------------------------------------------------------------
+
+type TestItemResourceNothing struct{}
+
+func (r *TestItemResourceNothing) Remove() error {
+	return nil
+}
+
+func Test_ItemEqualNothing(t *testing.T) {
+	i := &Item{
+		Resource: &TestItemResourceNothing{},
+		State:    ItemStateNew,
+		Reason:   "brand new",
+		Type:     "TestResource",
+	}
+
+	assert.False(t, i.Equals(i.Resource))
 }

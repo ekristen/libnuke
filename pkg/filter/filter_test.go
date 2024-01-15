@@ -227,6 +227,9 @@ func TestMerge(t *testing.T) {
 		},
 	}
 
+	validateErr := expected.Validate()
+	assert.NoError(t, validateErr)
+
 	// Check if the result is as expected
 	if !reflect.DeepEqual(f1, expected) {
 		t.Errorf("Merge() = %v, want %v", f1, expected)
