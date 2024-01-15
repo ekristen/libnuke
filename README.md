@@ -16,6 +16,15 @@ This is an attempt to consolidate the commonalities between [aws-nuke](https://g
 that can be used between them and for future tooling, for example [gcp-nuke](https://github.com/ekristen/gcp-nuke). Additionally, the goal is to make it
 easier to add new features with better test coverage.
 
+## Attribution, License, and Copyright
+
+First of tall this library would not have been possible without the hard work of the team over at [rebuy-de](https://github.com/rebuy-de)
+and their original work on [rebuy-de/aws-nuke](https://github.com/rebuy-de/aws-nuke).
+
+This library is licensed under the MIT license. See the [LICENSE](LICENSE) file for more information. The bulk of this
+library was originally sourced from [rebuy-de/aws-nuke](https://github.com/rebuy-de/aws-nuke). See the [Sources](#sources)
+for more.
+
 ## History of the Library
 
 This all started when I created a managed fork of [aws-nuke](https://github.com/ekristen/aws-nuke) from the [original aws nuke](https://github.com/rebuy-de/aws-nuke).
