@@ -193,6 +193,28 @@ func Test_NewScannerWithMorphOpts(t *testing.T) {
 	}
 }
 
+func Test_NewScannerWithDuplicateMorphOpts(t *testing.T) {
+	resource.ClearRegistry()
+	resource.Register(testResourceRegistration)
+
+	opts := TestOpts{
+		SessionOne: "testing",
+	}
+
+	morphOpts := func(o interface{}, resourceType string) interface{} {
+		o1 := o.(TestOpts)
+		o1.SessionTwo = o1.SessionOne + "-" + resourceType
+		return o1
+	}
+
+	scanner := NewScanner("owner", []string{testResourceType}, opts)
+	optErr := scanner.RegisterMutateOptsFunc(morphOpts)
+	assert.NoError(t, optErr)
+
+	optErr = scanner.RegisterMutateOptsFunc(morphOpts)
+	assert.Error(t, optErr)
+}
+
 func Test_NewScannerWithResourceListerError(t *testing.T) {
 	resource.ClearRegistry()
 	logrus.AddHook(&TestGlobalHook{

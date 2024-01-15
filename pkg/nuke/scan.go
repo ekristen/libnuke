@@ -53,12 +53,12 @@ type IScanner interface {
 
 // RegisterMutateOptsFunc registers a mutate options function for the scanner. The mutate options function is called
 // for each resource type that is being scanned. This allows you to mutate the options for a given resource type.
-func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) {
+func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) error {
 	if s.mutateOptsFunc != nil {
-		panic("mutateOptsFunc already registered")
+		return fmt.Errorf("mutateOptsFunc already registered")
 	}
-
 	s.mutateOptsFunc = morph
+	return nil
 }
 
 // Run starts the scanner and runs the lister for each resource type.
@@ -66,10 +66,10 @@ func (s *Scanner) Run() error {
 	ctx := context.Background()
 
 	for _, resourceType := range s.resourceTypes {
-		err := s.semaphore.Acquire(ctx, 1)
-		if err != nil {
+		if err := s.semaphore.Acquire(ctx, 1); err != nil {
 			return err
 		}
+
 		opts := s.options
 		if s.mutateOptsFunc != nil {
 			opts = s.mutateOptsFunc(opts, resourceType)
@@ -79,8 +79,7 @@ func (s *Scanner) Run() error {
 	}
 
 	// Wait for all routines to finish.
-	err := s.semaphore.Acquire(ctx, ScannerParallelQueries)
-	if err != nil {
+	if err := s.semaphore.Acquire(ctx, ScannerParallelQueries); err != nil {
 		return err
 	}
 
