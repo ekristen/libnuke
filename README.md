@@ -6,18 +6,15 @@
 [![Maintainability](https://api.codeclimate.com/v1/badges/dc4078a236e89486b4ca/maintainability)](https://codeclimate.com/github/ekristen/libnuke/maintainability)
 [![codecov](https://codecov.io/gh/ekristen/libnuke/graph/badge.svg?token=UJJOUJ98G4)](https://codecov.io/gh/ekristen/libnuke)
 [![tests](https://github.com/ekristen/libnuke/actions/workflows/tests.yml/badge.svg)](https://github.com/ekristen/libnuke/actions/workflows/tests.yml)
-[![Known Vulnerabilities](https://snyk.io/test/github/ekristen/libnuke/badge.svg)](https://snyk.io/test/github/ekristen/libnuke)
 
-
-
-
-**Status: Alpha/Beta** - Everything works, but is still being abstracted and tailored to aws-nuke and azure-nuke,
+**Status: [Initial Development](https://semver.org/spec/v2.0.0-rc.1.html#spec-item-5)** - Everything works, but is still being abstracted and tailored to aws-nuke and azure-nuke,
 as such func signatures and other things may change in breaking ways until things stabilize.
 
 ## Overview
 
 This is an attempt to consolidate the commonalities between [aws-nuke](https://github.com/ekristen/aws-nuke) and [azure-nuke](https://github.com/ekristen/azure-nuke) into a single library
-that can be used between them and for future tooling, for example [gcp-nuke](https://github.com/ekristen/gcp-nuke)
+that can be used between them and for future tooling, for example [gcp-nuke](https://github.com/ekristen/gcp-nuke). Additionally, the goal is to make it
+easier to add new features with better test coverage.
 
 ## History of the Library
 
