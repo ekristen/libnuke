@@ -57,7 +57,7 @@ func (r TestResource) Filter() error {
 	return nil
 }
 
-func (r TestResource) Remove() error {
+func (r TestResource) Remove(_ context.Context) error {
 	if r.RemoveError {
 		return fmt.Errorf("remove error")
 	}
@@ -81,7 +81,7 @@ func (r TestResource2) Filter() error {
 	return nil
 }
 
-func (r TestResource2) Remove() error {
+func (r TestResource2) Remove(_ context.Context) error {
 	if r.RemoveError {
 		return fmt.Errorf("remove error")
 	}

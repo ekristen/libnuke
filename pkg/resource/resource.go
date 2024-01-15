@@ -1,12 +1,14 @@
 package resource
 
 import (
+	"context"
+
 	"github.com/ekristen/libnuke/pkg/featureflag"
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
 type Resource interface {
-	Remove() error
+	Remove(ctx context.Context) error
 }
 
 type Filter interface {

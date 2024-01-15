@@ -177,7 +177,7 @@ func (r TestResourceFilter) Properties() types.Properties {
 	return props
 }
 
-func (r TestResourceFilter) Remove() error {
+func (r TestResourceFilter) Remove(_ context.Context) error {
 	return nil
 }
 

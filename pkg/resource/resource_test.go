@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -15,7 +16,7 @@ type TestResource struct {
 	Flags *featureflag.FeatureFlags
 }
 
-func (r *TestResource) Remove() error {
+func (r *TestResource) Remove(_ context.Context) error {
 	return fmt.Errorf("remove called")
 }
 
@@ -39,7 +40,7 @@ func (r *TestResource) FeatureFlags(ff *featureflag.FeatureFlags) {
 
 func TestInterfaceResource(t *testing.T) {
 	r := TestResource{}
-	err := r.Remove()
+	err := r.Remove(context.TODO())
 	assert.Error(t, err)
 	assert.Equal(t, "remove called", err.Error())
 }
