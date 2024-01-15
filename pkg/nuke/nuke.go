@@ -464,9 +464,9 @@ func (n *Nuke) HandleQueue(ctx context.Context) {
 
 // HandleRemove is used to handle the removal of a resource. It will remove the resource and set the state of the
 // resource to pending if it was successful or failed if it was not.
-func (n *Nuke) HandleRemove(_ context.Context, item *queue.Item) {
+func (n *Nuke) HandleRemove(ctx context.Context, item *queue.Item) {
 	// TODO: pass context to remove for remove functions to use
-	err := item.Resource.Remove()
+	err := item.Resource.Remove(ctx)
 	if err != nil {
 		var resErr liberrors.ErrHoldResource
 		if errors.As(err, &resErr) {
