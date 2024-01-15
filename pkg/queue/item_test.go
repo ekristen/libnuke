@@ -2,11 +2,11 @@ package queue
 
 import (
 	"context"
-	"github.com/ekristen/libnuke/pkg/resource"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
