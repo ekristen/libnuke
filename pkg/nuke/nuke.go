@@ -3,6 +3,7 @@
 package nuke
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -170,7 +171,7 @@ func (n *Nuke) Prompt() error {
 
 // Run is the main entry point for the library. It will run the validation handlers, prompt the user, scan for
 // resources, filter them and then process them.
-func (n *Nuke) Run() error {
+func (n *Nuke) Run(ctx context.Context) error {
 	n.Version()
 
 	if err := n.Validate(); err != nil {
@@ -181,7 +182,7 @@ func (n *Nuke) Run() error {
 		return err
 	}
 
-	if err := n.Scan(); err != nil {
+	if err := n.Scan(ctx); err != nil {
 		return err
 	}
 
@@ -199,7 +200,7 @@ func (n *Nuke) Run() error {
 		return err
 	}
 
-	if err := n.run(); err != nil {
+	if err := n.run(ctx); err != nil {
 		return err
 	}
 
@@ -210,12 +211,12 @@ func (n *Nuke) Run() error {
 }
 
 // run handles the processing and loop of the queue of items
-func (n *Nuke) run() error {
+func (n *Nuke) run(ctx context.Context) error {
 	failCount := 0
 	waitingCount := 0
 
 	for {
-		n.HandleQueue()
+		n.HandleQueue(ctx)
 
 		if n.Queue.Count(
 			queue.ItemStatePending,
@@ -301,14 +302,14 @@ func (n *Nuke) Validate() error {
 // Scan is used to scan for resources. It will run the scanners that were registered with the library by the invoking
 // tool. It will also filter the resources based on the filters that were registered. It will also print the current
 // status of the resources.
-func (n *Nuke) Scan() error {
+func (n *Nuke) Scan(ctx context.Context) error {
 	itemQueue := queue.Queue{
 		Items: make([]*queue.Item, 0),
 	}
 
 	for _, scanners := range n.Scanners {
 		for _, scanner := range scanners {
-			err := scanner.Run()
+			err := scanner.Run(ctx)
 			if err != nil {
 				return err
 			}
@@ -420,27 +421,27 @@ func (n *Nuke) Filter(item *queue.Item) error {
 
 // HandleQueue is used to handle the queue of resources. It will iterate over the queue and trigger the appropriate
 // handlers based on the state of the resource.
-func (n *Nuke) HandleQueue() {
+func (n *Nuke) HandleQueue(ctx context.Context) {
 	listCache := make(map[string]map[string][]resource.Resource)
 
 	for _, item := range n.Queue.GetItems() {
 		switch item.GetState() {
 		case queue.ItemStateNew, queue.ItemStateHold:
-			n.HandleRemove(item)
+			n.HandleRemove(ctx, item)
 			item.Print()
 		case queue.ItemStateNewDependency, queue.ItemStatePendingDependency:
-			n.HandleWaitDependency(item)
+			n.HandleWaitDependency(ctx, item)
 			item.Print()
 		case queue.ItemStateFailed:
-			n.HandleRemove(item)
-			n.HandleWait(item, listCache)
+			n.HandleRemove(ctx, item)
+			n.HandleWait(ctx, item, listCache)
 			item.Print()
 		case queue.ItemStatePending:
-			n.HandleWait(item, listCache)
+			n.HandleWait(ctx, item, listCache)
 			item.State = queue.ItemStateWaiting
 			item.Print()
 		case queue.ItemStateWaiting:
-			n.HandleWait(item, listCache)
+			n.HandleWait(ctx, item, listCache)
 			item.Print()
 		}
 	}
@@ -463,7 +464,8 @@ func (n *Nuke) HandleQueue() {
 
 // HandleRemove is used to handle the removal of a resource. It will remove the resource and set the state of the
 // resource to pending if it was successful or failed if it was not.
-func (n *Nuke) HandleRemove(item *queue.Item) {
+func (n *Nuke) HandleRemove(_ context.Context, item *queue.Item) {
+	// TODO: pass context to remove for remove functions to use
 	err := item.Resource.Remove()
 	if err != nil {
 		var resErr liberrors.ErrHoldResource
@@ -484,7 +486,7 @@ func (n *Nuke) HandleRemove(item *queue.Item) {
 
 // HandleWaitDependency is used to handle the waiting of a resource. It will check if the resource has any dependencies
 // and if it does, it will check if the dependencies have been removed. If they have, it will trigger the remove handler.
-func (n *Nuke) HandleWaitDependency(item *queue.Item) {
+func (n *Nuke) HandleWaitDependency(ctx context.Context, item *queue.Item) {
 	reg := resource.GetRegistration(item.Type)
 	depCount := 0
 	for _, dep := range reg.DependsOn {
@@ -496,7 +498,7 @@ func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 	}
 
 	if depCount == 0 {
-		n.HandleRemove(item)
+		n.HandleRemove(ctx, item)
 		return
 	}
 
@@ -506,7 +508,7 @@ func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 
 // HandleWait is used to handle the waiting of a resource. It will check if the resource has been removed. If it has,
 // it will set the state of the resource to finished. If it has not, it will set the state of the resource to waiting.
-func (n *Nuke) HandleWait(item *queue.Item, cache ListCache) {
+func (n *Nuke) HandleWait(ctx context.Context, item *queue.Item, cache ListCache) {
 	var err error
 
 	ownerID := item.Owner
@@ -517,7 +519,7 @@ func (n *Nuke) HandleWait(item *queue.Item, cache ListCache) {
 
 	left, ok := cache[ownerID][item.Type]
 	if !ok {
-		left, err = item.List(item.Opts)
+		left, err = item.List(ctx, item.Opts)
 		if err != nil {
 			item.State = queue.ItemStateFailed
 			item.Reason = err.Error()

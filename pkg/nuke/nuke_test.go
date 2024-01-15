@@ -1,6 +1,7 @@
 package nuke
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
@@ -21,6 +22,7 @@ var testParameters = Parameters{
 	Force:      true,
 	ForceSleep: 3,
 	Quiet:      true,
+	NoDryRun:   false,
 }
 
 var testParametersRemove = Parameters{
@@ -221,7 +223,7 @@ func Test_Nuke_Scan(t *testing.T) {
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan()
+	err := n.Scan(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Equal(t, 2, n.Queue.Total())
@@ -252,7 +254,7 @@ func Test_Nuke_HandleRemove(t *testing.T) {
 		State:    queue.ItemStateNew,
 	}
 
-	n.HandleRemove(i)
+	n.HandleRemove(context.TODO(), i)
 	assert.Equal(t, queue.ItemStatePending, i.State)
 }
 
@@ -268,7 +270,7 @@ func Test_Nuke_HandleRemoveError(t *testing.T) {
 		State: queue.ItemStateNew,
 	}
 
-	n.HandleRemove(i)
+	n.HandleRemove(context.TODO(), i)
 	assert.Equal(t, queue.ItemStateFailed, i.State)
 }
 
@@ -297,7 +299,7 @@ func Test_Nuke_Run(t *testing.T) {
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
 
-	err := n.Run()
+	err := n.Run(context.TODO())
 	assert.NoError(t, err)
 }
 
@@ -329,7 +331,7 @@ func Test_Nuke_Run_Error(t *testing.T) {
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
 
-	err := n.Run()
+	err := n.Run(context.TODO())
 	assert.NoError(t, err)
 }
 
@@ -369,7 +371,7 @@ type TestResource4Lister struct {
 	attempts int
 }
 
-func (l *TestResource4Lister) List(o interface{}) ([]resource.Resource, error) {
+func (l *TestResource4Lister) List(_ context.Context, _ interface{}) ([]resource.Resource, error) {
 	l.attempts++
 
 	if l.attempts == 1 {
@@ -408,7 +410,7 @@ func Test_Nuke_Run_ItemStateHold(t *testing.T) {
 	scannerErr := n.RegisterScanner(testScope, NewScanner("owner", []string{"TestResource4"}, nil))
 	assert.NoError(t, scannerErr)
 
-	runErr := n.Run()
+	runErr := n.Run(context.TODO())
 	assert.NoError(t, runErr)
 
 	assert.Equal(t, 5, n.Queue.Count(queue.ItemStateFinished))

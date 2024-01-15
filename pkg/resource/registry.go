@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/sirupsen/logrus"
@@ -40,7 +41,7 @@ type Registration struct {
 
 // Lister is an interface that represents a resource that can be listed
 type Lister interface {
-	List(opts interface{}) ([]Resource, error)
+	List(ctx context.Context, opts interface{}) ([]Resource, error)
 }
 
 // RegisterOption is a function that can be used to manipulate the lister for a given resource type at

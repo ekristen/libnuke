@@ -62,9 +62,7 @@ func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) error {
 }
 
 // Run starts the scanner and runs the lister for each resource type.
-func (s *Scanner) Run() error {
-	ctx := context.Background()
-
+func (s *Scanner) Run(ctx context.Context) error {
 	for _, resourceType := range s.resourceTypes {
 		if err := s.semaphore.Acquire(ctx, 1); err != nil {
 			return err
@@ -75,7 +73,7 @@ func (s *Scanner) Run() error {
 			opts = s.mutateOptsFunc(opts, resourceType)
 		}
 
-		go s.list(s.owner, resourceType, opts)
+		go s.list(ctx, s.owner, resourceType, opts)
 	}
 
 	// Wait for all routines to finish.
@@ -88,7 +86,10 @@ func (s *Scanner) Run() error {
 	return nil
 }
 
-func (s *Scanner) list(owner, resourceType string, opts interface{}) {
+func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts interface{}) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	defer func() {
 		if r := recover(); r != nil {
 			err := fmt.Errorf("%v\n\n%s", r.(error), string(debug.Stack()))
@@ -96,12 +97,13 @@ func (s *Scanner) list(owner, resourceType string, opts interface{}) {
 			logrus.Errorf("Listing %s failed:\n%s", resourceType, dump)
 		}
 	}()
+
 	defer s.semaphore.Release(1)
 
 	lister := resource.GetLister(resourceType)
 	var rs []resource.Resource
 
-	rs, err := lister.List(opts)
+	rs, err := lister.List(ctx, opts)
 	if err != nil {
 		var errSkipRequest sdkerrors.ErrSkipRequest
 		ok := errors.As(err, &errSkipRequest)
