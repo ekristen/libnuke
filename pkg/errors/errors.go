@@ -12,3 +12,9 @@ type ErrUnknownEndpoint string
 func (err ErrUnknownEndpoint) Error() string {
 	return string(err)
 }
+
+type ErrHoldResource string
+
+func (err ErrHoldResource) Error() string {
+	return string(err)
+}

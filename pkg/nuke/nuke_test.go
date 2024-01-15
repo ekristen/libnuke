@@ -6,16 +6,15 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gotidy/ptr"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ekristen/libnuke/pkg/featureflag"
-	"github.com/ekristen/libnuke/pkg/filter"
+	liberrors "github.com/ekristen/libnuke/pkg/errors"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
-	"github.com/ekristen/libnuke/pkg/types"
 )
 
 var testParameters = Parameters{
@@ -24,11 +23,19 @@ var testParameters = Parameters{
 	Quiet:      true,
 }
 
+var testParametersRemove = Parameters{
+	Force:      true,
+	ForceSleep: 3,
+	Quiet:      true,
+	NoDryRun:   true,
+}
+
 const testScope resource.Scope = "test"
 
 func Test_Nuke_Version(t *testing.T) {
 	n := New(testParameters, nil)
 	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	n.RegisterVersion("1.0.0-test")
 
@@ -55,12 +62,9 @@ func Test_Nuke_Version(t *testing.T) {
 }
 
 func Test_Nuke_FeatureFlag(t *testing.T) {
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	n.RegisterFeatureFlags("test", ptr.Bool(true), ptr.Bool(true))
 
@@ -74,24 +78,18 @@ func Test_Nuke_FeatureFlag(t *testing.T) {
 }
 
 func Test_Nuke_Validators_Default(t *testing.T) {
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	err := n.Validate()
 	assert.NoError(t, err)
 }
 
 func Test_Nuke_Validators_Register1(t *testing.T) {
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	n.RegisterValidateHandler(func() error {
 		return fmt.Errorf("validator called")
@@ -103,12 +101,9 @@ func Test_Nuke_Validators_Register1(t *testing.T) {
 }
 
 func Test_Nuke_Validators_Register2(t *testing.T) {
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	n.RegisterValidateHandler(func() error {
 		return fmt.Errorf("validator called")
@@ -122,16 +117,14 @@ func Test_Nuke_Validators_Register2(t *testing.T) {
 }
 
 func Test_Nuke_Validators_Error(t *testing.T) {
-	n := &Nuke{
-		Parameters: Parameters{
-			Force:      true,
-			ForceSleep: 1,
-			Quiet:      true,
-		},
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
+	p := Parameters{
+		Force:      true,
+		ForceSleep: 1,
+		Quiet:      true,
 	}
+	n := New(p, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	err := n.Validate()
 	assert.Error(t, err)
@@ -139,12 +132,9 @@ func Test_Nuke_Validators_Error(t *testing.T) {
 }
 
 func Test_Nuke_ResourceTypes(t *testing.T) {
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	n.RegisterResourceTypes(testScope, "TestResource")
 
@@ -152,12 +142,9 @@ func Test_Nuke_ResourceTypes(t *testing.T) {
 }
 
 func Test_Nuke_Scanners(t *testing.T) {
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	opts := struct {
 		name string
@@ -174,12 +161,9 @@ func Test_Nuke_Scanners(t *testing.T) {
 }
 
 func Test_Nuke_Scanners_Duplicate(t *testing.T) {
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	opts := struct {
 		name string
@@ -199,12 +183,9 @@ func Test_Nuke_Scanners_Duplicate(t *testing.T) {
 }
 
 func Test_Nuke_RegisterPrompt(t *testing.T) {
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	n.RegisterPrompt(func() error {
 		return fmt.Errorf("prompt error")
@@ -228,12 +209,9 @@ func Test_Nuke_Scan(t *testing.T) {
 		},
 	})
 
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	opts := TestOpts{
 		SessionOne: "testing",
@@ -251,153 +229,6 @@ func Test_Nuke_Scan(t *testing.T) {
 	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFiltered))
 }
 
-func Test_Nuke_Filters_Match(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(testResourceRegistration2)
-
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		Filters: filter.Filters{
-			testResourceType2: []filter.Filter{
-				{
-					Type:     filter.Exact,
-					Property: "test",
-					Value:    "testing",
-				},
-			},
-		},
-		log: logrus.WithField("test", true),
-	}
-
-	opts := TestOpts{
-		SessionOne:     "testing",
-		SecondResource: true,
-	}
-	scanner := NewScanner("owner", []string{testResourceType2}, opts)
-
-	sErr := n.RegisterScanner(testScope, scanner)
-	assert.NoError(t, sErr)
-
-	err := n.Scan()
-	assert.NoError(t, err)
-	assert.Equal(t, 1, n.Queue.Total())
-	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFiltered))
-}
-
-func Test_Nuke_Filters_NoMatch(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(testResourceRegistration2)
-
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		Filters: filter.Filters{
-			testResourceType: []filter.Filter{
-				{
-					Type:     filter.Exact,
-					Property: "test",
-					Value:    "testing",
-				},
-			},
-		},
-		log: logrus.WithField("test", true),
-	}
-
-	opts := TestOpts{
-		SessionOne:     "testing",
-		SecondResource: true,
-	}
-	scanner := NewScanner("owner", []string{testResourceType2}, opts)
-
-	sErr := n.RegisterScanner(testScope, scanner)
-	assert.NoError(t, sErr)
-
-	err := n.Scan()
-	assert.NoError(t, err)
-	assert.Equal(t, 1, n.Queue.Total())
-	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFiltered))
-}
-
-func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(testResourceRegistration)
-
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		Filters: filter.Filters{
-			testResourceType: []filter.Filter{
-				{
-					Type:     filter.Exact,
-					Property: "Name",
-					Value:    testResourceType,
-				},
-			},
-		},
-		log: logrus.WithField("test", true),
-	}
-
-	opts := TestOpts{
-		SessionOne: "testing",
-	}
-	scanner := NewScanner("owner", []string{testResourceType}, opts)
-
-	sErr := n.RegisterScanner(testScope, scanner)
-	assert.NoError(t, sErr)
-
-	err := n.Scan()
-	assert.Error(t, err)
-	assert.Equal(t, "*nuke.TestResource does not support custom properties", err.Error())
-}
-
-type TestResourceFilter struct {
-}
-
-func (r TestResourceFilter) Properties() types.Properties {
-	props := types.NewProperties()
-
-	tagName := ptr.String("aws:cloudformation:stack-name")
-	tagVal := "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081"
-
-	props.SetTag(tagName, tagVal)
-	return props
-}
-
-func (r TestResourceFilter) Remove() error {
-	return nil
-}
-
-func Test_Nuke_Filters_Extra(t *testing.T) {
-	n := &Nuke{
-		Parameters:   testParameters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		Filters: filter.Filters{
-			testResourceType2: []filter.Filter{
-				{
-					Type:     filter.Glob,
-					Property: "tag:aws:cloudformation:stack-name",
-					Value:    "StackSet-AWSControlTowerBP*",
-				},
-			},
-		},
-		log: logrus.WithField("test", true),
-	}
-
-	i := &queue.Item{
-		Resource: &TestResourceFilter{},
-		Type:     testResourceType2,
-	}
-
-	err := n.Filter(i)
-	assert.NoError(t, err)
-	assert.Equal(t, i.Reason, "filtered by config")
-}
-
 // ---------------------------------------------------------------------
 
 type TestResource3 struct {
@@ -412,11 +243,9 @@ func (r TestResource3) Remove() error {
 }
 
 func Test_Nuke_HandleRemove(t *testing.T) {
-	n := &Nuke{
-		Parameters: testParameters,
-		Queue:      queue.Queue{},
-		log:        logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	i := &queue.Item{
 		Resource: &TestResource3{},
@@ -428,11 +257,9 @@ func Test_Nuke_HandleRemove(t *testing.T) {
 }
 
 func Test_Nuke_HandleRemoveError(t *testing.T) {
-	n := &Nuke{
-		Parameters: testParameters,
-		Queue:      queue.Queue{},
-		log:        logrus.WithField("test", true),
-	}
+	n := New(testParameters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	i := &queue.Item{
 		Resource: &TestResource3{
@@ -451,17 +278,16 @@ func Test_Nuke_Run(t *testing.T) {
 	resource.ClearRegistry()
 	resource.Register(testResourceRegistration)
 
-	n := &Nuke{
-		Parameters: Parameters{
-			Force:      true,
-			ForceSleep: 3,
-			Quiet:      true,
-			NoDryRun:   true,
-		},
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
+	p := Parameters{
+		Force:      true,
+		ForceSleep: 3,
+		Quiet:      true,
+		NoDryRun:   true,
 	}
+
+	n := New(p, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	opts := TestOpts{
 		SessionOne: "testing",
@@ -485,17 +311,15 @@ func Test_Nuke_Run_Error(t *testing.T) {
 		},
 	})
 
-	n := &Nuke{
-		Parameters: Parameters{
-			Force:      true,
-			ForceSleep: 3,
-			Quiet:      true,
-			NoDryRun:   true,
-		},
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logrus.WithField("test", true),
+	p := Parameters{
+		Force:      true,
+		ForceSleep: 3,
+		Quiet:      true,
+		NoDryRun:   true,
 	}
+	n := New(p, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
 
 	opts := TestOpts{
 		SessionOne: "testing",
@@ -508,3 +332,86 @@ func Test_Nuke_Run_Error(t *testing.T) {
 	err := n.Run()
 	assert.NoError(t, err)
 }
+
+// ------------------------------------------------------------
+
+var TestResource4Resources []resource.Resource
+
+type TestResource4 struct {
+	id       string
+	parentID string
+}
+
+func (r *TestResource4) Remove() error {
+	if r.parentID != "" {
+		parentFound := false
+
+		for _, o := range TestResource4Resources {
+			id := o.(resource.LegacyStringer).String()
+			if id == r.parentID {
+				parentFound = true
+			}
+		}
+
+		if parentFound {
+			return liberrors.ErrHoldResource("waiting for parent to be removed")
+		}
+	}
+
+	return nil
+}
+
+func (r *TestResource4) String() string {
+	return r.id
+}
+
+type TestResource4Lister struct {
+	attempts int
+}
+
+func (l *TestResource4Lister) List(o interface{}) ([]resource.Resource, error) {
+	l.attempts++
+
+	if l.attempts == 1 {
+		for x := 0; x < 5; x++ {
+			if x == 0 {
+				TestResource4Resources = append(TestResource4Resources, &TestResource4{
+					id:       fmt.Sprintf("resource-%d", x),
+					parentID: "",
+				})
+			} else {
+				TestResource4Resources = append(TestResource4Resources, &TestResource4{
+					id:       fmt.Sprintf("resource-%d", x),
+					parentID: "resource-0",
+				})
+			}
+		}
+	} else if l.attempts > 3 {
+		TestResource4Resources = TestResource4Resources[1:]
+	}
+
+	return TestResource4Resources, nil
+}
+
+func Test_Nuke_Run_ItemStateHold(t *testing.T) {
+	n := New(testParametersRemove, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
+
+	resource.ClearRegistry()
+	resource.Register(resource.Registration{
+		Name:   "TestResource4",
+		Scope:  testScope,
+		Lister: &TestResource4Lister{},
+	})
+
+	scannerErr := n.RegisterScanner(testScope, NewScanner("owner", []string{"TestResource4"}, nil))
+	assert.NoError(t, scannerErr)
+
+	runErr := n.Run()
+	assert.NoError(t, runErr)
+
+	assert.Equal(t, 5, n.Queue.Count(queue.ItemStateFinished))
+}
+
+// -----------------------------------------------

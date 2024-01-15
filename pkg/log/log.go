@@ -17,6 +17,7 @@ var (
 	ReasonWaitPending     = *color.New(color.FgBlue)
 	ReasonWaitDependency  = *color.New(color.FgCyan)
 	ReasonSuccess         = *color.New(color.FgGreen)
+	ReasonHold            = *color.New(color.FgMagenta)
 )
 
 var (

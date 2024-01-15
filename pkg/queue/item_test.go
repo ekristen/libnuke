@@ -8,20 +8,20 @@ import (
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
-type TestItemResource struct{}
+type TestItemResource struct {
+	id string
+}
 
-func (r TestItemResource) Properties() types.Properties {
+func (r *TestItemResource) Properties() types.Properties {
 	props := types.NewProperties()
-	props.Set("test", "testing")
+	props.Set(r.id, "testing")
 	return props
 }
-
-func (r TestItemResource) Remove() error {
+func (r *TestItemResource) Remove() error {
 	return nil
 }
-
-func (r TestItemResource) String() string {
-	return "test"
+func (r *TestItemResource) String() string {
+	return r.id
 }
 
 type TestItemResource2 struct{}
@@ -31,7 +31,7 @@ func (r TestItemResource2) Remove() error {
 }
 
 var testItem = Item{
-	Resource: &TestItemResource{},
+	Resource: &TestItemResource{id: "test"},
 	State:    ItemStateNew,
 	Reason:   "brand new",
 }
@@ -53,7 +53,6 @@ func Test_Item(t *testing.T) {
 	assert.Equal(t, "testing", propVal)
 
 	assert.True(t, i.Equals(i.Resource))
-
 	assert.False(t, i.Equals(testItem2.Resource))
 }
 
@@ -100,6 +99,11 @@ func Test_ItemPrint(t *testing.T) {
 			want:  "would remove after dependencies",
 		},
 		{
+			name:  "pending-dependency",
+			state: ItemStatePendingDependency,
+			want:  "waiting on dependencies (brand new)",
+		},
+		{
 			name:  "waiting",
 			state: ItemStateWaiting,
 			want:  "waiting",
@@ -118,6 +122,11 @@ func Test_ItemPrint(t *testing.T) {
 			name:  "finished",
 			state: ItemStateFinished,
 			want:  "finished",
+		},
+		{
+			name:  "hold",
+			state: ItemStateHold,
+			want:  "waiting for parent removal",
 		},
 	}
 

@@ -3,6 +3,7 @@
 package nuke
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"slices"
@@ -11,6 +12,7 @@ import (
 	"github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
 
+	liberrors "github.com/ekristen/libnuke/pkg/errors"
 	"github.com/ekristen/libnuke/pkg/featureflag"
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
@@ -49,20 +51,20 @@ type INuke interface {
 // Nuke is the main struct for the library. It is used to register resource types, scanners, filters and validation
 // handlers.
 type Nuke struct {
-	Parameters   Parameters
-	Queue        queue.Queue
-	Filters      filter.Filters
-	FeatureFlags *featureflag.FeatureFlags
+	Parameters   Parameters                // Parameters is a collection of common variables used to configure the before of the Nuke instance.
+	Queue        queue.Queue               // Queue is the queue of resources that will be processed
+	Filters      filter.Filters            // Filters is the collection of filters that will be used to filter resources
+	FeatureFlags *featureflag.FeatureFlags // FeatureFlags is the collection of feature flags that will be used to control resource behavior
 
 	ValidateHandlers []func() error
 	ResourceTypes    map[resource.Scope]types.Collection
 	Scanners         map[resource.Scope][]*Scanner
 
-	hashedScanners []string
-
-	prompt  func() error // prompt is what is shown to the user for confirmation
-	version string       // version is what is shown at the beginning of a run
-	log     *logrus.Entry
+	scannerHashes []string      // scannerHashes is used to track if a scanner has already been registered
+	prompt        func() error  // prompt is what is shown to the user for confirmation
+	version       string        // version is what is shown at the beginning of a run
+	log           *logrus.Entry // log is the logger that is used for the library
+	runSleep      time.Duration // runSleep is how long to sleep between runs of the queue
 }
 
 // New returns an instance of nuke that is properly configured for initial use
@@ -79,8 +81,15 @@ func New(params Parameters, filters filter.Filters) *Nuke {
 	}
 }
 
+// SetLogger allows the tool instantiating the library to set the logger that is used for the library. It is optional.
 func (n *Nuke) SetLogger(logger *logrus.Entry) {
 	n.log = logger
+}
+
+// SetRunSleep allows the tool instantiating the library to set the sleep duration between runs of the queue.
+// It is optional.
+func (n *Nuke) SetRunSleep(duration time.Duration) {
+	n.runSleep = duration
 }
 
 // RegisterVersion allows the tool instantiating the library to register its version so there's consist output
@@ -130,15 +139,15 @@ func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) error {
 	}
 
 	hashString := fmt.Sprintf("%s-%d", scope, hash)
-	if slices.Contains(n.hashedScanners, hashString) {
+	if slices.Contains(n.scannerHashes, hashString) {
 		return fmt.Errorf("scanner is already registered, you cannot register it twice")
 	}
 
-	if n.hashedScanners == nil {
-		n.hashedScanners = make([]string, 0)
+	if n.scannerHashes == nil {
+		n.scannerHashes = make([]string, 0)
 	}
 
-	n.hashedScanners = append(n.hashedScanners, hashString)
+	n.scannerHashes = append(n.scannerHashes, hashString)
 	n.Scanners[scope] = append(n.Scanners[scope], scanner)
 
 	return nil
@@ -211,6 +220,7 @@ func (n *Nuke) run() error {
 		if n.Queue.Count(
 			queue.ItemStatePending,
 			queue.ItemStatePendingDependency,
+			queue.ItemStateHold,
 			queue.ItemStateWaiting,
 			queue.ItemStateNew,
 			queue.ItemStateNewDependency,
@@ -235,8 +245,9 @@ func (n *Nuke) run() error {
 		} else {
 			failCount = 0
 		}
+
 		if n.Parameters.MaxWaitRetries != 0 &&
-			n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending, queue.ItemStatePendingDependency) > 0 &&
+			n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending, queue.ItemStatePendingDependency, queue.ItemStateHold) > 0 &&
 			n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency) == 0 {
 			if waitingCount >= n.Parameters.MaxWaitRetries {
 				return fmt.Errorf("max wait retries of %d exceeded", n.Parameters.MaxWaitRetries)
@@ -252,11 +263,12 @@ func (n *Nuke) run() error {
 			queue.ItemStatePendingDependency,
 			queue.ItemStateFailed,
 			queue.ItemStateWaiting,
+			queue.ItemStateHold,
 		) == 0 {
 			break
 		}
 
-		time.Sleep(5 * time.Second)
+		time.Sleep(n.runSleep)
 	}
 
 	return nil
@@ -413,7 +425,7 @@ func (n *Nuke) HandleQueue() {
 
 	for _, item := range n.Queue.GetItems() {
 		switch item.GetState() {
-		case queue.ItemStateNew:
+		case queue.ItemStateNew, queue.ItemStateHold:
 			n.HandleRemove(item)
 			item.Print()
 		case queue.ItemStateNewDependency, queue.ItemStatePendingDependency:
@@ -438,6 +450,7 @@ func (n *Nuke) HandleQueue() {
 		queue.ItemStatePending,
 		queue.ItemStatePendingDependency,
 		queue.ItemStateNewDependency,
+		queue.ItemStateHold,
 	)
 	countFailed := n.Queue.Count(queue.ItemStateFailed)
 	countSkipped := n.Queue.Count(queue.ItemStateFiltered)
@@ -453,6 +466,13 @@ func (n *Nuke) HandleQueue() {
 func (n *Nuke) HandleRemove(item *queue.Item) {
 	err := item.Resource.Remove()
 	if err != nil {
+		var resErr liberrors.ErrHoldResource
+		if errors.As(err, &resErr) {
+			item.State = queue.ItemStateHold
+			item.Reason = resErr.Error()
+			return
+		}
+
 		item.State = queue.ItemStateFailed
 		item.Reason = err.Error()
 		return
@@ -471,7 +491,7 @@ func (n *Nuke) HandleWaitDependency(item *queue.Item) {
 		cnt := n.Queue.CountByType(dep,
 			queue.ItemStateNew, queue.ItemStateNewDependency,
 			queue.ItemStatePending, queue.ItemStatePendingDependency,
-			queue.ItemStateWaiting)
+			queue.ItemStateWaiting, queue.ItemStateHold)
 		depCount += cnt
 	}
 
