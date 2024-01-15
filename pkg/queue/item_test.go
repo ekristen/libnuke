@@ -19,7 +19,7 @@ func (r *TestItemResource) Properties() types.Properties {
 	props.Set(r.id, "testing")
 	return props
 }
-func (r *TestItemResource) Remove() error {
+func (r *TestItemResource) Remove(_ context.Context) error {
 	return nil
 }
 func (r *TestItemResource) String() string {
@@ -28,7 +28,7 @@ func (r *TestItemResource) String() string {
 
 type TestItemResource2 struct{}
 
-func (r TestItemResource2) Remove() error {
+func (r TestItemResource2) Remove(_ context.Context) error {
 	return nil
 }
 
@@ -169,7 +169,7 @@ func Test_ItemPrint(t *testing.T) {
 
 type TestItemResourceProperties struct{}
 
-func (r *TestItemResourceProperties) Remove() error {
+func (r *TestItemResourceProperties) Remove(_ context.Context) error {
 	return nil
 }
 func (r *TestItemResourceProperties) Properties() types.Properties {
@@ -191,7 +191,7 @@ func Test_ItemEqualProperties(t *testing.T) {
 
 type TestItemResourceStringer struct{}
 
-func (r *TestItemResourceStringer) Remove() error {
+func (r *TestItemResourceStringer) Remove(_ context.Context) error {
 	return nil
 }
 func (r *TestItemResourceStringer) String() string {
@@ -221,7 +221,7 @@ func Test_ItemEqualStringer(t *testing.T) {
 
 type TestItemResourceNothing struct{}
 
-func (r *TestItemResourceNothing) Remove() error {
+func (r *TestItemResourceNothing) Remove(_ context.Context) error {
 	return nil
 }
 

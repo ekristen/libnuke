@@ -237,7 +237,7 @@ type TestResource3 struct {
 	Error bool
 }
 
-func (r TestResource3) Remove() error {
+func (r TestResource3) Remove(_ context.Context) error {
 	if r.Error {
 		return fmt.Errorf("remove error")
 	}
@@ -344,7 +344,7 @@ type TestResource4 struct {
 	parentID string
 }
 
-func (r *TestResource4) Remove() error {
+func (r *TestResource4) Remove(_ context.Context) error {
 	if r.parentID != "" {
 		parentFound := false
 

@@ -15,8 +15,8 @@ import (
 
 type TestResourceSuccess struct{}
 
-func (r *TestResourceSuccess) Remove() error  { return nil }
-func (r *TestResourceSuccess) String() string { return "TestResourceFailure" }
+func (r *TestResourceSuccess) Remove(_ context.Context) error { return nil }
+func (r *TestResourceSuccess) String() string                 { return "TestResourceFailure" }
 
 type TestResourceSuccessLister struct {
 	listed bool
@@ -32,7 +32,9 @@ func (l *TestResourceSuccessLister) List(_ context.Context, o interface{}) ([]re
 
 type TestResourceFailure struct{}
 
-func (r *TestResourceFailure) Remove() error  { return fmt.Errorf("unable to remove") }
+func (r *TestResourceFailure) Remove(_ context.Context) error {
+	return fmt.Errorf("unable to remove")
+}
 func (r *TestResourceFailure) String() string { return "TestResourceFailure" }
 
 type TestResourceFailureLister struct{}
