@@ -22,6 +22,7 @@ var testParameters = Parameters{
 	Force:      true,
 	ForceSleep: 3,
 	Quiet:      true,
+	NoDryRun:   false,
 }
 
 var testParametersRemove = Parameters{
