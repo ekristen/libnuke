@@ -180,7 +180,8 @@ func Test_NewScannerWithMorphOpts(t *testing.T) {
 	}
 
 	scanner := NewScanner("owner", []string{testResourceType}, opts)
-	scanner.RegisterMutateOptsFunc(morphOpts)
+	mutateErr := scanner.RegisterMutateOptsFunc(morphOpts)
+	assert.NoError(t, mutateErr)
 
 	err := scanner.Run()
 	assert.NoError(t, err)

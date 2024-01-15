@@ -2,7 +2,6 @@ package nuke
 
 import (
 	"fmt"
-	liberrors "github.com/ekristen/libnuke/pkg/errors"
 	"io"
 	"os"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
+	liberrors "github.com/ekristen/libnuke/pkg/errors"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
 )
@@ -339,17 +339,16 @@ var TestResource4Resources []resource.Resource
 
 type TestResource4 struct {
 	id       string
-	parentId string
-	attempts int
+	parentID string
 }
 
 func (r *TestResource4) Remove() error {
-	if r.parentId != "" {
+	if r.parentID != "" {
 		parentFound := false
 
 		for _, o := range TestResource4Resources {
 			id := o.(resource.LegacyStringer).String()
-			if id == r.parentId {
+			if id == r.parentID {
 				parentFound = true
 			}
 		}
@@ -378,12 +377,12 @@ func (l *TestResource4Lister) List(o interface{}) ([]resource.Resource, error) {
 			if x == 0 {
 				TestResource4Resources = append(TestResource4Resources, &TestResource4{
 					id:       fmt.Sprintf("resource-%d", x),
-					parentId: "",
+					parentID: "",
 				})
 			} else {
 				TestResource4Resources = append(TestResource4Resources, &TestResource4{
 					id:       fmt.Sprintf("resource-%d", x),
-					parentId: "resource-0",
+					parentID: "resource-0",
 				})
 			}
 		}
