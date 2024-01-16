@@ -18,7 +18,7 @@ easier to add new features with better test coverage.
 
 ## Attribution, License, and Copyright
 
-First of tall this library would not have been possible without the hard work of the team over at [rebuy-de](https://github.com/rebuy-de)
+First, of tall this library would not have been possible without the hard work of the team over at [rebuy-de](https://github.com/rebuy-de)
 and their original work on [rebuy-de/aws-nuke](https://github.com/rebuy-de/aws-nuke).
 
 This library is licensed under the MIT license. See the [LICENSE](LICENSE) file for more information. The bulk of this
@@ -28,7 +28,7 @@ for more.
 ## History of the Library
 
 This all started when I created a managed fork of [aws-nuke](https://github.com/ekristen/aws-nuke) from the [original aws nuke](https://github.com/rebuy-de/aws-nuke).
-The fork become necessary after attempting to make contributions and respond to issues to learn that the current 
+The fork became necessary after attempting to make contributions and respond to issues to learn that the current 
 maintainers only have time to work on the project about once a month and while receptive to bringing in other people
 to help maintain, made it clear it would take time. Considering the feedback cycle was already weeks on initial
 communications, I had to make the hard decision to fork and maintain myself.
@@ -38,22 +38,19 @@ quickly realized that it would be great to pull all the common code into a commo
 two tools with the realization I would be also be making [gcp-nuke](https://github.com/ekristen/gcp-nuke) in the near
 future.
 
-### A Few Note About the Original Code
+### A Few Notes About the Original Code
 
-The code that was originally written for [aws-nuke](https://github.com/rebuy-de/aws-nuke) for iterating over and clearing out resources was well 
-written and I wanted to be able to use it for other cloud providers. Originally I simply copied it for [azure-nuke,](https://github.com/ekristen/azure-nuke) 
+The code initially written for [aws-nuke](https://github.com/rebuy-de/aws-nuke) for iterating over and clearing out resources was well-written, and I wanted to use it for other cloud providers. Originally I copied it for [azure-nuke,](https://github.com/ekristen/azure-nuke) 
 but I didn't want to have to keep on maintaining multiple copies.
 
-There are a few shortcomings with the original code base, for example, there's no way to do dependency management. For 
-example there are some resources that must be cleared before other resources can be cleared, or it will end in error. Now
-the retry mechanism is **usually** sufficient for this, but not always.
+There are a few shortcomings with the original code base. For example, there's no way to do dependency management. For 
+example, some resources must be cleared before others can, or it will end in error. Now, the retry mechanism is **usually** sufficient for this, but only sometimes.
 
-The queue code in my opinion was very novel in its approach and I wanted to keep that, but I wanted to make sure it was
-agnostic to the system using it. As such, the queue package can be used for just about anything in which you want to queue
-and retry items. However, it is still geared towards the removal of said it, it's primary interface has to have the
-`Remove` method still available.
+The queue code was very novel in its approach, and I wanted to keep that, but I wanted to make sure it was
+agnostic to the system using it. As such, the queue package can be used for just about anything you want to queue
+and retry items. However, it is still geared towards the removal of said it, its primary interface has to have the `Remove` method is still available.
 
-The goal of this library is to be able to be used for any cloud provider, but really anything that wants to use a similar
+The goal of this library is to be able to be used for any cloud provider, but anything that wants to use a similar
 pattern for iterating over and removing resources.
 
 ## License
@@ -75,7 +72,7 @@ until it is stable and will remain on the `0.y.z` model until then.
 
 ## Packages
 
-I strongly dislike the use of the `internal` directory in any open source golang project. Therefore everything is in `pkg`
+I strongly dislike using the `internal` directory in any open-source Golang project. Therefore, everything is in `pkg`
 and exported wherever possible to allow others to use it.
 
 ### errors
@@ -84,7 +81,7 @@ These are common errors that need to be handled by the library.
 
 ### featureflag
 
-This allows for arbitrary settings to be passed into the library to enable/disable certain features.
+This allows arbitrary settings to be passed into the library to enable/disable certain features.
 
 ### filter
 
@@ -96,11 +93,11 @@ This is a simple wrapper around `fmt.Println` that formats resource cleanup mess
 
 ### nuke
 
-This is the primary package that is used to iterate over and remove resources.
+This is the primary package used to iterate over and remove resources.
 
 ### queue
 
-This is a queue package that can be used for just about anything, but is geared towards the removal of resources.
+This is a queue package that can be used for just about anything but is geared towards the removal of resources.
 
 ### resource
 
