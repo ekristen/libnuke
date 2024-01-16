@@ -18,7 +18,7 @@ easier to add new features with better test coverage.
 
 ## Attribution, License, and Copyright
 
-First, of tall this library would not have been possible without the hard work of the team over at [rebuy-de](https://github.com/rebuy-de)
+First, of all this library would not have been possible without the hard work of the team over at [rebuy-de](https://github.com/rebuy-de)
 and their original work on [rebuy-de/aws-nuke](https://github.com/rebuy-de/aws-nuke).
 
 This library is licensed under the MIT license. See the [LICENSE](LICENSE) file for more information. The bulk of this
