@@ -1,7 +1,9 @@
 package types
 
+// Collection is a collection of strings
 type Collection []string
 
+// Intersect returns the intersection of two collections
 func (c Collection) Intersect(o Collection) Collection {
 	mo := o.toMap()
 
@@ -15,6 +17,7 @@ func (c Collection) Intersect(o Collection) Collection {
 	return result
 }
 
+// Remove returns the difference of two collections
 func (c Collection) Remove(o Collection) Collection {
 	mo := o.toMap()
 
@@ -28,6 +31,7 @@ func (c Collection) Remove(o Collection) Collection {
 	return result
 }
 
+// Union returns the union of two collections
 func (c Collection) Union(o Collection) Collection {
 	ms := c.toMap()
 
@@ -41,6 +45,7 @@ func (c Collection) Union(o Collection) Collection {
 	return result
 }
 
+// toMap converts a collection to a map
 func (c Collection) toMap() map[string]bool {
 	m := map[string]bool{}
 	for _, t := range c {

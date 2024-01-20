@@ -33,10 +33,27 @@ var graph = topsort.NewGraph()
 
 // Registration is a struct that contains the information needed to register a resource lister
 type Registration struct {
-	Name      string
-	Scope     Scope
-	Lister    Lister
+	Name   string
+	Scope  Scope
+	Lister Lister
+
+	// DependsOn is a list of resource types that this resource type depends on. This is used to determine
+	// the order in which resources are deleted. For example, a VPC depends on subnets, so we want to delete
+	// the subnets before we delete the VPC. This is a Resource level dependency, not a resource instance (i.e. all
+	// subnets must be deleted before any VPC can be deleted, not just the subnets that are associated with the VPC).
 	DependsOn []string
+
+	// DeprecatedAliases is a list of deprecated aliases for the resource type, usually misspellings or old names
+	// that have been replaced with a new resource type. This is used to map the old resource type to the new
+	// resource type. This is used in the config package to resolve any deprecated resource types and provide
+	// notifications to the user.
+	DeprecatedAliases []string
+
+	// AlternativeResource is used to determine if there's an alternative resource type to use. The primary use case
+	// for this is AWS Cloud Control API, where we want to use the Cloud Control API resource type instead of the
+	// default resource type. However, any resource that uses a different API to manage the same resource can use this
+	// field.
+	AlternativeResource string
 }
 
 // Lister is an interface that represents a resource that can be listed
@@ -150,4 +167,25 @@ func GetNamesForScope(scope Scope) []string {
 // GetLister gets a specific lister by name
 func GetLister(name string) Lister {
 	return resourceListers[name]
+}
+
+func GetAlternativeResourceTypeMapping() map[string]string {
+	mapping := make(map[string]string)
+	for _, r := range registrations {
+		if r.AlternativeResource != "" {
+			mapping[r.Name] = r.AlternativeResource
+		}
+	}
+	return mapping
+}
+
+// GetDeprecatedResourceTypeMapping returns a map of deprecated resource types to their replacement
+func GetDeprecatedResourceTypeMapping() map[string]string {
+	mapping := make(map[string]string)
+	for _, r := range registrations {
+		for _, alias := range r.DeprecatedAliases {
+			mapping[alias] = r.Name
+		}
+	}
+	return mapping
 }

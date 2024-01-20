@@ -1,0 +1,10 @@
+regions:
+  - us-east-1
+
+resource-types:
+  targets:
+    - DynamoDBTable
+    - S3Bucket
+    - S3Object
+  excludes:
+    - IAMRole

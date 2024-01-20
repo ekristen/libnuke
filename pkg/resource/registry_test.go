@@ -34,6 +34,9 @@ func Test_RegisterResources(t *testing.T) {
 		Name:   "test",
 		Scope:  "test",
 		Lister: TestLister{},
+		DeprecatedAliases: []string{
+			"test2",
+		},
 	})
 
 	if len(registrations) != 1 {
@@ -48,6 +51,10 @@ func Test_RegisterResources(t *testing.T) {
 
 	names := GetNamesForScope("test")
 	assert.Len(t, names, 1)
+
+	deprecatedMapping := GetDeprecatedResourceTypeMapping()
+	assert.Len(t, deprecatedMapping, 1)
+	assert.Equal(t, "test", deprecatedMapping["test2"])
 }
 
 func Test_RegisterResourcesDouble(t *testing.T) {
@@ -106,4 +113,27 @@ func Test_Sorted(t *testing.T) {
 
 	names := GetNames()
 	fmt.Println(names)
+}
+
+func Test_RegisterResourcesWithAlternative(t *testing.T) {
+	ClearRegistry()
+
+	Register(Registration{
+		Name:                "test",
+		Scope:               "test",
+		Lister:              TestLister{},
+		AlternativeResource: "test2",
+	})
+
+	Register(Registration{
+		Name:   "test2",
+		Scope:  "test",
+		Lister: TestLister{},
+	})
+
+	assert.Len(t, registrations, 2)
+
+	deprecatedMapping := GetAlternativeResourceTypeMapping()
+	assert.Len(t, deprecatedMapping, 1)
+	assert.Equal(t, "test2", deprecatedMapping["test"])
 }
