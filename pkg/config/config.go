@@ -20,11 +20,11 @@ import (
 // Config is the configuration for libnuke. It contains the configuration for all the accounts, regions, and resource
 // types. It also contains the presets that can be used to apply a set of filters to a nuke process.
 type Config struct {
-	Blocklist     []string           `yaml:"blocklist"`
-	Regions       []string           `yaml:"regions"`
-	Accounts      map[string]Account `yaml:"accounts"`
-	ResourceTypes ResourceTypes      `yaml:"resource-types"`
-	Presets       map[string]Preset  `yaml:"presets"`
+	Blocklist     []string            `yaml:"blocklist"`
+	Regions       []string            `yaml:"regions"`
+	Accounts      map[string]*Account `yaml:"accounts"`
+	ResourceTypes ResourceTypes       `yaml:"resource-types"`
+	Presets       map[string]Preset   `yaml:"presets"`
 
 	AccountBlacklist []string `yaml:"account-blacklist"` // Deprecated: Use Blocklist instead. Will remove in 4.x
 	AccountBlocklist []string `yaml:"account-blocklist"` // Deprecated: Use Blocklist instead. Will remove in 4.x
@@ -56,7 +56,7 @@ type Options struct {
 // New creates a new configuration from a file.
 func New(opts Options) (*Config, error) {
 	c := &Config{
-		Accounts:     make(map[string]Account),
+		Accounts:     make(map[string]*Account),
 		Presets:      make(map[string]Preset),
 		deprecations: make(map[string]string),
 	}
@@ -113,13 +113,11 @@ func (c *Config) ResolveBlocklist() []string {
 	if len(c.AccountBlocklist) > 0 {
 		blocklist = append(blocklist, c.AccountBlocklist...)
 		c.log.Warn("deprecated configuration key 'account-blacklist' - please use 'blocklist' instead")
-
 	}
 
 	if len(c.AccountBlacklist) > 0 {
 		blocklist = append(blocklist, c.AccountBlacklist...)
 		c.log.Warn("deprecated configuration key 'account-blacklist' - please use 'blocklist' instead")
-
 	}
 
 	if len(c.Blocklist) > 0 {
@@ -132,7 +130,7 @@ func (c *Config) ResolveBlocklist() []string {
 // HasBlocklist returns true if the blocklist is not empty.
 func (c *Config) HasBlocklist() bool {
 	var blocklist = c.ResolveBlocklist()
-	return blocklist != nil && len(blocklist) > 0
+	return len(blocklist) > 0
 }
 
 // InBlocklist returns true if the searchID is in the blocklist.
@@ -165,6 +163,10 @@ func (c *Config) ValidateAccount(accountID string) error {
 
 // Filters resolves all the filters and preset definitions into one set of filters
 func (c *Config) Filters(accountID string) (filter.Filters, error) {
+	if _, ok := c.Accounts[accountID]; !ok {
+		return nil, errors.ErrAccountNotConfigured
+	}
+
 	account := c.Accounts[accountID]
 	filters := account.Filters
 
@@ -206,7 +208,9 @@ func (c *Config) ResolveDeprecations() error {
 
 			c.log.Warnf("deprecated resource type '%s' - converting to '%s'", resourceType, replacement)
 			if _, ok := a.Filters[replacement]; ok {
-				return errors.ErrDeprecatedResourceType(fmt.Sprintf("using deprecated resource type and replacement: '%s','%s'", resourceType, replacement))
+				return errors.ErrDeprecatedResourceType(
+					fmt.Sprintf(
+						"using deprecated resource type and replacement: '%s','%s'", resourceType, replacement))
 			}
 
 			a.Filters[replacement] = resources

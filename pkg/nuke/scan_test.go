@@ -27,17 +27,17 @@ func init() {
 
 var (
 	testResourceType         = "testResourceType"
-	testResourceRegistration = resource.Registration{
+	testResourceRegistration = &resource.Registration{
 		Name:   testResourceType,
 		Scope:  "account",
-		Lister: TestResourceLister{},
+		Lister: &TestResourceLister{},
 	}
 
 	testResourceType2         = "testResourceType2"
-	testResourceRegistration2 = resource.Registration{
+	testResourceRegistration2 = &resource.Registration{
 		Name:   testResourceType2,
 		Scope:  "account",
-		Lister: TestResourceLister{},
+		Lister: &TestResourceLister{},
 		DependsOn: []string{
 			testResourceType,
 		},

@@ -56,7 +56,7 @@ func Test_Nuke_Run_Simple(t *testing.T) {
 	n.SetRunSleep(time.Millisecond * 5)
 
 	resource.ClearRegistry()
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceSuccessLister{},
 	})
@@ -102,7 +102,7 @@ func Test_NukeRunSimpleWithSecondPromptError(t *testing.T) {
 	})
 
 	resource.ClearRegistry()
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceSuccessLister{},
 	})
@@ -138,12 +138,12 @@ func Test_Nuke_Run_Failure(t *testing.T) {
 	n.SetRunSleep(time.Millisecond * 5)
 
 	resource.ClearRegistry()
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceSuccessLister{},
 	})
 
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResourceFailure",
 		Lister: &TestResourceFailureLister{},
 	})
@@ -173,7 +173,7 @@ func Test_NukeRunWithMaxWaitRetries(t *testing.T) {
 	n.SetRunSleep(time.Millisecond * 5)
 
 	resource.ClearRegistry()
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceWaitLister{},
 	})

@@ -3,11 +3,12 @@ package config
 import (
 	"flag"
 	"fmt"
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 func init() {
@@ -126,9 +127,8 @@ func TestFilters(t *testing.T) {
 
 	// Test an account that is not configured
 	filters, err = c.Filters("1234567890")
-	assert.NoError(t, err)
-	assert.NotNil(t, filters)
-	assert.Equal(t, 0, len(filters))
+	assert.Error(t, err)
+	assert.Nil(t, filters)
 }
 
 func TestResourceTypeDeprecations(t *testing.T) {
@@ -140,8 +140,7 @@ func TestResourceTypeDeprecations(t *testing.T) {
 				return
 			}
 
-			switch e.Caller.Line {
-			case 212:
+			if e.Caller.Line == 212 {
 				assert.Equal(t, "deprecated resource type 'IamRole' - converting to 'IAMRole'", e.Message)
 			}
 		},
@@ -170,8 +169,7 @@ func TestResourceTypeDeprecationsError(t *testing.T) {
 				return
 			}
 
-			switch e.Caller.Line {
-			case 212:
+			if e.Caller.Line == 212 {
 				assert.Equal(t, "deprecated resource type 'IamRole' - converting to 'IAMRole'", e.Message)
 			}
 		},

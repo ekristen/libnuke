@@ -67,7 +67,7 @@ func Test_Item(t *testing.T) {
 
 func Test_ItemList(t *testing.T) {
 	resource.ClearRegistry()
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResource",
 		Lister: &TestItemResourceLister{},
 	})

@@ -2,7 +2,6 @@ package resource
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,7 +14,7 @@ func (l TestLister) List(_ context.Context, o interface{}) ([]Resource, error) {
 func Test_RegisterNoScope(t *testing.T) {
 	ClearRegistry()
 
-	Register(Registration{
+	Register(&Registration{
 		Name:   "test",
 		Lister: TestLister{},
 	})
@@ -30,7 +29,7 @@ func Test_RegisterNoScope(t *testing.T) {
 func Test_RegisterResources(t *testing.T) {
 	ClearRegistry()
 
-	Register(Registration{
+	Register(&Registration{
 		Name:   "test",
 		Scope:  "test",
 		Lister: TestLister{},
@@ -64,13 +63,13 @@ func Test_RegisterResourcesDouble(t *testing.T) {
 		}
 	}()
 
-	Register(Registration{
+	Register(&Registration{
 		Name:   "test",
 		Scope:  "test",
 		Lister: TestLister{},
 	})
 
-	Register(Registration{
+	Register(&Registration{
 		Name:   "test",
 		Scope:  "test",
 		Lister: TestLister{},
@@ -78,7 +77,7 @@ func Test_RegisterResourcesDouble(t *testing.T) {
 }
 
 func Test_Sorted(t *testing.T) {
-	Register(Registration{
+	Register(&Registration{
 		Name:   "Second",
 		Scope:  "test",
 		Lister: TestLister{},
@@ -87,13 +86,13 @@ func Test_Sorted(t *testing.T) {
 		},
 	})
 
-	Register(Registration{
+	Register(&Registration{
 		Name:   "First",
 		Scope:  "test",
 		Lister: TestLister{},
 	})
 
-	Register(Registration{
+	Register(&Registration{
 		Name:   "Third",
 		Scope:  "test",
 		Lister: TestLister{},
@@ -102,7 +101,7 @@ func Test_Sorted(t *testing.T) {
 		},
 	})
 
-	Register(Registration{
+	Register(&Registration{
 		Name:   "Fourth",
 		Scope:  "test",
 		Lister: TestLister{},
@@ -112,20 +111,20 @@ func Test_Sorted(t *testing.T) {
 	})
 
 	names := GetNames()
-	fmt.Println(names)
+	assert.Len(t, names, 5)
 }
 
 func Test_RegisterResourcesWithAlternative(t *testing.T) {
 	ClearRegistry()
 
-	Register(Registration{
+	Register(&Registration{
 		Name:                "test",
 		Scope:               "test",
 		Lister:              TestLister{},
 		AlternativeResource: "test2",
 	})
 
-	Register(Registration{
+	Register(&Registration{
 		Name:   "test2",
 		Scope:  "test",
 		Lister: TestLister{},

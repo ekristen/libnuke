@@ -203,7 +203,7 @@ func Test_Nuke_RegisterPrompt(t *testing.T) {
 func Test_Nuke_Scan(t *testing.T) {
 	resource.ClearRegistry()
 	resource.Register(testResourceRegistration)
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:  testResourceType2,
 		Scope: "account",
 		Lister: TestResourceLister{
@@ -305,7 +305,7 @@ func Test_Nuke_Run(t *testing.T) {
 
 func Test_Nuke_Run_Error(t *testing.T) {
 	resource.ClearRegistry()
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:  testResourceType2,
 		Scope: "account",
 		Lister: TestResourceLister{
@@ -401,7 +401,7 @@ func Test_Nuke_Run_ItemStateHold(t *testing.T) {
 	n.SetRunSleep(time.Millisecond * 5)
 
 	resource.ClearRegistry()
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResource4",
 		Scope:  testScope,
 		Lister: &TestResource4Lister{},

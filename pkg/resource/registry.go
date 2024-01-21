@@ -17,7 +17,7 @@ type Scope string
 const DefaultScope Scope = "default"
 
 // Registrations is a map of resource type to registration
-type Registrations map[string]Registration
+type Registrations map[string]*Registration
 
 // Listers is a map of resource type to lister
 type Listers map[string]Lister
@@ -27,6 +27,9 @@ var resourceListers = make(Listers)
 
 // registrations is a global variable of all registrations for resources
 var registrations = make(Registrations)
+
+// alternatives is a global variable of all alternative resource types
+var alternatives = make(map[string]string)
 
 // graph is a global variable of the graph of resource dependencies
 var graph = topsort.NewGraph()
@@ -66,13 +69,21 @@ type Lister interface {
 type RegisterOption func(name string, lister Lister)
 
 // Register registers a resource lister with the registry
-func Register(r Registration, opts ...RegisterOption) {
+func Register(r *Registration) {
 	if r.Scope == "" {
 		r.Scope = DefaultScope
 	}
 
 	if _, exists := registrations[r.Name]; exists {
 		panic(fmt.Sprintf("a resource with the name %s already exists", r.Name))
+	}
+
+	if r.AlternativeResource != "" {
+		if _, exists := alternatives[r.AlternativeResource]; exists {
+			panic(fmt.Sprintf("an alternative resource mapping for %s already exists", r.AlternativeResource))
+		}
+
+		alternatives[r.AlternativeResource] = r.Name
 	}
 
 	logrus.WithField("name", r.Name).Trace("registered resource lister")
@@ -88,10 +99,6 @@ func Register(r Registration, opts ...RegisterOption) {
 	for _, dep := range r.DependsOn {
 		// Note: AddEdge will never through an error
 		_ = graph.AddEdge(dep, r.Name)
-	}
-
-	for _, opt := range opts {
-		opt(r.Name, r.Lister)
 	}
 }
 
@@ -112,7 +119,7 @@ func GetListers() (listers Listers) {
 }
 
 // GetRegistration returns the registration for the given resource type
-func GetRegistration(name string) Registration {
+func GetRegistration(name string) *Registration {
 	return registrations[name]
 }
 

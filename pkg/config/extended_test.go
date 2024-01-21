@@ -2,12 +2,13 @@ package config
 
 import (
 	"bytes"
-	"github.com/sirupsen/logrus"
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
+
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 type TestCustomService struct {
@@ -70,7 +71,7 @@ type TestExpandedConfig struct {
 func NewExpandedConfig(opts Options) (*TestExpandedConfig, error) {
 	c := &TestExpandedConfig{
 		Config: &Config{
-			Accounts:     make(map[string]Account),
+			Accounts:     make(map[string]*Account),
 			Presets:      make(map[string]Preset),
 			deprecations: make(map[string]string),
 		},
@@ -115,14 +116,6 @@ func (c *TestExpandedConfig) load(path string) error {
 		return err
 	}
 
-	//if err := yaml.Unmarshal(raw, c); err != nil {
-	//	return err
-	//}
-
-	if err := c.ResolveDeprecations(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -130,7 +123,7 @@ func NewTestExpandedConfig(path string) (*TestExpandedConfig, error) {
 	c := &TestExpandedConfig{
 		Config: &Config{
 			Blocklist: make([]string, 0),
-			Accounts:  make(map[string]Account),
+			Accounts:  make(map[string]*Account),
 			Presets:   make(map[string]Preset),
 			Regions:   make([]string, 0),
 		},
