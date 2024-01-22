@@ -10,8 +10,6 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"github.com/ekristen/libnuke/pkg/types"
 )
 
 const Base62Chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
@@ -46,20 +44,6 @@ func Prompt(expect string) error {
 	fmt.Println()
 
 	return nil
-}
-
-func ResolveResourceTypes(base types.Collection, include, exclude []types.Collection) types.Collection {
-	for _, i := range include {
-		if len(i) > 0 {
-			base = base.Intersect(i)
-		}
-	}
-
-	for _, e := range exclude {
-		base = base.Remove(e)
-	}
-
-	return base
 }
 
 func IsTrue(s string) bool {

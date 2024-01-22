@@ -13,10 +13,11 @@ import (
 	"github.com/ekristen/libnuke/pkg/resource"
 )
 
-type TestResourceSuccess struct{}
+type TestResourceSuccess struct {
+}
 
 func (r *TestResourceSuccess) Remove(_ context.Context) error { return nil }
-func (r *TestResourceSuccess) String() string                 { return "TestResourceFailure" }
+func (r *TestResourceSuccess) String() string                 { return "TestResourceSuccess" }
 
 type TestResourceSuccessLister struct {
 	listed bool
@@ -51,12 +52,12 @@ func (l *TestResourceWaitLister) List(_ context.Context, o interface{}) ([]resou
 
 // Test_Nuke_Run_Simple tests a simple run with no dry run enabled so all resources are removed.
 func Test_Nuke_Run_Simple(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
 	resource.ClearRegistry()
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceSuccessLister{},
 	})
@@ -73,7 +74,7 @@ func Test_Nuke_Run_Simple(t *testing.T) {
 
 // Test_NukeRunSimpleWithFirstPromptError tests the first prompt throwing an error
 func Test_NukeRunSimpleWithFirstPromptError(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 	n.RegisterPrompt(func() error {
@@ -88,7 +89,7 @@ func Test_NukeRunSimpleWithFirstPromptError(t *testing.T) {
 // Test_NukeRunSimpleWithFirstPromptError tests the second prompt throwing an error
 func Test_NukeRunSimpleWithSecondPromptError(t *testing.T) {
 	promptCalled := false
-	n := New(testParametersRemove, nil)
+	n := New(testParametersRemove, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 	n.RegisterPrompt(func() error {
@@ -102,7 +103,7 @@ func Test_NukeRunSimpleWithSecondPromptError(t *testing.T) {
 	})
 
 	resource.ClearRegistry()
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceSuccessLister{},
 	})
@@ -117,7 +118,7 @@ func Test_NukeRunSimpleWithSecondPromptError(t *testing.T) {
 
 // Test_Nuke_Run_SimpleWithNoDryRun tests a simple run with no dry run enabled so all resources are removed.
 func Test_Nuke_Run_SimpleWithNoDryRun(t *testing.T) {
-	n := New(testParametersRemove, nil)
+	n := New(testParametersRemove, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -133,17 +134,17 @@ func Test_Nuke_Run_SimpleWithNoDryRun(t *testing.T) {
 // Test_Nuke_Run_Failure tests a run with a resource that fails to remove, so it should be in the failed state.
 // It also tests that a resource is successfully removed as well, to test the entire fail state.
 func Test_Nuke_Run_Failure(t *testing.T) {
-	n := New(testParametersRemove, nil)
+	n := New(testParametersRemove, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
 	resource.ClearRegistry()
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceSuccessLister{},
 	})
 
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResourceFailure",
 		Lister: &TestResourceFailureLister{},
 	})
@@ -159,7 +160,7 @@ func Test_Nuke_Run_Failure(t *testing.T) {
 	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFailed))
 }
 
-var testParametersMaxWaitRetries = Parameters{
+var testParametersMaxWaitRetries = &Parameters{
 	Force:          true,
 	ForceSleep:     3,
 	Quiet:          true,
@@ -168,12 +169,12 @@ var testParametersMaxWaitRetries = Parameters{
 }
 
 func Test_NukeRunWithMaxWaitRetries(t *testing.T) {
-	n := New(testParametersMaxWaitRetries, nil)
+	n := New(testParametersMaxWaitRetries, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
 	resource.ClearRegistry()
-	resource.Register(resource.Registration{
+	resource.Register(&resource.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceWaitLister{},
 	})
@@ -186,4 +187,58 @@ func Test_NukeRunWithMaxWaitRetries(t *testing.T) {
 	assert.Error(t, runErr)
 	assert.Equal(t, "max wait retries of 3 exceeded", runErr.Error())
 	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateWaiting))
+}
+
+// ---------------------
+
+type TestResourceAlpha struct {
+}
+
+func (r *TestResourceAlpha) Remove(_ context.Context) error { return nil }
+func (r *TestResourceAlpha) String() string                 { return "TestResourceAlpha" }
+
+type TestResourceAlphaLister struct {
+	listed bool
+}
+
+func (l *TestResourceAlphaLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
+	if l.listed {
+		return []resource.Resource{}, nil
+	}
+	l.listed = true
+	return []resource.Resource{&TestResourceAlpha{}}, nil
+}
+
+func TestNuke_RunWithWaitOnDependencies(t *testing.T) {
+	n := New(&Parameters{
+		Force:              true,
+		ForceSleep:         3,
+		Quiet:              true,
+		NoDryRun:           true,
+		WaitOnDependencies: true,
+	}, nil, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
+
+	resource.ClearRegistry()
+	resource.Register(&resource.Registration{
+		Name:   "TestResourceAlpha",
+		Lister: &TestResourceAlphaLister{},
+	})
+	resource.Register(&resource.Registration{
+		Name:   "TestResourceBeta",
+		Lister: &TestResourceAlphaLister{},
+		DependsOn: []string{
+			"TestResourceAlpha",
+		},
+	})
+
+	scanner := NewScanner("owner", []string{"TestResourceAlpha", "TestResourceBeta"}, nil)
+	scannerErr := n.RegisterScanner(testScope, scanner)
+	assert.NoError(t, scannerErr)
+
+	runErr := n.Run(context.TODO())
+	assert.NoError(t, runErr)
+
+	assert.Equal(t, 2, n.Queue.Count(queue.ItemStateFinished))
 }

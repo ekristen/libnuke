@@ -1,0 +1,14 @@
+regions:
+  - us-east-1
+
+accounts:
+  555133742:
+    presets:
+      - "terraform1"
+
+presets:
+  terraform:
+    filters:
+      S3Bucket:
+        - type: glob
+          value: "my-statebucket-*"

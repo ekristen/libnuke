@@ -1,3 +1,4 @@
+// Package filter provides a way to filter resources based on a set of criteria.
 package filter
 
 import (

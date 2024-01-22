@@ -1,9 +1,11 @@
+// Package resource provides a way to interact with resources. This provides multiple interfaces to test against
+// as resources can optionally implement these interfaces.
 package resource
 
 import (
 	"context"
 
-	"github.com/ekristen/libnuke/pkg/featureflag"
+	"github.com/ekristen/libnuke/pkg/settings"
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
@@ -26,7 +28,7 @@ type PropertyGetter interface {
 	Properties() types.Properties
 }
 
-type FeatureFlagGetter interface {
+type SettingsGetter interface {
 	Resource
-	FeatureFlags(*featureflag.FeatureFlags)
+	Settings(setting *settings.Setting)
 }

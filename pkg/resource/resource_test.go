@@ -5,15 +5,14 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gotidy/ptr"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ekristen/libnuke/pkg/featureflag"
+	"github.com/ekristen/libnuke/pkg/settings"
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
 type TestResource struct {
-	Flags *featureflag.FeatureFlags
+	settings *settings.Setting
 }
 
 func (r *TestResource) Remove(_ context.Context) error {
@@ -34,8 +33,8 @@ func (r *TestResource) Properties() types.Properties {
 	return props
 }
 
-func (r *TestResource) FeatureFlags(ff *featureflag.FeatureFlags) {
-	r.Flags = ff
+func (r *TestResource) Settings(sts *settings.Setting) {
+	r.settings = sts
 }
 
 func TestInterfaceResource(t *testing.T) {
@@ -64,14 +63,14 @@ func TestInterfacePropertyGetter(t *testing.T) {
 	assert.Equal(t, "example", props.Get("test"))
 }
 
-func TestInterfaceFeatureFlagGetter(t *testing.T) {
-	ff := &featureflag.FeatureFlags{}
-	ff.New("test", ptr.Bool(true), ptr.Bool(true))
+func TestInterface_SettingsGetter(t *testing.T) {
+	s := &settings.Settings{}
+	s.Set("TestResource", &settings.Setting{
+		"DisableDeletionProtection": true,
+	})
 
 	r := TestResource{}
-	r.FeatureFlags(ff)
+	r.Settings(s.Get("TestResource"))
 
-	flag, err := r.Flags.Get("test")
-	assert.NoError(t, err)
-	assert.Equal(t, true, flag.Enabled())
+	assert.Equal(t, true, r.settings.Get("DisableDeletionProtection"))
 }

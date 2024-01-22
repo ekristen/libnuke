@@ -1,0 +1,12 @@
+settings:
+  EC2Instance:
+    DisableDeletionProtection: true
+    DisableStopProtection: "true"
+  RDSInstance:
+    DisableDeletionProtection: "true"
+  Types:
+    Integer: 1
+    String: "string"
+    Boolean: true
+    Nested:
+      NotSupported: true

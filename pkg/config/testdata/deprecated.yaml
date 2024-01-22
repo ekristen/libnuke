@@ -1,0 +1,5 @@
+account-blocklist:
+  - 2234567890
+
+account-blacklist:
+  - 1234567890

@@ -1,0 +1,7 @@
+settings:
+  - something
+  EC2Instance:
+    DisableDeletionProtection: true
+    DisableStopProtection: "true"
+  RDSInstance:
+    DisableDeletionProtection: "true"

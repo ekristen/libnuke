@@ -16,6 +16,11 @@ This is an attempt to consolidate the commonalities between [aws-nuke](https://g
 that can be used between them and for future tooling, for example [gcp-nuke](https://github.com/ekristen/gcp-nuke). Additionally, the goal is to make it
 easier to add new features with better test coverage.
 
+The goal of this library is to have a well tested and stable library to build additional nuke tools on top of, while
+reducing the technical debt overhead of managing each tool individually. By abstracting away and testing the core parts
+of the code, each implementing tool can focus on adding resources to remove and lower the barrier of entry for new
+contributors.
+
 ## Attribution, License, and Copyright
 
 First, of all this library would not have been possible without the hard work of the team over at [rebuy-de](https://github.com/rebuy-de)
@@ -50,9 +55,6 @@ The queue code was very novel in its approach, and I wanted to keep that, but I 
 agnostic to the system using it. As such, the queue package can be used for just about anything you want to queue
 and retry items. However, it is still geared towards the removal of said it, its primary interface has to have the `Remove` method is still available.
 
-The goal of this library is to be able to be used for any cloud provider, but anything that wants to use a similar
-pattern for iterating over and removing resources.
-
 ## License
 
 MIT
@@ -73,20 +75,25 @@ until it is stable and will remain on the `0.y.z` model until then.
 
 ## Packages
 
-I strongly dislike using the `internal` directory in any open-source Golang project. Therefore, everything is in `pkg`
-and exported wherever possible to allow others to use it.
+I strongly dislike the use of the `internal` directory in any open source Golang project. Therefore, everything is in
+the `pkg` directory and exported wherever possible to allow others to use it. This project follows the semver model, so
+breaking changes will be made in a way that is compatible with semver.
+
+### config
+
+This provides the configuration for libnuke. It contains the configuration for all the accounts, regions,
+and resource types. It also contains the presets that can be used to apply a set of filters to a nuke process. The
+configuration is loaded from a YAML file and is meant to be used by the implementing tool. Use of the configuration
+is not required but is recommended. The configuration can be implemented a specific way for each tool providing it
+has the necessary methods available.
 
 ### errors
 
-These are common errors that need to be handled by the library.
-
-### featureflag
-
-This allows arbitrary settings to be passed into the library to enable/disable certain features.
+This provides common errors that can be used throughout the library for handling of resource errors
 
 ### filter
 
-This allows resources to be filtered on a number of different scenarios.
+This provides a way to filter resources based on a set of criteria.
 
 ### log
 
@@ -94,7 +101,8 @@ This is a simple wrapper around `fmt.Println` that formats resource cleanup mess
 
 ### nuke
 
-This is the primary package used to iterate over and remove resources.
+This provides the framework for scanning for resources and then iterating over said resources to determine
+if they should be removed or not and in what order.
 
 ### queue
 
@@ -102,8 +110,15 @@ This is a queue package that can be used for just about anything but is geared t
 
 ### resource
 
-This is the primary resource package that is used to define resources and their dependencies. To be used by the `nuke` 
-package and the `queue` package.
+This provides a way to interact with resources. This provides multiple interfaces to test against
+as resources can optionally implement these interfaces.
+
+### settings
+
+This provides a way to handle settings for the library. The primary use case is arbitrary settings that resources might
+need to be configurable that changes the behavior of how said resource is to be removed. For example, EC2Instances
+have Deletion Protection, this allows the resource to define it needs a setting called `DisableDeletionProtection` and then 
+allows that to be defined in the `config` package and then passed to the resource when it is being removed.
 
 ### types
 

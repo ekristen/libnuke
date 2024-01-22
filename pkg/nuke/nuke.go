@@ -14,10 +14,10 @@ import (
 	"github.com/sirupsen/logrus"
 
 	liberrors "github.com/ekristen/libnuke/pkg/errors"
-	"github.com/ekristen/libnuke/pkg/featureflag"
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
+	libsettings "github.com/ekristen/libnuke/pkg/settings"
 	"github.com/ekristen/libnuke/pkg/types"
 	"github.com/ekristen/libnuke/pkg/utils"
 )
@@ -38,6 +38,18 @@ type Parameters struct {
 	// depends on ResourceB, all ResourceB has to be in a completed state (removed or failed) before ResourceA will be
 	// processed
 	WaitOnDependencies bool
+
+	// Includes is a list of resource types that are to be included during the nuke process. If a resource type is
+	// listed in both the Includes and Excludes fields then the Excludes field will take precedence.
+	Includes []string
+
+	// Excludes is a list of resource types that are to be excluded during the nuke process. If a resource type is
+	// listed in both the Includes and Excludes fields then the Excludes field will take precedence.
+	Excludes []string
+
+	// Alternatives is a list of resource types that are to be used instead of the default resource. The primary use
+	// case for this is AWS Cloud Control API resources.
+	Alternatives []string
 }
 
 type INuke interface {
@@ -52,14 +64,14 @@ type INuke interface {
 // Nuke is the main struct for the library. It is used to register resource types, scanners, filters and validation
 // handlers.
 type Nuke struct {
-	Parameters   Parameters                // Parameters is a collection of common variables used to configure the before of the Nuke instance.
-	Queue        queue.Queue               // Queue is the queue of resources that will be processed
-	Filters      filter.Filters            // Filters is the collection of filters that will be used to filter resources
-	FeatureFlags *featureflag.FeatureFlags // FeatureFlags is the collection of feature flags that will be used to control resource behavior
+	Parameters *Parameters           // Parameters is a collection of common variables used to configure the before of the Nuke instance.
+	Filters    filter.Filters        // Filters is the collection of filters that will be used to filter resources
+	Settings   *libsettings.Settings // Settings is the collection of settings that will be used to control resource behavior
 
 	ValidateHandlers []func() error
 	ResourceTypes    map[resource.Scope]types.Collection
 	Scanners         map[resource.Scope][]*Scanner
+	Queue            queue.Queue // Queue is the queue of resources that will be processed
 
 	scannerHashes []string      // scannerHashes is used to track if a scanner has already been registered
 	prompt        func() error  // prompt is what is shown to the user for confirmation
@@ -69,17 +81,23 @@ type Nuke struct {
 }
 
 // New returns an instance of nuke that is properly configured for initial use
-func New(params Parameters, filters filter.Filters) *Nuke {
+func New(params *Parameters, filters filter.Filters, settings *libsettings.Settings) *Nuke {
 	logger := logrus.New()
 	logger.SetOutput(io.Discard)
 
-	return &Nuke{
-		Parameters:   params,
-		Filters:      filters,
-		Queue:        queue.Queue{},
-		FeatureFlags: &featureflag.FeatureFlags{},
-		log:          logger.WithField("component", "nuke"),
+	n := &Nuke{
+		Parameters: params,
+		Filters:    filters,
+		Queue:      queue.Queue{},
+		Settings:   settings,
+		log:        logger.WithField("component", "nuke"),
 	}
+
+	if n.Settings == nil {
+		n.Settings = &libsettings.Settings{}
+	}
+
+	return n
 }
 
 // SetLogger allows the tool instantiating the library to set the logger that is used for the library. It is optional.
@@ -97,13 +115,6 @@ func (n *Nuke) SetRunSleep(duration time.Duration) {
 // of the version information across all tools. It is optional.
 func (n *Nuke) RegisterVersion(version string) {
 	n.version = version
-}
-
-// RegisterFeatureFlags allows the tool instantiating the library to register a boolean flag. For example, aws nuke
-// needs to be able to register if disabling of instance deletion protection is allowed, this provides a generic method
-// for doing that.
-func (n *Nuke) RegisterFeatureFlags(flag string, defaultValue, value *bool) {
-	n.FeatureFlags.New(flag, defaultValue, value)
 }
 
 // RegisterValidateHandler allows the tool instantiating the library to register a validation handler. It is optional.
@@ -323,9 +334,9 @@ func (n *Nuke) Scan(ctx context.Context) error {
 					}
 				}
 
-				ffGetter, ok := item.Resource.(resource.FeatureFlagGetter)
+				sGetter, ok := item.Resource.(resource.SettingsGetter)
 				if ok {
-					ffGetter.FeatureFlags(n.FeatureFlags)
+					sGetter.Settings(n.Settings.Get(item.Type))
 				}
 
 				itemQueue.Items = append(itemQueue.Items, item)
@@ -465,7 +476,6 @@ func (n *Nuke) HandleQueue(ctx context.Context) {
 // HandleRemove is used to handle the removal of a resource. It will remove the resource and set the state of the
 // resource to pending if it was successful or failed if it was not.
 func (n *Nuke) HandleRemove(ctx context.Context, item *queue.Item) {
-	// TODO: pass context to remove for remove functions to use
 	err := item.Resource.Remove(ctx)
 	if err != nil {
 		var resErr liberrors.ErrHoldResource
