@@ -79,7 +79,7 @@ func New(opts Options) (*Config, error) {
 		c.Deprecations = opts.Deprecations
 	}
 
-	err := c.load(opts.Path)
+	err := c.Load(opts.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +97,8 @@ func New(opts Options) (*Config, error) {
 	return c, nil
 }
 
-// load loads a configuration from a file and parses it into a Config struct.
-func (c *Config) load(path string) error {
+// Load loads a configuration from a file and parses it into a Config struct.
+func (c *Config) Load(path string) error {
 	var err error
 
 	raw, err := os.ReadFile(path)
