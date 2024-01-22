@@ -32,8 +32,8 @@ type Config struct {
 	AccountBlacklist []string `yaml:"account-blacklist"` // Deprecated: Use Blocklist instead. Will remove in 4.x
 	AccountBlocklist []string `yaml:"account-blocklist"` // Deprecated: Use Blocklist instead. Will remove in 4.x
 
-	deprecations map[string]string
-	log          *logrus.Entry
+	Deprecations map[string]string
+	Log          *logrus.Entry
 }
 
 // Options are the options for creating a new configuration.
@@ -51,8 +51,8 @@ type Options struct {
 	// implement their own blocklist.
 	NoResolveBlacklist bool
 
-	// NoResolveDeprecations will prevent the deprecations from being resolved. This is useful for tools that want to
-	// implement their own deprecations.
+	// NoResolveDeprecations will prevent the Deprecations from being resolved. This is useful for tools that want to
+	// implement their own Deprecations.
 	NoResolveDeprecations bool
 }
 
@@ -61,22 +61,22 @@ func New(opts Options) (*Config, error) {
 	c := &Config{
 		Accounts:     make(map[string]*Account),
 		Presets:      make(map[string]Preset),
-		deprecations: make(map[string]string),
+		Deprecations: make(map[string]string),
 		Settings:     &settings.Settings{},
 	}
 
 	if opts.Log != nil {
-		c.log = opts.Log
+		c.Log = opts.Log
 	} else {
 		// Create a logger that discards all output
 		// The only way output is logged is if the instantiating tool provides a logger
 		logger := logrus.New()
 		logger.SetOutput(io.Discard)
-		c.log = logger.WithField("component", "config")
+		c.Log = logger.WithField("component", "config")
 	}
 
 	if len(opts.Deprecations) > 0 {
-		c.deprecations = opts.Deprecations
+		c.Deprecations = opts.Deprecations
 	}
 
 	err := c.load(opts.Path)
@@ -93,7 +93,7 @@ func New(opts Options) (*Config, error) {
 			return nil, err
 		}
 	}
-	
+
 	return c, nil
 }
 
@@ -120,12 +120,12 @@ func (c *Config) ResolveBlocklist() []string {
 
 	if len(c.AccountBlocklist) > 0 {
 		blocklist = append(blocklist, c.AccountBlocklist...)
-		c.log.Warn("deprecated configuration key 'account-blacklist' - please use 'blocklist' instead")
+		c.Log.Warn("deprecated configuration key 'account-blacklist' - please use 'blocklist' instead")
 	}
 
 	if len(c.AccountBlacklist) > 0 {
 		blocklist = append(blocklist, c.AccountBlacklist...)
-		c.log.Warn("deprecated configuration key 'account-blacklist' - please use 'blocklist' instead")
+		c.Log.Warn("deprecated configuration key 'account-blacklist' - please use 'blocklist' instead")
 	}
 
 	if len(c.Blocklist) > 0 {
@@ -203,18 +203,18 @@ func (c *Config) Filters(accountID string) (filter.Filters, error) {
 	return filters, nil
 }
 
-// ResolveDeprecations resolves any deprecations in the configuration. This is done after the configuration has been
+// ResolveDeprecations resolves any Deprecations in the configuration. This is done after the configuration has been
 // parsed. It loops through all the accounts and their filters and replaces any deprecated resource types with the
 // new resource type.
 func (c *Config) ResolveDeprecations() error {
 	for _, a := range c.Accounts {
 		for resourceType, resources := range a.Filters {
-			replacement, ok := c.deprecations[resourceType]
+			replacement, ok := c.Deprecations[resourceType]
 			if !ok {
 				continue
 			}
 
-			c.log.Warnf("deprecated resource type '%s' - converting to '%s'", resourceType, replacement)
+			c.Log.Warnf("deprecated resource type '%s' - converting to '%s'", resourceType, replacement)
 			if _, ok := a.Filters[replacement]; ok {
 				return errors.ErrDeprecatedResourceType(
 					fmt.Sprintf(

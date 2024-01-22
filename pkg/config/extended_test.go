@@ -73,14 +73,14 @@ func NewExpandedConfig(opts Options) (*TestExpandedConfig, error) {
 		Config: &Config{
 			Accounts:     make(map[string]*Account),
 			Presets:      make(map[string]Preset),
-			deprecations: make(map[string]string),
+			Deprecations: make(map[string]string),
 		},
 	}
 
 	if opts.Log != nil {
-		c.log = opts.Log
+		c.Log = opts.Log
 	} else {
-		c.log = logrus.NewEntry(logrus.New()).WithField("component", "config")
+		c.Log = logrus.NewEntry(logrus.New()).WithField("component", "config")
 	}
 
 	err := c.load(opts.Path)
