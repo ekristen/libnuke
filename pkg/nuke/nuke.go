@@ -38,6 +38,18 @@ type Parameters struct {
 	// depends on ResourceB, all ResourceB has to be in a completed state (removed or failed) before ResourceA will be
 	// processed
 	WaitOnDependencies bool
+
+	// Includes is a list of resource types that are to be included during the nuke process. If a resource type is
+	// listed in both the Includes and Excludes fields then the Excludes field will take precedence.
+	Includes []string
+
+	// Excludes is a list of resource types that are to be excluded during the nuke process. If a resource type is
+	// listed in both the Includes and Excludes fields then the Excludes field will take precedence.
+	Excludes []string
+
+	// Alternatives is a list of resource types that are to be used instead of the default resource. The primary use
+	// case for this is AWS Cloud Control API resources.
+	Alternatives []string
 }
 
 type INuke interface {
