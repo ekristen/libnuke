@@ -3,7 +3,6 @@ package resource
 import (
 	"context"
 	"fmt"
-
 	"github.com/sirupsen/logrus"
 	"github.com/stevenle/topsort"
 )
@@ -36,9 +35,23 @@ var graph = topsort.NewGraph()
 
 // Registration is a struct that contains the information needed to register a resource lister
 type Registration struct {
-	Name   string
-	Scope  Scope
+	// Name is the name of the resource type
+	Name string
+
+	// Scope is the scope of the resource type, if left empty it'll default to DefaultScope. It's simple a string
+	// designed to group resource types together. The primary use case is for Azure, it needs resources scoped to
+	// different levels, whereas AWS has simply Account level.
+	Scope Scope
+
+	// Lister is the lister for the resource type, it is a struct with a method called List that returns a slice
+	// of resources. The lister is responsible for filtering out any resources that should not be deleted because they
+	// are ineligible for deletion. For example, built in resources that cannot be deleted.
 	Lister Lister
+
+	// Settings allows for resources to define settings that can be configured by the calling tool to change the
+	// behavior of the resource. For example, EC2 and RDS Instances have Deletion Protection, this allows the resource
+	// to define a setting that can be configured by the calling tool to enable/disable deletion protection.
+	Settings []string
 
 	// DependsOn is a list of resource types that this resource type depends on. This is used to determine
 	// the order in which resources are deleted. For example, a VPC depends on subnets, so we want to delete

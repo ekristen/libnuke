@@ -3,13 +3,13 @@ package nuke
 import (
 	"context"
 	"fmt"
+	"github.com/ekristen/libnuke/pkg/settings"
 	"io"
 	"os"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/gotidy/ptr"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
@@ -35,7 +35,7 @@ var testParametersRemove = Parameters{
 const testScope resource.Scope = "test"
 
 func Test_Nuke_Version(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -63,24 +63,23 @@ func Test_Nuke_Version(t *testing.T) {
 	}
 }
 
-func Test_Nuke_FeatureFlag(t *testing.T) {
-	n := New(testParameters, nil)
+func TestNuke_Settings(t *testing.T) {
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
+	n.Settings = &settings.Settings{
+		"TestResource": &settings.Setting{
+			"DisableDeletionProtection": true,
+		},
+	}
 
-	n.RegisterFeatureFlags("test", ptr.Bool(true), ptr.Bool(true))
-
-	flag, err := n.FeatureFlags.Get("test")
-	assert.NoError(t, err)
-	assert.Equal(t, true, flag.Enabled())
-
-	flag1, err := n.FeatureFlags.Get("testing")
-	assert.Error(t, err)
-	assert.Nil(t, flag1)
+	testResourceSettings := n.Settings.Get("TestResource")
+	assert.NotNil(t, testResourceSettings)
+	assert.Equal(t, true, testResourceSettings.Get("DisableDeletionProtection"))
 }
 
 func Test_Nuke_Validators_Default(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -89,7 +88,7 @@ func Test_Nuke_Validators_Default(t *testing.T) {
 }
 
 func Test_Nuke_Validators_Register1(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -103,7 +102,7 @@ func Test_Nuke_Validators_Register1(t *testing.T) {
 }
 
 func Test_Nuke_Validators_Register2(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -124,7 +123,7 @@ func Test_Nuke_Validators_Error(t *testing.T) {
 		ForceSleep: 1,
 		Quiet:      true,
 	}
-	n := New(p, nil)
+	n := New(p, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -134,7 +133,7 @@ func Test_Nuke_Validators_Error(t *testing.T) {
 }
 
 func Test_Nuke_ResourceTypes(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -144,7 +143,7 @@ func Test_Nuke_ResourceTypes(t *testing.T) {
 }
 
 func Test_Nuke_Scanners(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -163,7 +162,7 @@ func Test_Nuke_Scanners(t *testing.T) {
 }
 
 func Test_Nuke_Scanners_Duplicate(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -185,7 +184,7 @@ func Test_Nuke_Scanners_Duplicate(t *testing.T) {
 }
 
 func Test_Nuke_RegisterPrompt(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -211,7 +210,7 @@ func Test_Nuke_Scan(t *testing.T) {
 		},
 	})
 
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -237,7 +236,7 @@ type TestResource3 struct {
 	Error bool
 }
 
-func (r TestResource3) Remove(_ context.Context) error {
+func (r *TestResource3) Remove(_ context.Context) error {
 	if r.Error {
 		return fmt.Errorf("remove error")
 	}
@@ -245,7 +244,7 @@ func (r TestResource3) Remove(_ context.Context) error {
 }
 
 func Test_Nuke_HandleRemove(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -259,7 +258,7 @@ func Test_Nuke_HandleRemove(t *testing.T) {
 }
 
 func Test_Nuke_HandleRemoveError(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -287,7 +286,7 @@ func Test_Nuke_Run(t *testing.T) {
 		NoDryRun:   true,
 	}
 
-	n := New(p, nil)
+	n := New(p, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -319,7 +318,7 @@ func Test_Nuke_Run_Error(t *testing.T) {
 		Quiet:      true,
 		NoDryRun:   true,
 	}
-	n := New(p, nil)
+	n := New(p, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -396,7 +395,7 @@ func (l *TestResource4Lister) List(_ context.Context, _ interface{}) ([]resource
 }
 
 func Test_Nuke_Run_ItemStateHold(t *testing.T) {
-	n := New(testParametersRemove, nil)
+	n := New(testParametersRemove, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ekristen/libnuke/pkg/featureflag"
 	"github.com/ekristen/libnuke/pkg/log"
 	"github.com/ekristen/libnuke/pkg/resource"
 )
@@ -34,13 +33,12 @@ type IItem interface {
 
 // Item is used to represent a specific resource, and it's current ItemState in the Queue
 type Item struct {
-	Resource     resource.Resource
-	State        ItemState
-	FeatureFlags *featureflag.FeatureFlags
-	Reason       string
-	Type         string
-	Owner        string // region/subscription
-	Opts         interface{}
+	Resource resource.Resource
+	State    ItemState
+	Reason   string
+	Type     string
+	Owner    string // region/subscription
+	Opts     interface{}
 }
 
 // GetState returns the current State of the Item

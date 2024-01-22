@@ -24,7 +24,7 @@ func Test_NukeFiltersBad(t *testing.T) {
 		},
 	}
 
-	n := New(testParameters, filters)
+	n := New(testParameters, filters, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -47,7 +47,7 @@ func Test_NukeFiltersMatch(t *testing.T) {
 		},
 	}
 
-	n := New(testParameters, filters)
+	n := New(testParameters, filters, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -81,7 +81,7 @@ func Test_NukeFiltersMatchInverted(t *testing.T) {
 		},
 	}
 
-	n := New(testParameters, filters)
+	n := New(testParameters, filters, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -114,7 +114,7 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 		},
 	}
 
-	n := New(testParameters, filters)
+	n := New(testParameters, filters, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -147,7 +147,7 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 		},
 	}
 
-	n := New(testParameters, filters)
+	n := New(testParameters, filters, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -167,7 +167,7 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 type TestResourceFilter struct {
 }
 
-func (r TestResourceFilter) Properties() types.Properties {
+func (r *TestResourceFilter) Properties() types.Properties {
 	props := types.NewProperties()
 
 	tagName := ptr.String("aws:cloudformation:stack-name")
@@ -177,7 +177,7 @@ func (r TestResourceFilter) Properties() types.Properties {
 	return props
 }
 
-func (r TestResourceFilter) Remove(_ context.Context) error {
+func (r *TestResourceFilter) Remove(_ context.Context) error {
 	return nil
 }
 
@@ -192,7 +192,7 @@ func Test_Nuke_Filters_Extra(t *testing.T) {
 		},
 	}
 
-	n := New(testParameters, filters)
+	n := New(testParameters, filters, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 

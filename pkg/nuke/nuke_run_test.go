@@ -13,7 +13,8 @@ import (
 	"github.com/ekristen/libnuke/pkg/resource"
 )
 
-type TestResourceSuccess struct{}
+type TestResourceSuccess struct {
+}
 
 func (r *TestResourceSuccess) Remove(_ context.Context) error { return nil }
 func (r *TestResourceSuccess) String() string                 { return "TestResourceFailure" }
@@ -51,7 +52,7 @@ func (l *TestResourceWaitLister) List(_ context.Context, o interface{}) ([]resou
 
 // Test_Nuke_Run_Simple tests a simple run with no dry run enabled so all resources are removed.
 func Test_Nuke_Run_Simple(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -73,7 +74,7 @@ func Test_Nuke_Run_Simple(t *testing.T) {
 
 // Test_NukeRunSimpleWithFirstPromptError tests the first prompt throwing an error
 func Test_NukeRunSimpleWithFirstPromptError(t *testing.T) {
-	n := New(testParameters, nil)
+	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 	n.RegisterPrompt(func() error {
@@ -88,7 +89,7 @@ func Test_NukeRunSimpleWithFirstPromptError(t *testing.T) {
 // Test_NukeRunSimpleWithFirstPromptError tests the second prompt throwing an error
 func Test_NukeRunSimpleWithSecondPromptError(t *testing.T) {
 	promptCalled := false
-	n := New(testParametersRemove, nil)
+	n := New(testParametersRemove, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 	n.RegisterPrompt(func() error {
@@ -117,7 +118,7 @@ func Test_NukeRunSimpleWithSecondPromptError(t *testing.T) {
 
 // Test_Nuke_Run_SimpleWithNoDryRun tests a simple run with no dry run enabled so all resources are removed.
 func Test_Nuke_Run_SimpleWithNoDryRun(t *testing.T) {
-	n := New(testParametersRemove, nil)
+	n := New(testParametersRemove, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -133,7 +134,7 @@ func Test_Nuke_Run_SimpleWithNoDryRun(t *testing.T) {
 // Test_Nuke_Run_Failure tests a run with a resource that fails to remove, so it should be in the failed state.
 // It also tests that a resource is successfully removed as well, to test the entire fail state.
 func Test_Nuke_Run_Failure(t *testing.T) {
-	n := New(testParametersRemove, nil)
+	n := New(testParametersRemove, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
@@ -168,7 +169,7 @@ var testParametersMaxWaitRetries = Parameters{
 }
 
 func Test_NukeRunWithMaxWaitRetries(t *testing.T) {
-	n := New(testParametersMaxWaitRetries, nil)
+	n := New(testParametersMaxWaitRetries, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 

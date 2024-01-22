@@ -7,6 +7,7 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/sirupsen/logrus"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/ekristen/libnuke/pkg/errors"
 	"github.com/ekristen/libnuke/pkg/filter"
+	"github.com/ekristen/libnuke/pkg/settings"
 )
 
 // Config is the configuration for libnuke. It contains the configuration for all the accounts, regions, and resource
@@ -25,6 +27,7 @@ type Config struct {
 	Accounts      map[string]*Account `yaml:"accounts"`
 	ResourceTypes ResourceTypes       `yaml:"resource-types"`
 	Presets       map[string]Preset   `yaml:"presets"`
+	Settings      *settings.Settings  `yaml:"settings"`
 
 	AccountBlacklist []string `yaml:"account-blacklist"` // Deprecated: Use Blocklist instead. Will remove in 4.x
 	AccountBlocklist []string `yaml:"account-blocklist"` // Deprecated: Use Blocklist instead. Will remove in 4.x
@@ -38,7 +41,7 @@ type Options struct {
 	// Path to the config file
 	Path string
 
-	// Logrus entry to use for logging
+	// Log is the logrus entry to use for logging
 	Log *logrus.Entry
 
 	// Deprecations is a map of deprecated resource types to their replacements.
@@ -59,12 +62,17 @@ func New(opts Options) (*Config, error) {
 		Accounts:     make(map[string]*Account),
 		Presets:      make(map[string]Preset),
 		deprecations: make(map[string]string),
+		Settings:     &settings.Settings{},
 	}
 
 	if opts.Log != nil {
 		c.log = opts.Log
 	} else {
-		c.log = logrus.WithField("component", "config")
+		// Create a logger that discards all output
+		// The only way output is logged is if the instantiating tool provides a logger
+		logger := logrus.New()
+		logger.SetOutput(io.Discard)
+		c.log = logger.WithField("component", "config")
 	}
 
 	if len(opts.Deprecations) > 0 {
@@ -85,7 +93,7 @@ func New(opts Options) (*Config, error) {
 			return nil, err
 		}
 	}
-
+	
 	return c, nil
 }
 

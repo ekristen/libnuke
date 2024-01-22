@@ -189,6 +189,14 @@ func TestResourceTypeDeprecationsError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestInvalid(t *testing.T) {
+	opts := Options{
+		Path: "testdata/invalid.yaml",
+	}
+	_, err := New(opts)
+	assert.Error(t, err)
+}
+
 func TestInvalidPreset(t *testing.T) {
 	opts := Options{
 		Path: "testdata/invalid-preset.yaml",

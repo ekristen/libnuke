@@ -47,9 +47,36 @@ type ResourceTypes struct {
 	// that are associated with the alternative resource).
 	Alternatives types.Collection `yaml:"alternatives"`
 
+	// Targets is a list of resource types that are to be included during the nuke process. If a resource type is
+	// listed in both the Targets and Excludes fields then the Excludes field will take precedence.
 	// Deprecated: Use Includes instead.
 	Targets types.Collection `yaml:"targets"`
 
+	// CloudControl is a list of resource types that are to be used with the Cloud Control API. This is a Resource
+	// level alternative. This was left in place to make the transition to libnuke and ekristen/aws-nuke@v3 easier
+	// for existing users.
 	// Deprecated: Use Alternatives instead.
 	CloudControl types.Collection `yaml:"cloud-control"`
+}
+
+// FeatureFlags is a collection of feature flags that can be used to enable or disable certain features of the nuke
+// This is left over from the AWS Nuke tool and is deprecated. It was left to make the transition to the library and
+// ekristen/aws-nuke@v3 easier for existing users.
+// Deprecated: Use Settings instead. Will be removed in 4.x
+type FeatureFlags struct {
+	DisableDeletionProtection        DisableDeletionProtection `yaml:"disable-deletion-protection"`
+	DisableEC2InstanceStopProtection bool                      `yaml:"disable-ec2-instance-stop-protection"`
+	ForceDeleteLightsailAddOns       bool                      `yaml:"force-delete-lightsail-addons"`
+}
+
+// DisableDeletionProtection is a collection of feature flags that can be used to disable deletion protection for
+// certain resource types. This is left over from the AWS Nuke tool and is deprecated. It was left to make transition
+// to the library and ekristen/aws-nuke@v3 easier for existing users.
+// Deprecated: Use Settings instead. Will be removed in 4.x
+type DisableDeletionProtection struct {
+	RDSInstance         bool `yaml:"RDSInstance"`
+	EC2Instance         bool `yaml:"EC2Instance"`
+	CloudformationStack bool `yaml:"CloudformationStack"`
+	ELBv2               bool `yaml:"ELBv2"`
+	QLDBLedger          bool `yaml:"QLDBLedger"`
 }

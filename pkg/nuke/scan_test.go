@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/ekristen/libnuke/pkg/settings"
 	"io"
 	"strings"
 	"testing"
@@ -12,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/errors"
-	"github.com/ekristen/libnuke/pkg/featureflag"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
 )
@@ -49,7 +49,7 @@ type TestResource struct {
 	RemoveError bool
 }
 
-func (r TestResource) Filter() error {
+func (r *TestResource) Filter() error {
 	if r.Filtered {
 		return fmt.Errorf("cannot remove default")
 	}
@@ -57,14 +57,14 @@ func (r TestResource) Filter() error {
 	return nil
 }
 
-func (r TestResource) Remove(_ context.Context) error {
+func (r *TestResource) Remove(_ context.Context) error {
 	if r.RemoveError {
 		return fmt.Errorf("remove error")
 	}
 	return nil
 }
 
-func (r TestResource) FeatureFlags(ff *featureflag.FeatureFlags) {
+func (r *TestResource) Settings(setting *settings.Setting) {
 
 }
 
@@ -73,7 +73,7 @@ type TestResource2 struct {
 	RemoveError bool
 }
 
-func (r TestResource2) Filter() error {
+func (r *TestResource2) Filter() error {
 	if r.Filtered {
 		return fmt.Errorf("cannot remove default")
 	}
@@ -81,18 +81,14 @@ func (r TestResource2) Filter() error {
 	return nil
 }
 
-func (r TestResource2) Remove(_ context.Context) error {
+func (r *TestResource2) Remove(_ context.Context) error {
 	if r.RemoveError {
 		return fmt.Errorf("remove error")
 	}
 	return nil
 }
 
-func (r TestResource2) FeatureFlags(ff *featureflag.FeatureFlags) {
-
-}
-
-func (r TestResource2) Properties() types.Properties {
+func (r *TestResource2) Properties() types.Properties {
 	props := types.NewProperties()
 	props.Set("test", "testing")
 	return props
@@ -140,6 +136,7 @@ func (l TestResourceLister) List(_ context.Context, o interface{}) ([]resource.R
 }
 
 type TestOpts struct {
+	Test               *testing.T
 	SessionOne         string
 	SessionTwo         string
 	ThrowError         bool
