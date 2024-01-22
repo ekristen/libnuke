@@ -3,11 +3,11 @@ package resource
 import (
 	"context"
 	"fmt"
-	"github.com/ekristen/libnuke/pkg/settings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/ekristen/libnuke/pkg/settings"
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
@@ -33,8 +33,8 @@ func (r *TestResource) Properties() types.Properties {
 	return props
 }
 
-func (r *TestResource) Settings(settings *settings.Setting) {
-	r.settings = settings
+func (r *TestResource) Settings(sts *settings.Setting) {
+	r.settings = sts
 }
 
 func TestInterfaceResource(t *testing.T) {

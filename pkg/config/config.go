@@ -10,9 +10,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/sirupsen/logrus"
-
 	"gopkg.in/yaml.v3"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/ekristen/libnuke/pkg/errors"
 	"github.com/ekristen/libnuke/pkg/filter"
@@ -22,18 +22,44 @@ import (
 // Config is the configuration for libnuke. It contains the configuration for all the accounts, regions, and resource
 // types. It also contains the presets that can be used to apply a set of filters to a nuke process.
 type Config struct {
-	Blocklist     []string            `yaml:"blocklist"`
-	Regions       []string            `yaml:"regions"`
-	Accounts      map[string]*Account `yaml:"accounts"`
-	ResourceTypes ResourceTypes       `yaml:"resource-types"`
-	Presets       map[string]Preset   `yaml:"presets"`
-	Settings      *settings.Settings  `yaml:"settings"`
+	// Blocklist is a list of IDs that are to be excluded from the nuke process. In this case account is a generic term.
+	// It can represent an AWS account, a GCP project, or an Azure tenant.
+	Blocklist []string `yaml:"blocklist"`
 
-	AccountBlacklist []string `yaml:"account-blacklist"` // Deprecated: Use Blocklist instead. Will remove in 4.x
-	AccountBlocklist []string `yaml:"account-blocklist"` // Deprecated: Use Blocklist instead. Will remove in 4.x
+	// Regions is a list of regions that are to be included during the nuke process. Region is fairly generic, it can
+	// be an AWS region, a GCP region, or an Azure region, or any other region that is supported by the implementing
+	// tool.
+	Regions []string `yaml:"regions"`
 
-	Deprecations map[string]string
-	Log          *logrus.Entry
+	// Accounts is a map of accounts that are configured a certain way. Account is fairly generic, it can be an AWS
+	// account, a GCP project, or an Azure tenant, or any other account that is supported by the implementing tool.
+	Accounts map[string]*Account `yaml:"accounts"`
+
+	// ResourceTypes is a collection of resource types that are to be included or excluded from the nuke process.
+	ResourceTypes ResourceTypes `yaml:"resource-types"`
+
+	// Presets is a list of presets that are to be used for the configuration. These are global presets that can be used
+	// by any account. A Preset can also be defined at the account leve.
+	Presets map[string]Preset `yaml:"presets"`
+
+	// Settings is a collection of resource level settings that are to be used by the resource during the nuke process.
+	// Resources define their own settings and this allows those settings to be defined in the configuration. The
+	// appropriate settings are then passed to the appropriate resource during the nuke process.
+	Settings *settings.Settings `yaml:"settings"`
+
+	// Deprecations is a map of deprecated resource types to their replacements. This is passed in as part of the
+	// configuration due to the fact the configuration has to resolve the filters in the presets to from any deprecated
+	// resource types to their replacements. It cannot be imported from YAML, instead has to be configured post parsing.
+	Deprecations map[string]string `yaml:"-"`
+
+	// Log is the logrus entry to use for logging. It cannot be imported from YAML.
+	Log *logrus.Entry `yaml:"-"`
+
+	// Deprecated: Use Blocklist instead. Will remove in 4.x
+	AccountBlacklist []string `yaml:"account-blacklist"`
+
+	// Deprecated: Use Blocklist instead. Will remove in 4.x
+	AccountBlocklist []string `yaml:"account-blocklist"`
 }
 
 // Options are the options for creating a new configuration.
@@ -48,11 +74,11 @@ type Options struct {
 	Deprecations map[string]string
 
 	// NoResolveBlacklist will prevent the blocklist from being resolved. This is useful for tools that want to
-	// implement their own blocklist.
+	// implement their own blocklist. Advanced use only, typically for unit tests.
 	NoResolveBlacklist bool
 
 	// NoResolveDeprecations will prevent the Deprecations from being resolved. This is useful for tools that want to
-	// implement their own Deprecations.
+	// implement their own Deprecations. Advanced used only, typically for unit tests.
 	NoResolveDeprecations bool
 }
 
@@ -120,11 +146,13 @@ func (c *Config) ResolveBlocklist() []string {
 
 	if len(c.AccountBlocklist) > 0 {
 		blocklist = append(blocklist, c.AccountBlocklist...)
+		c.AccountBlocklist = nil
 		c.Log.Warn("deprecated configuration key 'account-blacklist' - please use 'blocklist' instead")
 	}
 
 	if len(c.AccountBlacklist) > 0 {
 		blocklist = append(blocklist, c.AccountBlacklist...)
+		c.AccountBlacklist = nil
 		c.Log.Warn("deprecated configuration key 'account-blacklist' - please use 'blocklist' instead")
 	}
 

@@ -3,7 +3,6 @@ package nuke
 import (
 	"context"
 	"fmt"
-	"github.com/ekristen/libnuke/pkg/settings"
 	"io"
 	"os"
 	"strings"
@@ -16,16 +15,17 @@ import (
 	liberrors "github.com/ekristen/libnuke/pkg/errors"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/settings"
 )
 
-var testParameters = Parameters{
+var testParameters = &Parameters{
 	Force:      true,
 	ForceSleep: 3,
 	Quiet:      true,
 	NoDryRun:   false,
 }
 
-var testParametersRemove = Parameters{
+var testParametersRemove = &Parameters{
 	Force:      true,
 	ForceSleep: 3,
 	Quiet:      true,
@@ -118,7 +118,7 @@ func Test_Nuke_Validators_Register2(t *testing.T) {
 }
 
 func Test_Nuke_Validators_Error(t *testing.T) {
-	p := Parameters{
+	p := &Parameters{
 		Force:      true,
 		ForceSleep: 1,
 		Quiet:      true,
@@ -279,7 +279,7 @@ func Test_Nuke_Run(t *testing.T) {
 	resource.ClearRegistry()
 	resource.Register(testResourceRegistration)
 
-	p := Parameters{
+	p := &Parameters{
 		Force:      true,
 		ForceSleep: 3,
 		Quiet:      true,
@@ -312,7 +312,7 @@ func Test_Nuke_Run_Error(t *testing.T) {
 		},
 	})
 
-	p := Parameters{
+	p := &Parameters{
 		Force:      true,
 		ForceSleep: 3,
 		Quiet:      true,

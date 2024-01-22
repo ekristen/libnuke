@@ -1,3 +1,5 @@
+// Package resource provides a way to interact with resources. This provides multiple interfaces to test against
+// as resources can optionally implement these interfaces.
 package resource
 
 import (

@@ -64,14 +64,14 @@ type INuke interface {
 // Nuke is the main struct for the library. It is used to register resource types, scanners, filters and validation
 // handlers.
 type Nuke struct {
-	Parameters Parameters            // Parameters is a collection of common variables used to configure the before of the Nuke instance.
-	Queue      queue.Queue           // Queue is the queue of resources that will be processed
+	Parameters *Parameters           // Parameters is a collection of common variables used to configure the before of the Nuke instance.
 	Filters    filter.Filters        // Filters is the collection of filters that will be used to filter resources
 	Settings   *libsettings.Settings // Settings is the collection of settings that will be used to control resource behavior
 
 	ValidateHandlers []func() error
 	ResourceTypes    map[resource.Scope]types.Collection
 	Scanners         map[resource.Scope][]*Scanner
+	Queue            queue.Queue // Queue is the queue of resources that will be processed
 
 	scannerHashes []string      // scannerHashes is used to track if a scanner has already been registered
 	prompt        func() error  // prompt is what is shown to the user for confirmation
@@ -81,7 +81,7 @@ type Nuke struct {
 }
 
 // New returns an instance of nuke that is properly configured for initial use
-func New(params Parameters, filters filter.Filters, settings *libsettings.Settings) *Nuke {
+func New(params *Parameters, filters filter.Filters, settings *libsettings.Settings) *Nuke {
 	logger := logrus.New()
 	logger.SetOutput(io.Discard)
 

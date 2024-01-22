@@ -1,3 +1,4 @@
+// Package log provides a way to log messages to the screen with the appropriate coloring and formatting for readability
 package log
 
 import (

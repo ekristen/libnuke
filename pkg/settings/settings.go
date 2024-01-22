@@ -1,3 +1,4 @@
+// Package settings provides a way to store and retrieve settings for resources.
 package settings
 
 type Settings map[string]*Setting
@@ -38,11 +39,11 @@ func (s *Setting) Get(key string) interface{} {
 
 	switch value.(type) {
 	case string:
-		return value.(string)
+		return value
 	case int:
-		return value.(int)
+		return value
 	case bool:
-		return value.(bool)
+		return value
 	default:
 		return value
 	}

@@ -1,10 +1,12 @@
 package settings
 
 import (
-	"github.com/stretchr/testify/assert"
-	"gopkg.in/yaml.v3"
 	"os"
 	"testing"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type Config struct {

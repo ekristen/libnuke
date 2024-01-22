@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/ekristen/libnuke/pkg/settings"
 	"io"
 	"strings"
 	"testing"
@@ -14,6 +13,7 @@ import (
 
 	"github.com/ekristen/libnuke/pkg/errors"
 	"github.com/ekristen/libnuke/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/settings"
 	"github.com/ekristen/libnuke/pkg/types"
 )
 

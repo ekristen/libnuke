@@ -3,6 +3,7 @@ package resource
 import (
 	"context"
 	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/stevenle/topsort"
 )
@@ -189,6 +190,9 @@ func GetLister(name string) Lister {
 	return resourceListers[name]
 }
 
+// GetAlternativeResourceTypeMapping returns a map of resource types to their alternative resource type. The primary
+// use case is used to map resource types to their alternative AWS Cloud Control resource type. This allows each
+// resource to define what it's alternative resource type is instead of trying to track them in a single place.
 func GetAlternativeResourceTypeMapping() map[string]string {
 	mapping := make(map[string]string)
 	for _, r := range registrations {
@@ -199,7 +203,10 @@ func GetAlternativeResourceTypeMapping() map[string]string {
 	return mapping
 }
 
-// GetDeprecatedResourceTypeMapping returns a map of deprecated resource types to their replacement
+// GetDeprecatedResourceTypeMapping returns a map of deprecated resource types to their replacement. The primary use
+// case is used to map deprecated resource types to their replacement in the config package. This allows us to
+// provide notifications to the user that they are using a deprecated resource type and should update their config.
+// This allow allows each resource to define it's DeprecatedAliases instead of trying to track them in a single place.
 func GetDeprecatedResourceTypeMapping() map[string]string {
 	mapping := make(map[string]string)
 	for _, r := range registrations {

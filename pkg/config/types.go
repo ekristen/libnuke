@@ -3,6 +3,7 @@ package config
 import (
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/types"
+	"github.com/sirupsen/logrus"
 )
 
 // Account is a collection of filters and resource types that are to be included or excluded from the nuke process.
@@ -59,24 +60,32 @@ type ResourceTypes struct {
 	CloudControl types.Collection `yaml:"cloud-control"`
 }
 
-// FeatureFlags is a collection of feature flags that can be used to enable or disable certain features of the nuke
-// This is left over from the AWS Nuke tool and is deprecated. It was left to make the transition to the library and
-// ekristen/aws-nuke@v3 easier for existing users.
-// Deprecated: Use Settings instead. Will be removed in 4.x
-type FeatureFlags struct {
-	DisableDeletionProtection        DisableDeletionProtection `yaml:"disable-deletion-protection"`
-	DisableEC2InstanceStopProtection bool                      `yaml:"disable-ec2-instance-stop-protection"`
-	ForceDeleteLightsailAddOns       bool                      `yaml:"force-delete-lightsail-addons"`
+// GetIncludes returns the combined list of includes and targets. This is left over from the AWS Nuke
+// tool and is deprecated. It was left to make the transition to the library and ekristen/aws-nuke@v3 easier for
+// existing users. This will be removed in 4.x of ekristen/aws-nuke.
+func (r *ResourceTypes) GetIncludes() types.Collection {
+	var combined types.Collection
+
+	if r.Targets != nil {
+		logrus.Warn("'targets' is deprecated. Please use 'includes' instead.")
+		combined = combined.Union(r.Targets)
+	}
+
+	combined = combined.Union(r.Includes)
+	return combined
 }
 
-// DisableDeletionProtection is a collection of feature flags that can be used to disable deletion protection for
-// certain resource types. This is left over from the AWS Nuke tool and is deprecated. It was left to make transition
-// to the library and ekristen/aws-nuke@v3 easier for existing users.
-// Deprecated: Use Settings instead. Will be removed in 4.x
-type DisableDeletionProtection struct {
-	RDSInstance         bool `yaml:"RDSInstance"`
-	EC2Instance         bool `yaml:"EC2Instance"`
-	CloudformationStack bool `yaml:"CloudformationStack"`
-	ELBv2               bool `yaml:"ELBv2"`
-	QLDBLedger          bool `yaml:"QLDBLedger"`
+// GetAlternatives returns the combined list of cloud control and alternatives. This is left over from the AWS Nuke
+// tool and is deprecated. It was left to make the transition to the library and ekristen/aws-nuke@v3 easier for
+// existing users. This will be removed in 4.x of ekristen/aws-nuke.
+func (r *ResourceTypes) GetAlternatives() types.Collection {
+	var combined types.Collection
+
+	if r.CloudControl != nil {
+		logrus.Warn("'cloud-control' is deprecated. Please use 'alternatives' instead.")
+		combined = combined.Union(r.CloudControl)
+	}
+
+	combined = combined.Union(r.Alternatives)
+	return combined
 }
