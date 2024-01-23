@@ -22,11 +22,11 @@ const ScannerParallelQueries = 16
 // item queue for processing. These items will be filtered and then processed.
 type Scanner struct {
 	Items          chan *queue.Item    `hash:"ignore"`
-	Semaphore      *semaphore.Weighted `hash:"ignore"`
+	semaphore      *semaphore.Weighted `hash:"ignore"`
 	ResourceTypes  []string
 	Options        interface{}
 	Owner          string
-	MutateOptsFunc MutateOptsFunc `hash:"ignore"`
+	mutateOptsFunc MutateOptsFunc `hash:"ignore"`
 }
 
 // MutateOptsFunc is a function that can mutate the Options for a given resource type. This is useful for when you
@@ -38,7 +38,7 @@ type MutateOptsFunc func(opts interface{}, resourceType string) interface{}
 func NewScanner(owner string, resourceTypes []string, opts interface{}) *Scanner {
 	return &Scanner{
 		Items:         make(chan *queue.Item, 10000),
-		Semaphore:     semaphore.NewWeighted(ScannerParallelQueries),
+		semaphore:     semaphore.NewWeighted(ScannerParallelQueries),
 		ResourceTypes: resourceTypes,
 		Options:       opts,
 		Owner:         owner,
@@ -53,30 +53,30 @@ type IScanner interface {
 // RegisterMutateOptsFunc registers a mutate Options function for the scanner. The mutate Options function is called
 // for each resource type that is being scanned. This allows you to mutate the Options for a given resource type.
 func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) error {
-	if s.MutateOptsFunc != nil {
-		return fmt.Errorf("MutateOptsFunc already registered")
+	if s.mutateOptsFunc != nil {
+		return fmt.Errorf("mutateOptsFunc already registered")
 	}
-	s.MutateOptsFunc = morph
+	s.mutateOptsFunc = morph
 	return nil
 }
 
 // Run starts the scanner and runs the lister for each resource type.
 func (s *Scanner) Run(ctx context.Context) error {
 	for _, resourceType := range s.ResourceTypes {
-		if err := s.Semaphore.Acquire(ctx, 1); err != nil {
+		if err := s.semaphore.Acquire(ctx, 1); err != nil {
 			return err
 		}
 
 		opts := s.Options
-		if s.MutateOptsFunc != nil {
-			opts = s.MutateOptsFunc(opts, resourceType)
+		if s.mutateOptsFunc != nil {
+			opts = s.mutateOptsFunc(opts, resourceType)
 		}
 
 		go s.list(ctx, s.Owner, resourceType, opts)
 	}
 
 	// Wait for all routines to finish.
-	if err := s.Semaphore.Acquire(ctx, ScannerParallelQueries); err != nil {
+	if err := s.semaphore.Acquire(ctx, ScannerParallelQueries); err != nil {
 		return err
 	}
 
@@ -97,7 +97,7 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 		}
 	}()
 
-	defer s.Semaphore.Release(1)
+	defer s.semaphore.Release(1)
 
 	lister := resource.GetLister(resourceType)
 	var rs []resource.Resource
