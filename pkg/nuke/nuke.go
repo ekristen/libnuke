@@ -145,7 +145,9 @@ func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) error {
 		n.Scanners = make(map[resource.Scope][]*Scanner)
 	}
 
-	hash, err := hashstructure.Hash(scanner, hashstructure.FormatV2, nil)
+	hash, err := hashstructure.Hash(scanner, hashstructure.FormatV2, &hashstructure.HashOptions{
+		TagName: "hash",
+	})
 	if err != nil {
 		return err
 	}
