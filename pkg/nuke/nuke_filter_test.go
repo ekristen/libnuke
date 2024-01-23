@@ -55,7 +55,7 @@ func Test_NukeFiltersMatch(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	scanner := NewScanner("owner", []string{testResourceType2}, opts)
+	scanner := NewScanner("Owner", []string{testResourceType2}, opts)
 
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
@@ -89,7 +89,7 @@ func Test_NukeFiltersMatchInverted(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	scanner := NewScanner("owner", []string{testResourceType2}, opts)
+	scanner := NewScanner("Owner", []string{testResourceType2}, opts)
 
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
@@ -122,7 +122,7 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	scanner := NewScanner("owner", []string{testResourceType2}, opts)
+	scanner := NewScanner("Owner", []string{testResourceType2}, opts)
 
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
@@ -154,7 +154,7 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	scanner := NewScanner("owner", []string{testResourceType}, opts)
+	scanner := NewScanner("Owner", []string{testResourceType}, opts)
 
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)

@@ -183,6 +183,32 @@ func Test_Nuke_Scanners_Duplicate(t *testing.T) {
 	assert.Len(t, n.Scanners[testScope], 1)
 }
 
+func TestNuke_RegisterMultipleScanners(t *testing.T) {
+	n := New(testParameters, nil, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
+
+	opts := struct {
+		name string
+	}{
+		name: "test",
+	}
+
+	var mutateOpts = func(o interface{}, resourceType string) interface{} {
+		return o
+	}
+
+	s := NewScanner("test", []string{"TestResource"}, opts)
+	assert.NoError(t, s.RegisterMutateOptsFunc(mutateOpts))
+
+	s2 := NewScanner("test2", []string{"TestResource"}, opts)
+	assert.NoError(t, s2.RegisterMutateOptsFunc(mutateOpts))
+
+	assert.NoError(t, n.RegisterScanner(testScope, s))
+	assert.NoError(t, n.RegisterScanner(testScope, s2))
+	assert.Len(t, n.Scanners[testScope], 2)
+}
+
 func Test_Nuke_RegisterPrompt(t *testing.T) {
 	n := New(testParameters, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
@@ -217,7 +243,7 @@ func Test_Nuke_Scan(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	scanner := NewScanner("owner", []string{testResourceType, testResourceType2}, opts)
+	scanner := NewScanner("Owner", []string{testResourceType, testResourceType2}, opts)
 
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
@@ -293,7 +319,7 @@ func Test_Nuke_Run(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	scanner := NewScanner("owner", []string{testResourceType}, opts)
+	scanner := NewScanner("Owner", []string{testResourceType}, opts)
 
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
@@ -325,7 +351,7 @@ func Test_Nuke_Run_Error(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	scanner := NewScanner("owner", []string{testResourceType2}, opts)
+	scanner := NewScanner("Owner", []string{testResourceType2}, opts)
 
 	sErr := n.RegisterScanner(testScope, scanner)
 	assert.NoError(t, sErr)
@@ -406,7 +432,7 @@ func Test_Nuke_Run_ItemStateHold(t *testing.T) {
 		Lister: &TestResource4Lister{},
 	})
 
-	scannerErr := n.RegisterScanner(testScope, NewScanner("owner", []string{"TestResource4"}, nil))
+	scannerErr := n.RegisterScanner(testScope, NewScanner("Owner", []string{"TestResource4"}, nil))
 	assert.NoError(t, scannerErr)
 
 	runErr := n.Run(context.TODO())
@@ -414,5 +440,3 @@ func Test_Nuke_Run_ItemStateHold(t *testing.T) {
 
 	assert.Equal(t, 5, n.Queue.Count(queue.ItemStateFinished))
 }
-
-// -----------------------------------------------

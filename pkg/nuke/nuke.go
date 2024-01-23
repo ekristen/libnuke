@@ -10,7 +10,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/mitchellh/hashstructure/v2"
 	"github.com/sirupsen/logrus"
 
 	liberrors "github.com/ekristen/libnuke/pkg/errors"
@@ -145,12 +144,8 @@ func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) error {
 		n.Scanners = make(map[resource.Scope][]*Scanner)
 	}
 
-	hash, err := hashstructure.Hash(scanner, hashstructure.FormatV2, nil)
-	if err != nil {
-		return err
-	}
-
-	hashString := fmt.Sprintf("%s-%d", scope, hash)
+	hashString := fmt.Sprintf("%s-%s", scope, scanner.Owner)
+	n.log.Debugf("hash: %s", hashString)
 	if slices.Contains(n.scannerHashes, hashString) {
 		return fmt.Errorf("scanner is already registered, you cannot register it twice")
 	}

@@ -21,17 +21,16 @@ const ScannerParallelQueries = 16
 // Scanner is collection of resource types that will be scanned for existing resources and added to the
 // item queue for processing. These items will be filtered and then processed.
 type Scanner struct {
-	Items     chan *queue.Item    `hash:"ignore"`
-	semaphore *semaphore.Weighted `hash:"ignore"`
-
-	resourceTypes  []string
-	options        interface{}
-	owner          string
-	mutateOptsFunc MutateOptsFunc
+	Items          chan *queue.Item    `hash:"ignore"`
+	semaphore      *semaphore.Weighted `hash:"ignore"`
+	ResourceTypes  []string
+	Options        interface{}
+	Owner          string
+	mutateOptsFunc MutateOptsFunc `hash:"ignore"`
 }
 
-// MutateOptsFunc is a function that can mutate the options for a given resource type. This is useful for when you
-// need to pass in a different set of options for a given resource type. For example, AWS nuke needs to be able to
+// MutateOptsFunc is a function that can mutate the Options for a given resource type. This is useful for when you
+// need to pass in a different set of Options for a given resource type. For example, AWS nuke needs to be able to
 // populate the region and session for a given resource type give that it might only exist in us-east-1.
 type MutateOptsFunc func(opts interface{}, resourceType string) interface{}
 
@@ -40,9 +39,9 @@ func NewScanner(owner string, resourceTypes []string, opts interface{}) *Scanner
 	return &Scanner{
 		Items:         make(chan *queue.Item, 10000),
 		semaphore:     semaphore.NewWeighted(ScannerParallelQueries),
-		resourceTypes: resourceTypes,
-		options:       opts,
-		owner:         owner,
+		ResourceTypes: resourceTypes,
+		Options:       opts,
+		Owner:         owner,
 	}
 }
 
@@ -51,8 +50,8 @@ type IScanner interface {
 	list(resourceType string)
 }
 
-// RegisterMutateOptsFunc registers a mutate options function for the scanner. The mutate options function is called
-// for each resource type that is being scanned. This allows you to mutate the options for a given resource type.
+// RegisterMutateOptsFunc registers a mutate Options function for the scanner. The mutate Options function is called
+// for each resource type that is being scanned. This allows you to mutate the Options for a given resource type.
 func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) error {
 	if s.mutateOptsFunc != nil {
 		return fmt.Errorf("mutateOptsFunc already registered")
@@ -63,17 +62,17 @@ func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) error {
 
 // Run starts the scanner and runs the lister for each resource type.
 func (s *Scanner) Run(ctx context.Context) error {
-	for _, resourceType := range s.resourceTypes {
+	for _, resourceType := range s.ResourceTypes {
 		if err := s.semaphore.Acquire(ctx, 1); err != nil {
 			return err
 		}
 
-		opts := s.options
+		opts := s.Options
 		if s.mutateOptsFunc != nil {
 			opts = s.mutateOptsFunc(opts, resourceType)
 		}
 
-		go s.list(ctx, s.owner, resourceType, opts)
+		go s.list(ctx, s.Owner, resourceType, opts)
 	}
 
 	// Wait for all routines to finish.

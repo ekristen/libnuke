@@ -2,7 +2,9 @@
 
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![GoDoc](https://godoc.org/github.com/ekristen/libnuke?status.svg)](https://godoc.org/github.com/ekristen/libnuke)
+[![release](https://img.shields.io/github/release/ekristen/libnuke.svg)](https://github.com/ekristen/libnuke/releases)
 [![Go Report Card](https://goreportcard.com/badge/github.com/ekristen/libnuke)](https://goreportcard.com/report/github.com/ekristen/libnuke)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/dc4078a236e89486b4ca/test_coverage)](https://codeclimate.com/github/ekristen/libnuke/test_coverage)
 [![Maintainability](https://api.codeclimate.com/v1/badges/dc4078a236e89486b4ca/maintainability)](https://codeclimate.com/github/ekristen/libnuke/maintainability)
 [![codecov](https://codecov.io/gh/ekristen/libnuke/graph/badge.svg?token=UJJOUJ98G4)](https://codecov.io/gh/ekristen/libnuke)
 [![tests](https://github.com/ekristen/libnuke/actions/workflows/tests.yml/badge.svg)](https://github.com/ekristen/libnuke/actions/workflows/tests.yml)
