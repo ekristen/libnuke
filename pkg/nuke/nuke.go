@@ -145,14 +145,23 @@ func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) error {
 		n.Scanners = make(map[resource.Scope][]*Scanner)
 	}
 
-	hash, err := hashstructure.Hash(scanner, hashstructure.FormatV2, &hashstructure.HashOptions{
-		TagName: "hash",
-	})
+	toHash := struct {
+		Owner         string
+		ResourceTypes []string
+		Options       interface{}
+	}{
+		Owner:         scanner.Owner,
+		ResourceTypes: scanner.ResourceTypes,
+		Options:       scanner.Options,
+	}
+
+	hash, err := hashstructure.Hash(toHash, hashstructure.FormatV2, nil)
 	if err != nil {
 		return err
 	}
 
 	hashString := fmt.Sprintf("%s-%d", scope, hash)
+	n.log.Debugf("hash: %s", hashString)
 	if slices.Contains(n.scannerHashes, hashString) {
 		return fmt.Errorf("scanner is already registered, you cannot register it twice")
 	}
