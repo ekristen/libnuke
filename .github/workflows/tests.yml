@@ -32,5 +32,5 @@ jobs:
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CODECLIMATE_TEST_REPORTER_ID }}
         with:
-          prefix: ${{ github.event.repository.name }}
+          prefix: "github.com/ekristen/libnuke"
           coverageLocations: coverage.txt:gocov
