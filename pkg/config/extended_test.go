@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/yaml.v2"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -64,13 +64,13 @@ func (endpoints TestCustomEndpoints) GetURL(region, serviceType string) string {
 }
 
 type TestExpandedConfig struct {
-	*Config         `yaml:",inline"`
+	Config          `yaml:",inline"`
 	CustomEndpoints TestCustomEndpoints `yaml:"endpoints"`
 }
 
 func NewExpandedConfig(opts Options) (*TestExpandedConfig, error) {
 	c := &TestExpandedConfig{
-		Config: &Config{
+		Config: Config{
 			Accounts:     make(map[string]*Account),
 			Presets:      make(map[string]Preset),
 			Deprecations: make(map[string]string),
@@ -111,7 +111,6 @@ func (c *TestExpandedConfig) load(path string) error {
 	}
 
 	dec := yaml.NewDecoder(bytes.NewReader(raw))
-	dec.KnownFields(true)
 	if err := dec.Decode(&c); err != nil {
 		return err
 	}
@@ -121,7 +120,7 @@ func (c *TestExpandedConfig) load(path string) error {
 
 func NewTestExpandedConfig(path string) (*TestExpandedConfig, error) {
 	c := &TestExpandedConfig{
-		Config: &Config{
+		Config: Config{
 			Blocklist: make([]string, 0),
 			Accounts:  make(map[string]*Account),
 			Presets:   make(map[string]Preset),
