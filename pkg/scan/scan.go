@@ -112,6 +112,11 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 	lister := resource.GetLister(resourceType)
 	var rs []resource.Resource
 
+	if lister == nil {
+		logrus.Errorf("lister for resource type not found: %s", resourceType)
+		return
+	}
+
 	rs, err := lister.List(ctx, opts)
 	if err != nil {
 		var errSkipRequest liberrors.ErrSkipRequest
