@@ -73,6 +73,28 @@ func Test_Nuke_Run_Simple(t *testing.T) {
 	assert.Equal(t, 1, n.Queue.Total())
 }
 
+// Test_Nuke_Run_ScanError tests a simple run with no dry run enabled so all resources are removed.
+func Test_Nuke_Run_ScanError(t *testing.T) {
+	n := New(testParameters, nil, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+	defer cancel()
+
+	resource.ClearRegistry()
+	resource.Register(&resource.Registration{
+		Name:   "TestResourceSuccess",
+		Lister: &TestResourceSuccessLister{},
+	})
+
+	scannerErr := n.RegisterScanner(testScope, scan.NewScanner("Owner", []string{"TestResourceSuccess"}, nil))
+	assert.NoError(t, scannerErr)
+
+	runErr := n.Run(ctx)
+	assert.Error(t, runErr)
+}
+
 // Test_NukeRunSimpleWithFirstPromptError tests the first prompt throwing an error
 func Test_NukeRunSimpleWithFirstPromptError(t *testing.T) {
 	n := New(testParameters, nil, nil)

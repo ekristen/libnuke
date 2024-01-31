@@ -79,6 +79,9 @@ type Nuke struct {
 	version       string        // version is what is shown at the beginning of a run
 	log           *logrus.Entry // log is the logger that is used for the library
 	runSleep      time.Duration // runSleep is how long to sleep between runs of the queue
+
+	failedCount  int // failedCount is used to track how many times we've retried all failed resources
+	waitingCount int // waitingCount is used to track how many times we've waiting for resources to move states
 }
 
 // New returns an instance of nuke that is properly configured for initial use
@@ -218,62 +221,100 @@ func (n *Nuke) Run(ctx context.Context) error {
 	return nil
 }
 
-// run handles the processing and loop of the queue of items
-func (n *Nuke) run(ctx context.Context) error {
-	failCount := 0
-	waitingCount := 0
+// handleFailure is used to handle the failure state of resources. It will determine if there have been too many
+// failures and exit accordingly, writing to screen the failure state of each resource
+func (n *Nuke) handleFailure() error {
+	// processingCount is used to determine if there are any resources that are not in the failed state
+	processingCount := n.Queue.Count(queue.ItemStatePending, queue.ItemStatePendingDependency, queue.ItemStateHold,
+		queue.ItemStateWaiting, queue.ItemStateNew, queue.ItemStateNewDependency)
 
-	for {
-		n.HandleQueue(ctx)
+	// failedCount is used to determine if there are any resources that are in the failed state
+	failedCount := n.Queue.Count(queue.ItemStateFailed)
 
-		if n.Queue.Count(
-			queue.ItemStatePending,
-			queue.ItemStatePendingDependency,
-			queue.ItemStateHold,
-			queue.ItemStateWaiting,
-			queue.ItemStateNew,
-			queue.ItemStateNewDependency,
-		) == 0 && n.Queue.Count(queue.ItemStateFailed) > 0 {
-			if failCount >= 2 {
-				logrus.Errorf("There are resources in failed state, but none are ready for deletion, anymore.")
-				fmt.Println()
+	// if there are no resources being processed and there are resources in the failed state, then we enter this
+	// loop to determine how many times we've tried the failed resources
+	if processingCount == 0 && failedCount > 0 {
+		// if failCount is greater than 2, then we are done, print status and return failed error
+		if n.failedCount >= 2 {
+			logrus.Errorf("There are resources in failed state, but none are ready for deletion, anymore.")
+			fmt.Println()
 
-				for _, item := range n.Queue.GetItems() {
-					if item.GetState() != queue.ItemStateFailed {
-						continue
-					}
-
-					item.Print()
-					logrus.Error(item.GetReason())
+			for _, item := range n.Queue.GetItems() {
+				if item.GetState() != queue.ItemStateFailed {
+					continue
 				}
 
-				return fmt.Errorf("failed")
+				item.Print()
+				logrus.Error(item.GetReason())
 			}
 
-			failCount++
-		} else {
-			failCount = 0
+			return fmt.Errorf("failed")
 		}
 
-		if n.Parameters.MaxWaitRetries != 0 &&
-			n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending, queue.ItemStatePendingDependency, queue.ItemStateHold) > 0 &&
-			n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency) == 0 {
-			if waitingCount >= n.Parameters.MaxWaitRetries {
-				return fmt.Errorf("max wait retries of %d exceeded", n.Parameters.MaxWaitRetries)
-			}
-			waitingCount++
-		} else {
-			waitingCount = 0
+		n.failedCount++
+	} else {
+		n.failedCount = 0
+	}
+
+	return nil
+}
+
+// handleWaiting is used to handle the waiting state of resources. It will determine if there have been too many
+// wait retries and exit accordingly.
+func (n *Nuke) handleWaiting() error {
+	// if MaxWaitRetries is set to 0, then we do not need to do anything, we will retry indefinitely
+	if n.Parameters.MaxWaitRetries == 0 {
+		return nil
+	}
+
+	// pendingCount is used to determine if there are any resources that are still in a pending or hold
+	pendingCount := n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending,
+		queue.ItemStatePendingDependency, queue.ItemStateHold)
+
+	// newCount is used to determine if there are any resources that are still in a new state
+	newCount := n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency)
+
+	// If MaxWaitRetries is set, then we need to know if all resources have been moved from new to a pending state.
+	// If there are pending, then we need to know how many times to retry before giving up, otherwise we try
+	// indefinitely.
+	if pendingCount > 0 && newCount == 0 {
+		if n.waitingCount >= n.Parameters.MaxWaitRetries {
+			return fmt.Errorf("max wait retries of %d exceeded", n.Parameters.MaxWaitRetries)
 		}
-		if n.Queue.Count(
-			queue.ItemStateNew,
-			queue.ItemStateNewDependency,
-			queue.ItemStatePending,
-			queue.ItemStatePendingDependency,
-			queue.ItemStateFailed,
-			queue.ItemStateWaiting,
-			queue.ItemStateHold,
-		) == 0 {
+		n.waitingCount++
+	} else {
+		n.waitingCount = 0
+	}
+
+	return nil
+}
+
+// run handles the processing and loop of the queue of items
+func (n *Nuke) run(ctx context.Context) error {
+	for {
+		// HandleQueue is used to handle the queue of resources. It will iterate over the queue and trigger the
+		// appropriate handlers based on the state of the resource.
+		n.HandleQueue(ctx)
+
+		// handleFailure will check to see if we are in a final failure state and should error out and exit
+		if err := n.handleFailure(); err != nil {
+			return err
+		}
+
+		// handleWaiting will check to see if we have waited to long for resources to retry and error and exit
+		if err := n.handleWaiting(); err != nil {
+			return err
+		}
+
+		// unfinishedCount is used to determine if there are any resources that are still in a state
+		// that is not the finished state
+		unfinishedCount := n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency,
+			queue.ItemStatePending, queue.ItemStatePendingDependency, queue.ItemStateFailed,
+			queue.ItemStateWaiting, queue.ItemStateHold,
+		)
+
+		// If there are no resources in the queue that are in a state that is not finished, then we are done
+		if unfinishedCount == 0 {
 			break
 		}
 
