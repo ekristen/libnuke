@@ -1,32 +1,35 @@
-package nuke
+package scan
 
 import (
 	"context"
 	"errors"
 	"fmt"
+
 	"runtime/debug"
 
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/semaphore"
 
-	sdkerrors "github.com/ekristen/libnuke/pkg/errors"
+	liberrors "github.com/ekristen/libnuke/pkg/errors"
+
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/utils"
 )
 
-// ScannerParallelQueries is the number of parallel queries to run at any given time for a scanner.
-const ScannerParallelQueries = 16
+// DefaultParallelQueries is the number of parallel queries to run at any given time for a scanner.
+const DefaultParallelQueries = 16
 
 // Scanner is collection of resource types that will be scanned for existing resources and added to the
 // item queue for processing. These items will be filtered and then processed.
 type Scanner struct {
-	Items          chan *queue.Item    `hash:"ignore"`
-	semaphore      *semaphore.Weighted `hash:"ignore"`
-	ResourceTypes  []string
-	Options        interface{}
-	Owner          string
-	mutateOptsFunc MutateOptsFunc `hash:"ignore"`
+	Items           chan *queue.Item    `hash:"ignore"`
+	semaphore       *semaphore.Weighted `hash:"ignore"`
+	ResourceTypes   []string
+	Options         interface{}
+	Owner           string
+	mutateOptsFunc  MutateOptsFunc `hash:"ignore"`
+	parallelQueries int64
 }
 
 // MutateOptsFunc is a function that can mutate the Options for a given resource type. This is useful for when you
@@ -37,11 +40,12 @@ type MutateOptsFunc func(opts interface{}, resourceType string) interface{}
 // NewScanner creates a new scanner for the given resource types.
 func NewScanner(owner string, resourceTypes []string, opts interface{}) *Scanner {
 	return &Scanner{
-		Items:         make(chan *queue.Item, 10000),
-		semaphore:     semaphore.NewWeighted(ScannerParallelQueries),
-		ResourceTypes: resourceTypes,
-		Options:       opts,
-		Owner:         owner,
+		Items:           make(chan *queue.Item, 10000),
+		semaphore:       semaphore.NewWeighted(DefaultParallelQueries),
+		ResourceTypes:   resourceTypes,
+		Options:         opts,
+		Owner:           owner,
+		parallelQueries: DefaultParallelQueries,
 	}
 }
 
@@ -60,6 +64,12 @@ func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) error {
 	return nil
 }
 
+// SetParallelQueries changes the number of parallel queries to run at any given time from the default for the scanner.
+func (s *Scanner) SetParallelQueries(parallelQueries int64) {
+	s.parallelQueries = parallelQueries
+	s.semaphore = semaphore.NewWeighted(s.parallelQueries)
+}
+
 // Run starts the scanner and runs the lister for each resource type.
 func (s *Scanner) Run(ctx context.Context) error {
 	for _, resourceType := range s.ResourceTypes {
@@ -76,7 +86,7 @@ func (s *Scanner) Run(ctx context.Context) error {
 	}
 
 	// Wait for all routines to finish.
-	if err := s.semaphore.Acquire(ctx, ScannerParallelQueries); err != nil {
+	if err := s.semaphore.Acquire(ctx, s.parallelQueries); err != nil {
 		return err
 	}
 
@@ -104,14 +114,14 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 
 	rs, err := lister.List(ctx, opts)
 	if err != nil {
-		var errSkipRequest sdkerrors.ErrSkipRequest
+		var errSkipRequest liberrors.ErrSkipRequest
 		ok := errors.As(err, &errSkipRequest)
 		if ok {
 			logrus.Debugf("skipping request: %v", err)
 			return
 		}
 
-		var errUnknownEndpoint sdkerrors.ErrUnknownEndpoint
+		var errUnknownEndpoint liberrors.ErrUnknownEndpoint
 		ok = errors.As(err, &errUnknownEndpoint)
 		if ok {
 			logrus.Debugf("skipping request: %v", err)

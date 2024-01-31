@@ -13,10 +13,12 @@ import (
 	"github.com/sirupsen/logrus"
 
 	liberrors "github.com/ekristen/libnuke/pkg/errors"
+	libsettings "github.com/ekristen/libnuke/pkg/settings"
+
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
-	libsettings "github.com/ekristen/libnuke/pkg/settings"
+	"github.com/ekristen/libnuke/pkg/scan"
 	"github.com/ekristen/libnuke/pkg/types"
 	"github.com/ekristen/libnuke/pkg/utils"
 )
@@ -69,7 +71,7 @@ type Nuke struct {
 
 	ValidateHandlers []func() error
 	ResourceTypes    map[resource.Scope]types.Collection
-	Scanners         map[resource.Scope][]*Scanner
+	Scanners         map[resource.Scope][]*scan.Scanner
 	Queue            queue.Queue // Queue is the queue of resources that will be processed
 
 	scannerHashes []string      // scannerHashes is used to track if a scanner has already been registered
@@ -139,12 +141,12 @@ func (n *Nuke) RegisterResourceTypes(scope resource.Scope, resourceTypes ...stri
 // RegisterScanner is used to register a scanner against a scope. A scope is a string that is used to group resource
 // types together. A scanner is what is responsible for actually querying the API for resources and adding them to
 // the queue for processing.
-func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) error {
+func (n *Nuke) RegisterScanner(scope resource.Scope, instance *scan.Scanner) error {
 	if n.Scanners == nil {
-		n.Scanners = make(map[resource.Scope][]*Scanner)
+		n.Scanners = make(map[resource.Scope][]*scan.Scanner)
 	}
 
-	hashString := fmt.Sprintf("%s-%s", scope, scanner.Owner)
+	hashString := fmt.Sprintf("%s-%s", scope, instance.Owner)
 	n.log.Debugf("hash: %s", hashString)
 	if slices.Contains(n.scannerHashes, hashString) {
 		return fmt.Errorf("scanner is already registered, you cannot register it twice")
@@ -155,7 +157,7 @@ func (n *Nuke) RegisterScanner(scope resource.Scope, scanner *Scanner) error {
 	}
 
 	n.scannerHashes = append(n.scannerHashes, hashString)
-	n.Scanners[scope] = append(n.Scanners[scope], scanner)
+	n.Scanners[scope] = append(n.Scanners[scope], instance)
 
 	return nil
 }

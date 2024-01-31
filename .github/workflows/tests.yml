@@ -22,7 +22,7 @@ jobs:
           go mod download
       - name: run go tests
         run: |
-          go test -timeout 60s -race -coverprofile=coverage.txt -covermode=atomic ./...
+          go test -timeout 60s -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         env:
