@@ -12,8 +12,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	liberrors "github.com/ekristen/libnuke/pkg/errors"
-
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/scan"
@@ -364,6 +362,7 @@ func Test_Nuke_Run_Error(t *testing.T) {
 
 // ------------------------------------------------------------
 
+/*
 var TestResource4Resources []resource.Resource
 
 type TestResource4 struct {
@@ -422,7 +421,6 @@ func (l *TestResource4Lister) List(_ context.Context, _ interface{}) ([]resource
 	return TestResource4Resources, nil
 }
 
-/*
 func Test_Nuke_Run_ItemStateHold(t *testing.T) {
 	n := New(testParametersRemove, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
