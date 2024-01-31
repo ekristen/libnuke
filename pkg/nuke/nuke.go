@@ -80,8 +80,8 @@ type Nuke struct {
 	log           *logrus.Entry // log is the logger that is used for the library
 	runSleep      time.Duration // runSleep is how long to sleep between runs of the queue
 
-	failedCount  int
-	waitingCount int
+	failedCount  int // failedCount is used to track how many times we've retried all failed resources
+	waitingCount int // waitingCount is used to track how many times we've waiting for resources to move states
 }
 
 // New returns an instance of nuke that is properly configured for initial use
