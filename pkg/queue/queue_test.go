@@ -7,7 +7,7 @@ import (
 )
 
 func Test_Queue(t *testing.T) {
-	q := Queue{}
+	q := New()
 
 	items := []*Item{
 		{

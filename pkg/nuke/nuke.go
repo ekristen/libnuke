@@ -72,7 +72,7 @@ type Nuke struct {
 	ValidateHandlers []func() error
 	ResourceTypes    map[resource.Scope]types.Collection
 	Scanners         map[resource.Scope][]*scan.Scanner
-	Queue            queue.Queue // Queue is the queue of resources that will be processed
+	Queue            *queue.Queue // Queue is the queue of resources that will be processed
 
 	scannerHashes []string      // scannerHashes is used to track if a scanner has already been registered
 	prompt        func() error  // prompt is what is shown to the user for confirmation
@@ -92,7 +92,7 @@ func New(params *Parameters, filters filter.Filters, settings *libsettings.Setti
 	n := &Nuke{
 		Parameters: params,
 		Filters:    filters,
-		Queue:      queue.Queue{},
+		Queue:      queue.New(),
 		Settings:   settings,
 		log:        logger.WithField("component", "nuke"),
 	}
@@ -348,45 +348,60 @@ func (n *Nuke) Validate() error {
 	return nil
 }
 
+// getScanners is used to condense the scanners down to a single list
+func (n *Nuke) getScanners() []*scan.Scanner {
+	var allScanners []*scan.Scanner
+	for _, scanners := range n.Scanners {
+		allScanners = append(allScanners, scanners...)
+	}
+	return allScanners
+}
+
+// runScanner is used to run a scanner and process the items that are returned from the scanner
+func (n *Nuke) runScanner(ctx context.Context, scanner *scan.Scanner, itemQueue *queue.Queue) error {
+	if err := scanner.Run(ctx); err != nil {
+		return err
+	}
+
+	for item := range scanner.Items {
+		// Experimental Feature
+		if n.Parameters.WaitOnDependencies {
+			reg := resource.GetRegistration(item.Type)
+			if len(reg.DependsOn) > 0 {
+				item.State = queue.ItemStateNewDependency
+			}
+		}
+
+		sGetter, ok := item.Resource.(resource.SettingsGetter)
+		if ok {
+			sGetter.Settings(n.Settings.Get(item.Type))
+		}
+
+		itemQueue.Items = append(itemQueue.Items, item)
+		if err := n.Filter(item); err != nil {
+			return err
+		}
+
+		if item.State == queue.ItemStateFiltered && !n.Parameters.Quiet {
+			item.Print()
+		}
+	}
+
+	return nil
+}
+
 // Scan is used to scan for resources. It will run the scanners that were registered with the library by the invoking
 // tool. It will also filter the resources based on the filters that were registered. It will also print the current
 // status of the resources.
 func (n *Nuke) Scan(ctx context.Context) error {
-	itemQueue := queue.Queue{
-		Items: make([]*queue.Item, 0),
-	}
+	itemQueue := queue.New()
 
-	for _, scanners := range n.Scanners {
-		for _, scanner := range scanners {
-			err := scanner.Run(ctx)
-			if err != nil {
-				return err
-			}
+	scanners := n.getScanners()
 
-			for item := range scanner.Items {
-				// Experimental Feature
-				if n.Parameters.WaitOnDependencies {
-					reg := resource.GetRegistration(item.Type)
-					if len(reg.DependsOn) > 0 {
-						item.State = queue.ItemStateNewDependency
-					}
-				}
-
-				sGetter, ok := item.Resource.(resource.SettingsGetter)
-				if ok {
-					sGetter.Settings(n.Settings.Get(item.Type))
-				}
-
-				itemQueue.Items = append(itemQueue.Items, item)
-				err := n.Filter(item)
-				if err != nil {
-					return err
-				}
-
-				if item.State == queue.ItemStateFiltered || !n.Parameters.Quiet {
-					item.Print()
-				}
-			}
+	// Iterate over scanners and run them then process their items.
+	for _, actualScanner := range scanners {
+		if err := n.runScanner(ctx, actualScanner, itemQueue); err != nil {
+			return err
 		}
 	}
 

@@ -23,7 +23,7 @@ import (
 var testParameters = &Parameters{
 	Force:      true,
 	ForceSleep: 3,
-	Quiet:      true,
+	Quiet:      false,
 	NoDryRun:   false,
 }
 
