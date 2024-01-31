@@ -31,16 +31,6 @@ var (
 		Scope:  "account",
 		Lister: &TestResourceLister{},
 	}
-
-	testResourceType2         = "testResourceType2"
-	testResourceRegistration2 = &resource.Registration{
-		Name:   testResourceType2,
-		Scope:  "account",
-		Lister: &TestResourceLister{},
-		DependsOn: []string{
-			testResourceType,
-		},
-	}
 )
 
 type TestResource struct {

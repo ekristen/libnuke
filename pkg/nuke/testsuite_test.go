@@ -3,12 +3,14 @@ package nuke
 import (
 	"context"
 	"fmt"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+
 	"github.com/ekristen/libnuke/pkg/errors"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/settings"
 	"github.com/ekristen/libnuke/pkg/types"
-	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var (

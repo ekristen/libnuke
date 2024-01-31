@@ -2,8 +2,6 @@ package nuke
 
 import (
 	"context"
-	"github.com/ekristen/libnuke/pkg/queue"
-
 	"testing"
 	"time"
 
@@ -12,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/filter"
+	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/scanner"
 	"github.com/ekristen/libnuke/pkg/types"
