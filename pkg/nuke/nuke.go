@@ -383,7 +383,7 @@ func (n *Nuke) Scan(ctx context.Context) error {
 					return err
 				}
 
-				if item.State != queue.ItemStateFiltered || !n.Parameters.Quiet {
+				if item.State == queue.ItemStateFiltered || !n.Parameters.Quiet {
 					item.Print()
 				}
 			}
