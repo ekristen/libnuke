@@ -376,6 +376,9 @@ func (r *TestResource4) Remove(_ context.Context) error {
 		parentFound := false
 
 		for _, o := range TestResource4Resources {
+			if o == nil {
+				panic("resource is nil")
+			}
 			id := o.(resource.LegacyStringer).String()
 			if id == r.parentID {
 				parentFound = true
