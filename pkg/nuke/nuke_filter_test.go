@@ -2,6 +2,8 @@ package nuke
 
 import (
 	"context"
+	"github.com/ekristen/libnuke/pkg/queue"
+
 	"testing"
 	"time"
 
@@ -10,14 +12,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/filter"
-	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/scanner"
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
 func Test_NukeFiltersBad(t *testing.T) {
 	filters := filter.Filters{
-		testResourceType: []filter.Filter{
+		TestResourceType: []filter.Filter{
 			{
 				Type: filter.Exact,
 			},
@@ -35,10 +37,10 @@ func Test_NukeFiltersBad(t *testing.T) {
 
 func Test_NukeFiltersMatch(t *testing.T) {
 	resource.ClearRegistry()
-	resource.Register(testResourceRegistration2)
+	resource.Register(TestResourceRegistration2)
 
 	filters := filter.Filters{
-		testResourceType2: []filter.Filter{
+		TestResourceType2: []filter.Filter{
 			{
 				Type:     filter.Exact,
 				Property: "test",
@@ -55,9 +57,9 @@ func Test_NukeFiltersMatch(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	scanner := NewScanner("Owner", []string{testResourceType2}, opts)
+	newScanner := scanner.NewScanner("Owner", []string{TestResourceType2}, opts)
 
-	sErr := n.RegisterScanner(testScope, scanner)
+	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
 	err := n.Scan(context.TODO())
@@ -68,10 +70,10 @@ func Test_NukeFiltersMatch(t *testing.T) {
 
 func Test_NukeFiltersMatchInverted(t *testing.T) {
 	resource.ClearRegistry()
-	resource.Register(testResourceRegistration2)
+	resource.Register(TestResourceRegistration2)
 
 	filters := filter.Filters{
-		testResourceType2: []filter.Filter{
+		TestResourceType2: []filter.Filter{
 			{
 				Type:     filter.Exact,
 				Property: "test",
@@ -89,9 +91,9 @@ func Test_NukeFiltersMatchInverted(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	scanner := NewScanner("Owner", []string{testResourceType2}, opts)
+	newScanner := scanner.NewScanner("Owner", []string{TestResourceType2}, opts)
 
-	sErr := n.RegisterScanner(testScope, scanner)
+	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
 	err := n.Scan(context.TODO())
@@ -102,10 +104,10 @@ func Test_NukeFiltersMatchInverted(t *testing.T) {
 
 func Test_Nuke_Filters_NoMatch(t *testing.T) {
 	resource.ClearRegistry()
-	resource.Register(testResourceRegistration2)
+	resource.Register(TestResourceRegistration2)
 
 	filters := filter.Filters{
-		testResourceType: []filter.Filter{
+		TestResourceType: []filter.Filter{
 			{
 				Type:     filter.Exact,
 				Property: "test",
@@ -122,9 +124,9 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	scanner := NewScanner("Owner", []string{testResourceType2}, opts)
+	newScanner := scanner.NewScanner("Owner", []string{TestResourceType2}, opts)
 
-	sErr := n.RegisterScanner(testScope, scanner)
+	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
 	err := n.Scan(context.TODO())
@@ -135,14 +137,14 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 
 func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 	resource.ClearRegistry()
-	resource.Register(testResourceRegistration)
+	resource.Register(TestResourceRegistration)
 
 	filters := filter.Filters{
-		testResourceType: []filter.Filter{
+		TestResourceType: []filter.Filter{
 			{
 				Type:     filter.Exact,
 				Property: "Name",
-				Value:    testResourceType,
+				Value:    TestResourceType,
 			},
 		},
 	}
@@ -154,9 +156,9 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	scanner := NewScanner("Owner", []string{testResourceType}, opts)
+	newScanner := scanner.NewScanner("Owner", []string{TestResourceType}, opts)
 
-	sErr := n.RegisterScanner(testScope, scanner)
+	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
 	err := n.Scan(context.TODO())
@@ -183,7 +185,7 @@ func (r *TestResourceFilter) Remove(_ context.Context) error {
 
 func Test_Nuke_Filters_Extra(t *testing.T) {
 	filters := filter.Filters{
-		testResourceType2: []filter.Filter{
+		TestResourceType2: []filter.Filter{
 			{
 				Type:     filter.Glob,
 				Property: "tag:aws:cloudformation:stack-name",
@@ -198,7 +200,7 @@ func Test_Nuke_Filters_Extra(t *testing.T) {
 
 	i := &queue.Item{
 		Resource: &TestResourceFilter{},
-		Type:     testResourceType2,
+		Type:     TestResourceType2,
 	}
 
 	err := n.Filter(i)

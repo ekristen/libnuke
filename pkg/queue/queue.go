@@ -25,9 +25,9 @@ func (q Queue) Total() int {
 // Count returns the total number of items in a specific ItemState from the Queue
 func (q Queue) Count(states ...ItemState) int {
 	count := 0
-	for _, item := range q.Items {
+	for _, i := range q.Items {
 		for _, state := range states {
-			if item.GetState() == state {
+			if i.GetState() == state {
 				count++
 				break
 			}
@@ -39,10 +39,10 @@ func (q Queue) Count(states ...ItemState) int {
 // CountByType returns the total number of items that match a ResourceType and specific ItemState from the Queue
 func (q Queue) CountByType(resourceType string, states ...ItemState) int {
 	count := 0
-	for _, item := range q.Items {
-		if item.Type == resourceType {
+	for _, i := range q.Items {
+		if i.Type == resourceType {
 			for _, state := range states {
-				if item.GetState() == state {
+				if i.GetState() == state {
 					count++
 					break
 				}
