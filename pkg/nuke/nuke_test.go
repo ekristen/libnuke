@@ -3,6 +3,7 @@ package nuke
 import (
 	"context"
 	"fmt"
+	liberrors "github.com/ekristen/libnuke/pkg/errors"
 	"io"
 	"os"
 	"strings"
@@ -362,7 +363,6 @@ func Test_Nuke_Run_Error(t *testing.T) {
 
 // ------------------------------------------------------------
 
-/*
 var TestResource4Resources []resource.Resource
 
 type TestResource4 struct {
@@ -393,6 +393,7 @@ func (r *TestResource4) String() string {
 	return r.id
 }
 
+/*
 type TestResource4Lister struct {
 	attempts int
 }
