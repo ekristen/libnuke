@@ -12,6 +12,13 @@ type Queue struct {
 	Items []*Item
 }
 
+// New creates a new Queue
+func New() *Queue {
+	return &Queue{
+		Items: []*Item{},
+	}
+}
+
 // GetItems returns all the items currently in the Queue
 func (q Queue) GetItems() []*Item {
 	return q.Items
