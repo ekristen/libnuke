@@ -352,9 +352,7 @@ func (n *Nuke) Validate() error {
 func (n *Nuke) getScanners() []*scan.Scanner {
 	var allScanners []*scan.Scanner
 	for _, scanners := range n.Scanners {
-		for _, scanner := range scanners {
-			allScanners = append(allScanners, scanner)
-		}
+		allScanners = append(allScanners, scanners...)
 	}
 	return allScanners
 }
