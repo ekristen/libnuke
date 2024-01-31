@@ -13,8 +13,8 @@ type Queue struct {
 }
 
 // New creates a new Queue
-func New() Queue {
-	return Queue{
+func New() *Queue {
+	return &Queue{
 		Items: []*Item{},
 	}
 }

@@ -72,7 +72,7 @@ type Nuke struct {
 	ValidateHandlers []func() error
 	ResourceTypes    map[resource.Scope]types.Collection
 	Scanners         map[resource.Scope][]*scan.Scanner
-	Queue            queue.Queue // Queue is the queue of resources that will be processed
+	Queue            *queue.Queue // Queue is the queue of resources that will be processed
 
 	scannerHashes []string      // scannerHashes is used to track if a scanner has already been registered
 	prompt        func() error  // prompt is what is shown to the user for confirmation
@@ -400,7 +400,7 @@ func (n *Nuke) Scan(ctx context.Context) error {
 
 	// Iterate over scanners and run them then process their items.
 	for _, actualScanner := range scanners {
-		if err := n.runScanner(ctx, actualScanner, &itemQueue); err != nil {
+		if err := n.runScanner(ctx, actualScanner, itemQueue); err != nil {
 			return err
 		}
 	}
