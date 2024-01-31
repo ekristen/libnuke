@@ -145,13 +145,19 @@ func Test_Nuke_Run_SimpleWithNoDryRun(t *testing.T) {
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
-	scannerErr := n.RegisterScanner(testScope, scan.NewScanner("Owner", []string{"TestResource4"}, nil))
+	resource.ClearRegistry()
+	resource.Register(&resource.Registration{
+		Name:   "TestResourceSuccess",
+		Lister: &TestResourceSuccessLister{},
+	})
+
+	scannerErr := n.RegisterScanner(testScope, scan.NewScanner("Owner", []string{"TestResourceSuccess"}, nil))
 	assert.NoError(t, scannerErr)
 
 	runErr := n.Run(context.TODO())
 	assert.NoError(t, runErr)
 
-	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFinished))
+	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFinished))
 }
 
 // Test_Nuke_Run_Failure tests a run with a resource that fails to remove, so it should be in the failed state.
