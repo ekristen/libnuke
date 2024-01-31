@@ -393,7 +393,6 @@ func (r *TestResource4) String() string {
 	return r.id
 }
 
-/*
 type TestResource4Lister struct {
 	attempts int
 }
@@ -441,4 +440,3 @@ func Test_Nuke_Run_ItemStateHold(t *testing.T) {
 	assert.NoError(t, runErr)
 	assert.Equal(t, 5, n.Queue.Count(queue.ItemStateFinished))
 }
-*/

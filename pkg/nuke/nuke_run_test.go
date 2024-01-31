@@ -24,7 +24,7 @@ type TestResourceSuccessLister struct {
 	listed bool
 }
 
-func (l *TestResourceSuccessLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
+func (l *TestResourceSuccessLister) List(_ context.Context, _ interface{}) ([]resource.Resource, error) {
 	if l.listed {
 		return []resource.Resource{}, nil
 	}
@@ -41,7 +41,7 @@ func (r *TestResourceFailure) String() string { return "TestResourceFailure" }
 
 type TestResourceFailureLister struct{}
 
-func (l *TestResourceFailureLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
+func (l *TestResourceFailureLister) List(_ context.Context, _ interface{}) ([]resource.Resource, error) {
 	return []resource.Resource{&TestResourceFailure{}}, nil
 }
 
@@ -145,7 +145,7 @@ func Test_Nuke_Run_SimpleWithNoDryRun(t *testing.T) {
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
-	scannerErr := n.RegisterScanner(testScope, scan.NewScanner("Owner", []string{"TestResource4"}, nil))
+	scannerErr := n.RegisterScanner(testScope, scan.NewScanner("Owner", []string{"TestResource0"}, nil))
 	assert.NoError(t, scannerErr)
 
 	runErr := n.Run(context.TODO())
