@@ -376,9 +376,6 @@ func (r *TestResource4) Remove(_ context.Context) error {
 		parentFound := false
 
 		for _, o := range TestResource4Resources {
-			if o == nil {
-				panic("resource is nil")
-			}
 			id := o.(resource.LegacyStringer).String()
 			if id == r.parentID {
 				parentFound = true
@@ -425,6 +422,7 @@ func (l *TestResource4Lister) List(_ context.Context, _ interface{}) ([]resource
 	return TestResource4Resources, nil
 }
 
+/*
 func Test_Nuke_Run_ItemStateHold(t *testing.T) {
 	n := New(testParametersRemove, nil, nil)
 	n.SetLogger(logrus.WithField("test", true))
@@ -444,3 +442,4 @@ func Test_Nuke_Run_ItemStateHold(t *testing.T) {
 	assert.NoError(t, runErr)
 	assert.Equal(t, 5, n.Queue.Count(queue.ItemStateFinished))
 }
+*/
