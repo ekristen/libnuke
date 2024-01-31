@@ -226,14 +226,17 @@ func (n *Nuke) run(ctx context.Context) error {
 	for {
 		n.HandleQueue(ctx)
 
-		if n.Queue.Count(
-			queue.ItemStatePending,
-			queue.ItemStatePendingDependency,
-			queue.ItemStateHold,
-			queue.ItemStateWaiting,
-			queue.ItemStateNew,
-			queue.ItemStateNewDependency,
-		) == 0 && n.Queue.Count(queue.ItemStateFailed) > 0 {
+		// processingCount is used to determine if there are any resources that are not in the failed state
+		processingCount := n.Queue.Count(queue.ItemStatePending, queue.ItemStatePendingDependency, queue.ItemStateHold,
+			queue.ItemStateWaiting, queue.ItemStateNew, queue.ItemStateNewDependency)
+
+		// failedCount is used to determine if there are any resources that are in the failed state
+		failedCount := n.Queue.Count(queue.ItemStateFailed)
+
+		// if there are no resources being processed and there are resources in the failed state, then we enter this
+		// loop to determine how many times we've tried the failed resources
+		if processingCount == 0 && failedCount > 0 {
+			// if failCount is greater than 2, then we are done, print status and return failed error
 			if failCount >= 2 {
 				logrus.Errorf("There are resources in failed state, but none are ready for deletion, anymore.")
 				fmt.Println()
@@ -255,9 +258,24 @@ func (n *Nuke) run(ctx context.Context) error {
 			failCount = 0
 		}
 
-		if n.Parameters.MaxWaitRetries != 0 &&
-			n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending, queue.ItemStatePendingDependency, queue.ItemStateHold) > 0 &&
-			n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency) == 0 {
+		// pendingCount is used to determine if there are any resources that are still in a pending or hold
+		pendingCount := n.Queue.Count(queue.ItemStateWaiting, queue.ItemStatePending,
+			queue.ItemStatePendingDependency, queue.ItemStateHold)
+
+		// newCount is used to determine if there are any resources that are still in a new state
+		newCount := n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency)
+
+		// unfinishedCount is used to determine if there are any resources that are still in a state
+		// that is not the finished state
+		unfinishedCount := n.Queue.Count(queue.ItemStateNew, queue.ItemStateNewDependency,
+			queue.ItemStatePending, queue.ItemStatePendingDependency, queue.ItemStateFailed,
+			queue.ItemStateWaiting, queue.ItemStateHold,
+		)
+
+		// If MaxWaitRetries is set, then we need to know if all resources have been moved from new to a pending state.
+		// If there are pending, then we need to know how many times to retry before giving up, otherwise we try
+		// indefinitely.
+		if n.Parameters.MaxWaitRetries != 0 && pendingCount > 0 && newCount == 0 {
 			if waitingCount >= n.Parameters.MaxWaitRetries {
 				return fmt.Errorf("max wait retries of %d exceeded", n.Parameters.MaxWaitRetries)
 			}
@@ -265,15 +283,9 @@ func (n *Nuke) run(ctx context.Context) error {
 		} else {
 			waitingCount = 0
 		}
-		if n.Queue.Count(
-			queue.ItemStateNew,
-			queue.ItemStateNewDependency,
-			queue.ItemStatePending,
-			queue.ItemStatePendingDependency,
-			queue.ItemStateFailed,
-			queue.ItemStateWaiting,
-			queue.ItemStateHold,
-		) == 0 {
+
+		// If there are no resources in the queue that are in a state that is not finished, then we are done
+		if unfinishedCount == 0 {
 			break
 		}
 
