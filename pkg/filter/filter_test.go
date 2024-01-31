@@ -235,3 +235,17 @@ func TestMerge(t *testing.T) {
 		t.Errorf("Merge() = %v, want %v", f1, expected)
 	}
 }
+
+func Test_FiltersValidateError(t *testing.T) {
+	filters := filter.Filters{
+		"resource1": []filter.Filter{
+			{
+				Property: "",
+				Type:     filter.Empty,
+				Value:    "",
+			},
+		},
+	}
+	err := filters.Validate()
+	assert.Error(t, err)
+}
