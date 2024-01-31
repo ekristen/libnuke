@@ -1,9 +1,11 @@
-package scanner
+package scan
 
 import (
 	"context"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -158,10 +160,44 @@ func Test_NewScannerWithResourceListerErrorUnknownEndpoint(t *testing.T) {
 	assert.Len(t, scanner.Items, 0)
 }
 
-/*
-TODO: fix - when run as a whole, this panics but doesn't get caught properly instead the test suite panics and exits
+func TestRunSemaphoreFirstAcquireError(t *testing.T) {
+	// Create a new scanner
+	scanner := NewScanner("owner", []string{testResourceType}, nil)
+	scanner.SetParallelQueries(0)
+
+	// Create a context that will be cancelled immediately
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
+	defer cancel()
+
+	// Run the scanner
+	err := scanner.Run(ctx)
+	assert.Error(t, err)
+}
+
+func TestRunSemaphoreSecondAcquireError(t *testing.T) {
+	resource.ClearRegistry()
+	resource.Register(testResourceRegistration)
+	// Create a new scanner
+	scanner := NewScanner("owner", []string{testResourceType}, TestOpts{
+		Sleep: 45 * time.Second,
+	})
+
+	// Create a context that will be cancelled immediately
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+
+	// Run the scanner
+	err := scanner.Run(ctx)
+	assert.Error(t, err)
+}
 
 func Test_NewScannerWithResourceListerPanic(t *testing.T) {
+	var wg sync.WaitGroup
+
+	wg.Add(2)
+
+	panicCaught := false
+
 	resource.ClearRegistry()
 	logrus.AddHook(&TestGlobalHook{
 		t: t,
@@ -169,14 +205,16 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 			if strings.HasSuffix(e.Caller.File, "pkg/resource/registry.go") {
 				assert.Equal(t, logrus.TraceLevel, e.Level)
 				assert.Equal(t, "registered resource lister", e.Message)
+				wg.Done()
 				return
 			}
 
-			if strings.HasSuffix(e.Caller.File, "pkg/nuke/scan.go") {
-				assert.Contains(t, e.Message, "Listing testResourceType failed:\n assert.AnError general error for testing")
-				assert.Contains(t, e.Message, "goroutine")
-				assert.Contains(t, e.Message, "runtime/debug.Stack()")
+			if strings.HasSuffix(e.Caller.File, "pkg/scan/scan.go") && e.Caller.Line == 106 {
+				assert.Contains(t, e.Message, "Listing testResourceType failed")
+				assert.Contains(t, e.Message, "panic error for testing")
 				logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
+				panicCaught = true
+				wg.Done()
 			}
 		},
 	})
@@ -188,9 +226,10 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 		Panic:      true,
 	}
 
-	scanner := NewScanner("Owner", []string{testResourceType}, opts, nil)
-	scanner.Run()
+	scanner := NewScanner("Owner", []string{testResourceType}, opts)
+	_ = scanner.Run(context.TODO())
 
-	assert.Len(t, scanner.Items, 0)
+	wg.Wait()
+
+	assert.True(t, panicCaught)
 }
-*/

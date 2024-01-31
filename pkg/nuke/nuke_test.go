@@ -16,7 +16,7 @@ import (
 
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
-	"github.com/ekristen/libnuke/pkg/scanner"
+	"github.com/ekristen/libnuke/pkg/scan"
 	"github.com/ekristen/libnuke/pkg/settings"
 )
 
@@ -155,7 +155,7 @@ func Test_Nuke_Scanners(t *testing.T) {
 		name: "test",
 	}
 
-	s := scanner.NewScanner("test", []string{"TestResource"}, opts)
+	s := scan.NewScanner("test", []string{"TestResource"}, opts)
 
 	err := n.RegisterScanner(testScope, s)
 	assert.NoError(t, err)
@@ -174,7 +174,7 @@ func Test_Nuke_Scanners_Duplicate(t *testing.T) {
 		name: "test",
 	}
 
-	s := scanner.NewScanner("test", []string{"TestResource"}, opts)
+	s := scan.NewScanner("test", []string{"TestResource"}, opts)
 
 	err := n.RegisterScanner(testScope, s)
 	assert.NoError(t, err)
@@ -200,10 +200,10 @@ func TestNuke_RegisterMultipleScanners(t *testing.T) {
 		return o
 	}
 
-	s := scanner.NewScanner("test", []string{"TestResource"}, opts)
+	s := scan.NewScanner("test", []string{"TestResource"}, opts)
 	assert.NoError(t, s.RegisterMutateOptsFunc(mutateOpts))
 
-	s2 := scanner.NewScanner("test2", []string{"TestResource"}, opts)
+	s2 := scan.NewScanner("test2", []string{"TestResource"}, opts)
 	assert.NoError(t, s2.RegisterMutateOptsFunc(mutateOpts))
 
 	assert.NoError(t, n.RegisterScanner(testScope, s))
@@ -245,7 +245,7 @@ func Test_Nuke_Scan(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	newScanner := scanner.NewScanner("Owner", []string{TestResourceType, TestResourceType2}, opts)
+	newScanner := scan.NewScanner("Owner", []string{TestResourceType, TestResourceType2}, opts)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -321,7 +321,7 @@ func Test_Nuke_Run(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	newScanner := scanner.NewScanner("Owner", []string{TestResourceType}, opts)
+	newScanner := scan.NewScanner("Owner", []string{TestResourceType}, opts)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -353,7 +353,7 @@ func Test_Nuke_Run_Error(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	newScanner := scanner.NewScanner("Owner", []string{TestResourceType2}, opts)
+	newScanner := scan.NewScanner("Owner", []string{TestResourceType2}, opts)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -434,11 +434,10 @@ func Test_Nuke_Run_ItemStateHold(t *testing.T) {
 		Lister: &TestResource4Lister{},
 	})
 
-	scannerErr := n.RegisterScanner(testScope, scanner.NewScanner("Owner", []string{"TestResource4"}, nil))
+	scannerErr := n.RegisterScanner(testScope, scan.NewScanner("Owner", []string{"TestResource4"}, nil))
 	assert.NoError(t, scannerErr)
 
 	runErr := n.Run(context.TODO())
 	assert.NoError(t, runErr)
-
 	assert.Equal(t, 5, n.Queue.Count(queue.ItemStateFinished))
 }

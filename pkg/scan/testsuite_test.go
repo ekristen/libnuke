@@ -1,4 +1,4 @@
-package scanner
+package scan
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"testing"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -107,6 +108,10 @@ func (l TestResourceLister) List(_ context.Context, o interface{}) ([]resource.R
 		panic(fmt.Errorf("panic error for testing"))
 	}
 
+	if opts.Sleep > 0 {
+		time.Sleep(opts.Sleep)
+	}
+
 	if opts.SecondResource {
 		return []resource.Resource{
 			&TestResource2{
@@ -133,6 +138,7 @@ type TestOpts struct {
 	ThrowEndpointError bool
 	Panic              bool
 	SecondResource     bool
+	Sleep              time.Duration
 }
 
 type TestGlobalHook struct {
