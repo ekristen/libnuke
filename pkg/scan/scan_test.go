@@ -165,7 +165,7 @@ func TestRunSemaphoreFirstAcquireError(t *testing.T) {
 	scanner := NewScanner("owner", []string{testResourceType}, nil)
 	scanner.SetParallelQueries(0)
 
-	// Create a context that will be cancelled immediately
+	// Create a context that will be canceled immediately
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
 	defer cancel()
 
@@ -182,7 +182,7 @@ func TestRunSemaphoreSecondAcquireError(t *testing.T) {
 		Sleep: 45 * time.Second,
 	})
 
-	// Create a context that will be cancelled immediately
+	// Create a context that will be canceled immediately
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
