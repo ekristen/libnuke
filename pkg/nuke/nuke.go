@@ -95,6 +95,7 @@ func New(params *Parameters, filters filter.Filters, settings *libsettings.Setti
 		Queue:      queue.New(),
 		Settings:   settings,
 		log:        logger.WithField("component", "nuke"),
+		runSleep:   5 * time.Second,
 	}
 
 	if n.Settings == nil {
