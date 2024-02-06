@@ -11,7 +11,7 @@ import (
 
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
-	"github.com/ekristen/libnuke/pkg/scan"
+	"github.com/ekristen/libnuke/pkg/scanner"
 )
 
 type TestResourceSuccess struct {
@@ -63,7 +63,7 @@ func Test_Nuke_Run_Simple(t *testing.T) {
 		Lister: &TestResourceSuccessLister{},
 	})
 
-	scannerErr := n.RegisterScanner(testScope, scan.NewScanner("Owner", []string{"TestResourceSuccess"}, nil))
+	scannerErr := n.RegisterScanner(testScope, scanner.New("Owner", []string{"TestResourceSuccess"}, nil))
 	assert.NoError(t, scannerErr)
 
 	runErr := n.Run(context.TODO())
@@ -88,7 +88,7 @@ func Test_Nuke_Run_ScanError(t *testing.T) {
 		Lister: &TestResourceSuccessLister{},
 	})
 
-	scannerErr := n.RegisterScanner(testScope, scan.NewScanner("Owner", []string{"TestResourceSuccess"}, nil))
+	scannerErr := n.RegisterScanner(testScope, scanner.New("Owner", []string{"TestResourceSuccess"}, nil))
 	assert.NoError(t, scannerErr)
 
 	runErr := n.Run(ctx)
@@ -131,7 +131,7 @@ func Test_NukeRunSimpleWithSecondPromptError(t *testing.T) {
 		Lister: &TestResourceSuccessLister{},
 	})
 
-	scannerErr := n.RegisterScanner(testScope, scan.NewScanner("Owner", []string{"TestResourceSuccess"}, nil))
+	scannerErr := n.RegisterScanner(testScope, scanner.New("Owner", []string{"TestResourceSuccess"}, nil))
 	assert.NoError(t, scannerErr)
 
 	runErr := n.Run(context.TODO())
@@ -151,7 +151,7 @@ func Test_Nuke_Run_SimpleWithNoDryRun(t *testing.T) {
 		Lister: &TestResourceSuccessLister{},
 	})
 
-	scannerErr := n.RegisterScanner(testScope, scan.NewScanner("Owner", []string{"TestResourceSuccess"}, nil))
+	scannerErr := n.RegisterScanner(testScope, scanner.New("Owner", []string{"TestResourceSuccess"}, nil))
 	assert.NoError(t, scannerErr)
 
 	runErr := n.Run(context.TODO())
@@ -178,7 +178,7 @@ func Test_Nuke_Run_Failure(t *testing.T) {
 		Lister: &TestResourceFailureLister{},
 	})
 
-	newScanner := scan.NewScanner("Owner", []string{"TestResourceSuccess", "TestResourceFailure"}, nil)
+	newScanner := scanner.New("Owner", []string{"TestResourceSuccess", "TestResourceFailure"}, nil)
 	scannerErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, scannerErr)
 
@@ -208,7 +208,7 @@ func Test_NukeRunWithMaxWaitRetries(t *testing.T) {
 		Lister: &TestResourceWaitLister{},
 	})
 
-	newScanner := scan.NewScanner("Owner", []string{"TestResourceSuccess"}, nil)
+	newScanner := scanner.New("Owner", []string{"TestResourceSuccess"}, nil)
 	scannerErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, scannerErr)
 
@@ -262,7 +262,7 @@ func TestNuke_RunWithWaitOnDependencies(t *testing.T) {
 		},
 	})
 
-	newScanner := scan.NewScanner("Owner", []string{"TestResourceAlpha", "TestResourceBeta"}, nil)
+	newScanner := scanner.New("Owner", []string{"TestResourceAlpha", "TestResourceBeta"}, nil)
 	scannerErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, scannerErr)
 

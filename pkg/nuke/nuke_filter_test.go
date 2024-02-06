@@ -12,7 +12,7 @@ import (
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
-	"github.com/ekristen/libnuke/pkg/scan"
+	"github.com/ekristen/libnuke/pkg/scanner"
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
@@ -56,7 +56,7 @@ func Test_NukeFiltersMatch(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	newScanner := scan.NewScanner("Owner", []string{TestResourceType2}, opts)
+	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -90,7 +90,7 @@ func Test_NukeFiltersMatchInverted(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	newScanner := scan.NewScanner("Owner", []string{TestResourceType2}, opts)
+	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -123,7 +123,7 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	newScanner := scan.NewScanner("Owner", []string{TestResourceType2}, opts)
+	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -155,7 +155,7 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	newScanner := scan.NewScanner("Owner", []string{TestResourceType}, opts)
+	newScanner := scanner.New("Owner", []string{TestResourceType}, opts)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
