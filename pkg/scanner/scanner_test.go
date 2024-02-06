@@ -209,7 +209,7 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 				return
 			}
 
-			if strings.HasSuffix(e.Caller.File, "pkg/scan/scan.go") && e.Caller.Line == 106 {
+			if strings.HasSuffix(e.Caller.File, "pkg/scanner/scanner.go") && e.Caller.Line == 106 {
 				assert.Contains(t, e.Message, "Listing testResourceType failed")
 				assert.Contains(t, e.Message, "panic error for testing")
 				logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
@@ -229,7 +229,24 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 	scanner := New("Owner", []string{testResourceType}, opts)
 	_ = scanner.Run(context.TODO())
 
-	wg.Wait()
+	if waitTimeout(&wg, 10*time.Second) {
+		t.Fatal("Wait group timed out")
+		return
+	}
 
 	assert.True(t, panicCaught)
+}
+
+func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	c := make(chan struct{})
+	go func() {
+		defer close(c)
+		wg.Wait()
+	}()
+	select {
+	case <-c:
+		return false // completed normally
+	case <-time.After(timeout):
+		return true // timed out
+	}
 }
