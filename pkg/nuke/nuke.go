@@ -363,12 +363,12 @@ func (n *Nuke) getScanners() []*scanner.Scanner {
 }
 
 // runScanner is used to run a scanner and process the items that are returned from the scanner
-func (n *Nuke) runScanner(ctx context.Context, scanner *scanner.Scanner, itemQueue *queue.Queue) error {
-	if err := scanner.Run(ctx); err != nil {
+func (n *Nuke) runScanner(ctx context.Context, resourceScanner *scanner.Scanner, itemQueue *queue.Queue) error {
+	if err := resourceScanner.Run(ctx); err != nil {
 		return err
 	}
 
-	for item := range scanner.Items {
+	for item := range resourceScanner.Items {
 		// Experimental Feature
 		if n.Parameters.WaitOnDependencies {
 			reg := resource.GetRegistration(item.Type)
