@@ -1,4 +1,4 @@
-package scan
+package scanner
 
 import (
 	"context"
@@ -37,8 +37,8 @@ type Scanner struct {
 // populate the region and session for a given resource type give that it might only exist in us-east-1.
 type MutateOptsFunc func(opts interface{}, resourceType string) interface{}
 
-// NewScanner creates a new scanner for the given resource types.
-func NewScanner(owner string, resourceTypes []string, opts interface{}) *Scanner {
+// New creates a new scanner for the given resource types.
+func New(owner string, resourceTypes []string, opts interface{}) *Scanner {
 	return &Scanner{
 		Items:           make(chan *queue.Item, 10000),
 		semaphore:       semaphore.NewWeighted(DefaultParallelQueries),

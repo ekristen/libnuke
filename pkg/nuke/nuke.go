@@ -13,12 +13,12 @@ import (
 	"github.com/sirupsen/logrus"
 
 	liberrors "github.com/ekristen/libnuke/pkg/errors"
+	"github.com/ekristen/libnuke/pkg/scanner"
 	libsettings "github.com/ekristen/libnuke/pkg/settings"
 
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/resource"
-	"github.com/ekristen/libnuke/pkg/scan"
 	"github.com/ekristen/libnuke/pkg/types"
 	"github.com/ekristen/libnuke/pkg/utils"
 )
@@ -71,7 +71,7 @@ type Nuke struct {
 
 	ValidateHandlers []func() error
 	ResourceTypes    map[resource.Scope]types.Collection
-	Scanners         map[resource.Scope][]*scan.Scanner
+	Scanners         map[resource.Scope][]*scanner.Scanner
 	Queue            *queue.Queue // Queue is the queue of resources that will be processed
 
 	scannerHashes []string      // scannerHashes is used to track if a scanner has already been registered
@@ -145,9 +145,9 @@ func (n *Nuke) RegisterResourceTypes(scope resource.Scope, resourceTypes ...stri
 // RegisterScanner is used to register a scanner against a scope. A scope is a string that is used to group resource
 // types together. A scanner is what is responsible for actually querying the API for resources and adding them to
 // the queue for processing.
-func (n *Nuke) RegisterScanner(scope resource.Scope, instance *scan.Scanner) error {
+func (n *Nuke) RegisterScanner(scope resource.Scope, instance *scanner.Scanner) error {
 	if n.Scanners == nil {
-		n.Scanners = make(map[resource.Scope][]*scan.Scanner)
+		n.Scanners = make(map[resource.Scope][]*scanner.Scanner)
 	}
 
 	hashString := fmt.Sprintf("%s-%s", scope, instance.Owner)
@@ -292,6 +292,10 @@ func (n *Nuke) handleWaiting() error {
 
 // run handles the processing and loop of the queue of items
 func (n *Nuke) run(ctx context.Context) error {
+	if n.runSleep == 0 {
+		n.runSleep = 5 * time.Second
+	}
+
 	for {
 		// HandleQueue is used to handle the queue of resources. It will iterate over the queue and trigger the
 		// appropriate handlers based on the state of the resource.
@@ -350,8 +354,8 @@ func (n *Nuke) Validate() error {
 }
 
 // getScanners is used to condense the scanners down to a single list
-func (n *Nuke) getScanners() []*scan.Scanner {
-	var allScanners []*scan.Scanner
+func (n *Nuke) getScanners() []*scanner.Scanner {
+	var allScanners []*scanner.Scanner
 	for _, scanners := range n.Scanners {
 		allScanners = append(allScanners, scanners...)
 	}
@@ -359,7 +363,7 @@ func (n *Nuke) getScanners() []*scan.Scanner {
 }
 
 // runScanner is used to run a scanner and process the items that are returned from the scanner
-func (n *Nuke) runScanner(ctx context.Context, scanner *scan.Scanner, itemQueue *queue.Queue) error {
+func (n *Nuke) runScanner(ctx context.Context, scanner *scanner.Scanner, itemQueue *queue.Queue) error {
 	if err := scanner.Run(ctx); err != nil {
 		return err
 	}

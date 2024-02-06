@@ -1,4 +1,4 @@
-package scan
+package scanner
 
 import (
 	"context"
@@ -27,7 +27,7 @@ func Test_NewScannerWithMorphOpts(t *testing.T) {
 		return o1
 	}
 
-	scanner := NewScanner("Owner", []string{testResourceType}, opts)
+	scanner := New("Owner", []string{testResourceType}, opts)
 	mutateErr := scanner.RegisterMutateOptsFunc(morphOpts)
 	assert.NoError(t, mutateErr)
 
@@ -58,7 +58,7 @@ func Test_NewScannerWithDuplicateMorphOpts(t *testing.T) {
 		return o1
 	}
 
-	scanner := NewScanner("Owner", []string{testResourceType}, opts)
+	scanner := New("Owner", []string{testResourceType}, opts)
 	optErr := scanner.RegisterMutateOptsFunc(morphOpts)
 	assert.NoError(t, optErr)
 
@@ -87,7 +87,7 @@ func Test_NewScannerWithResourceListerError(t *testing.T) {
 		ThrowError: true,
 	}
 
-	scanner := NewScanner("Owner", []string{testResourceType}, opts)
+	scanner := New("Owner", []string{testResourceType}, opts)
 	err := scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
@@ -120,7 +120,7 @@ func Test_NewScannerWithResourceListerErrorSkip(t *testing.T) {
 		ThrowSkipError: true,
 	}
 
-	scanner := NewScanner("Owner", []string{testResourceType}, opts)
+	scanner := New("Owner", []string{testResourceType}, opts)
 	err := scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
@@ -153,7 +153,7 @@ func Test_NewScannerWithResourceListerErrorUnknownEndpoint(t *testing.T) {
 		ThrowEndpointError: true,
 	}
 
-	scanner := NewScanner("Owner", []string{testResourceType}, opts)
+	scanner := New("Owner", []string{testResourceType}, opts)
 	err := scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
@@ -162,7 +162,7 @@ func Test_NewScannerWithResourceListerErrorUnknownEndpoint(t *testing.T) {
 
 func TestRunSemaphoreFirstAcquireError(t *testing.T) {
 	// Create a new scanner
-	scanner := NewScanner("owner", []string{testResourceType}, nil)
+	scanner := New("owner", []string{testResourceType}, nil)
 	scanner.SetParallelQueries(0)
 
 	// Create a context that will be canceled immediately
@@ -178,7 +178,7 @@ func TestRunSemaphoreSecondAcquireError(t *testing.T) {
 	resource.ClearRegistry()
 	resource.Register(testResourceRegistration)
 	// Create a new scanner
-	scanner := NewScanner("owner", []string{testResourceType}, TestOpts{
+	scanner := New("owner", []string{testResourceType}, TestOpts{
 		Sleep: 45 * time.Second,
 	})
 
@@ -226,7 +226,7 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 		Panic:      true,
 	}
 
-	scanner := NewScanner("Owner", []string{testResourceType}, opts)
+	scanner := New("Owner", []string{testResourceType}, opts)
 	_ = scanner.Run(context.TODO())
 
 	wg.Wait()
