@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -66,8 +67,8 @@ func Test_Item(t *testing.T) {
 }
 
 func Test_ItemList(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
 		Name:   "TestResource",
 		Lister: &TestItemResourceLister{},
 	})

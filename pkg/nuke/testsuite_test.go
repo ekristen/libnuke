@@ -3,6 +3,7 @@ package nuke
 import (
 	"context"
 	"fmt"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"testing"
 
 	"github.com/sirupsen/logrus"
@@ -33,14 +34,14 @@ func (h *TestGlobalHook) Fire(e *logrus.Entry) error {
 
 var (
 	TestResourceType         = "testResourceType"
-	TestResourceRegistration = &resource.Registration{
+	TestResourceRegistration = &registry.Registration{
 		Name:   TestResourceType,
 		Scope:  "account",
 		Lister: &TestResourceLister{},
 	}
 
 	TestResourceType2         = "testResourceType2"
-	TestResourceRegistration2 = &resource.Registration{
+	TestResourceRegistration2 = &registry.Registration{
 		Name:   TestResourceType2,
 		Scope:  "account",
 		Lister: &TestResourceLister{},

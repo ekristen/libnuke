@@ -2,6 +2,7 @@ package nuke
 
 import (
 	"context"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"testing"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
-	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/scanner"
 	"github.com/ekristen/libnuke/pkg/types"
 )
@@ -35,8 +35,8 @@ func Test_NukeFiltersBad(t *testing.T) {
 }
 
 func Test_NukeFiltersMatch(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(TestResourceRegistration2)
+	registry.ClearRegistry()
+	registry.Register(TestResourceRegistration2)
 
 	filters := filter.Filters{
 		TestResourceType2: []filter.Filter{
@@ -68,8 +68,8 @@ func Test_NukeFiltersMatch(t *testing.T) {
 }
 
 func Test_NukeFiltersMatchInverted(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(TestResourceRegistration2)
+	registry.ClearRegistry()
+	registry.Register(TestResourceRegistration2)
 
 	filters := filter.Filters{
 		TestResourceType2: []filter.Filter{
@@ -102,8 +102,8 @@ func Test_NukeFiltersMatchInverted(t *testing.T) {
 }
 
 func Test_Nuke_Filters_NoMatch(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(TestResourceRegistration2)
+	registry.ClearRegistry()
+	registry.Register(TestResourceRegistration2)
 
 	filters := filter.Filters{
 		TestResourceType: []filter.Filter{
@@ -135,8 +135,8 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 }
 
 func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(TestResourceRegistration)
+	registry.ClearRegistry()
+	registry.Register(TestResourceRegistration)
 
 	filters := filter.Filters{
 		TestResourceType: []filter.Filter{

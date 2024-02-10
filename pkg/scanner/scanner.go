@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ekristen/libnuke/pkg/registry"
 
 	"runtime/debug"
 
@@ -109,7 +110,7 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 
 	defer s.semaphore.Release(1)
 
-	lister := resource.GetLister(resourceType)
+	lister := registry.GetLister(resourceType)
 	var rs []resource.Resource
 
 	if lister == nil {

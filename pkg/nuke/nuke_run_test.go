@@ -3,6 +3,7 @@ package nuke
 import (
 	"context"
 	"fmt"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"testing"
 	"time"
 
@@ -57,8 +58,8 @@ func Test_Nuke_Run_Simple(t *testing.T) {
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
-	resource.ClearRegistry()
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceSuccessLister{},
 	})
@@ -82,8 +83,8 @@ func Test_Nuke_Run_ScanError(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Nanosecond)
 	defer cancel()
 
-	resource.ClearRegistry()
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceSuccessLister{},
 	})
@@ -125,8 +126,8 @@ func Test_NukeRunSimpleWithSecondPromptError(t *testing.T) {
 		return nil
 	})
 
-	resource.ClearRegistry()
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceSuccessLister{},
 	})
@@ -145,8 +146,8 @@ func Test_Nuke_Run_SimpleWithNoDryRun(t *testing.T) {
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
-	resource.ClearRegistry()
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceSuccessLister{},
 	})
@@ -167,13 +168,13 @@ func Test_Nuke_Run_Failure(t *testing.T) {
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
-	resource.ClearRegistry()
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceSuccessLister{},
 	})
 
-	resource.Register(&resource.Registration{
+	registry.Register(&registry.Registration{
 		Name:   "TestResourceFailure",
 		Lister: &TestResourceFailureLister{},
 	})
@@ -202,8 +203,8 @@ func Test_NukeRunWithMaxWaitRetries(t *testing.T) {
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
-	resource.ClearRegistry()
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
 		Name:   "TestResourceSuccess",
 		Lister: &TestResourceWaitLister{},
 	})
@@ -249,12 +250,12 @@ func TestNuke_RunWithWaitOnDependencies(t *testing.T) {
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
-	resource.ClearRegistry()
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
 		Name:   "TestResourceAlpha",
 		Lister: &TestResourceAlphaLister{},
 	})
-	resource.Register(&resource.Registration{
+	registry.Register(&registry.Registration{
 		Name:   "TestResourceBeta",
 		Lister: &TestResourceAlphaLister{},
 		DependsOn: []string{

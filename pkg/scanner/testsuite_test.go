@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"io"
 	"testing"
 	"time"
@@ -27,7 +28,7 @@ func init() {
 
 var (
 	testResourceType         = "testResourceType"
-	testResourceRegistration = &resource.Registration{
+	testResourceRegistration = &registry.Registration{
 		Name:   testResourceType,
 		Scope:  "account",
 		Lister: &TestResourceLister{},
