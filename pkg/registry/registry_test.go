@@ -2,10 +2,11 @@ package registry
 
 import (
 	"context"
-	"github.com/ekristen/libnuke/pkg/resource"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ekristen/libnuke/pkg/resource"
 )
 
 type TestLister struct{}

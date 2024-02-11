@@ -3,9 +3,9 @@ package queue
 import (
 	"context"
 	"fmt"
-	"github.com/ekristen/libnuke/pkg/registry"
 
 	"github.com/ekristen/libnuke/pkg/log"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 )
 
