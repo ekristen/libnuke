@@ -21,7 +21,6 @@ import (
 	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
-	"github.com/ekristen/libnuke/pkg/utils"
 )
 
 // ListCache is used to cache the list of resources that are returned from the API.
@@ -449,46 +448,59 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		}
 	}
 
-	itemFilters := n.Filters.Get(item.Type)
-	if itemFilters == nil {
-		log.Tracef("no filters found for type: %s", item.Type)
+	matched, err := n.Filters.Match(item.Type, item)
+	if err != nil {
+		return err
+	}
+
+	if matched {
+		log.Trace("resource was filtered by config")
+		item.State = queue.ItemStateFiltered
+		item.Reason = "filtered by config"
 		return nil
 	}
 
-	for _, f := range itemFilters {
-		log.
-			WithField("prop", f.Property).
-			WithField("type", f.Type).
-			WithField("value", f.Value).
-			Trace("filter details")
-
-		prop, err := item.GetProperty(f.Property)
-		if err != nil {
-			log.WithError(err).Warnf("unable to get property: %s", f.Property)
-			continue
-		}
-
-		log.Tracef("property: %s", prop)
-
-		match, err := f.Match(prop)
-		if err != nil {
-			return err
-		}
-
-		log.Tracef("match: %t", match)
-
-		if utils.IsTrue(f.Invert) {
-			log.WithField("orig", match).WithField("new", !match).Trace("filter inverted")
-			match = !match
-		}
-
-		if match {
-			log.Trace("filter matched")
-			item.State = queue.ItemStateFiltered
-			item.Reason = "filtered by config"
+	/*
+		itemFilters := n.Filters.Get(item.Type)
+		if itemFilters == nil {
+			log.Tracef("no filters found for type: %s", item.Type)
 			return nil
 		}
-	}
+
+		for _, f := range itemFilters {
+			log.
+				WithField("prop", f.Property).
+				WithField("type", f.Type).
+				WithField("value", f.Value).
+				Trace("filter details")
+
+			prop, err := item.GetProperty(f.Property)
+			if err != nil {
+				return err
+			}
+
+			log.Tracef("property: %s", prop)
+
+			match, err := f.Match(prop)
+			if err != nil {
+				return err
+			}
+
+			log.Tracef("match: %t", match)
+
+			if f.Invert {
+				log.WithField("orig", match).WithField("new", !match).Trace("filter inverted")
+				match = !match
+			}
+
+			if match {
+				log.Trace("filter matched")
+				item.State = queue.ItemStateFiltered
+				item.Reason = "filtered by config"
+				return nil
+			}
+		}
+	*/
 
 	return nil
 }

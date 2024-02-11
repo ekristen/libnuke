@@ -3,6 +3,7 @@ package filter
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"regexp"
 	"slices"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"github.com/mb0/glob"
 )
 
+type OpType string
 type Type string
 
 const (
@@ -26,8 +28,15 @@ const (
 	NotIn         Type = "NotIn"
 	In            Type = "In"
 
+	And OpType = "and"
+	Or  OpType = "or"
+
 	Global = "__global__"
 )
+
+type Property interface {
+	GetProperty(string) (string, error)
+}
 
 type Filters map[string][]Filter
 
@@ -42,6 +51,27 @@ func (f Filters) Get(resourceType string) []Filter {
 
 	if f[resourceType] != nil {
 		filters = append(filters, f[resourceType]...)
+	}
+
+	if len(filters) == 0 {
+		return nil
+	}
+
+	return filters
+}
+
+func (f Filters) GetByGroup(resourceType string) map[string][]Filter {
+	filters := make(Filters)
+
+	if f[resourceType] != nil {
+		for _, filter := range f[resourceType] {
+			group := filter.GetGroup()
+			if filters[group] == nil {
+				filters[group] = []Filter{}
+			}
+
+			filters[group] = append(filters[group], filter)
+		}
 	}
 
 	if len(filters) == 0 {
@@ -78,8 +108,67 @@ func (f Filters) Merge(f2 Filters) {
 	f.Append(f2)
 }
 
+func (f Filters) Match(resourceType string, p Property) (bool, error) {
+	resourceFilters := f.GetByGroup(resourceType)
+	if resourceFilters == nil {
+		return true, nil
+	}
+
+	groupCount := make(map[string]int)
+	totalCount := make(map[string]int)
+	matchCount := make(map[string]int)
+
+	for group, groupFilters := range resourceFilters {
+		totalCount[group] = len(groupFilters)
+
+		for _, filter := range groupFilters {
+			prop, err := p.GetProperty(filter.Property)
+			if err != nil {
+				logrus.WithError(err).Warn("error getting property")
+				continue
+			}
+
+			match, err := filter.Match(prop)
+			if err != nil {
+				logrus.WithError(err).Warn("error matching filter")
+				continue
+			}
+
+			fmt.Println(match, filter.Invert)
+
+			if filter.Invert {
+				match = !match
+			}
+
+			if match {
+				matchCount[group]++
+			}
+		}
+
+		fmt.Println("groupCount", groupCount)
+		fmt.Println("totalCount", totalCount)
+		fmt.Println("matchCount", matchCount)
+
+		if totalCount[group] == matchCount[group] {
+			groupCount[group]++
+		}
+	}
+
+	// If the group count is greater than 0, then one of the groups matched
+	if len(groupCount) > 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+// ----------------
+
 // Filter is a filter to apply to a resource
 type Filter struct {
+	// Group is the name of the group of filters, all filters in a group are ANDed together
+	Group string
+
 	// Type is the type of filter to apply
 	Type Type
 
@@ -90,10 +179,18 @@ type Filter struct {
 	Value string
 
 	// Values allows for multiple values to be specified for a filter
-	Values []string
+	Values []string `yaml:"values" json:"values"`
 
 	// Invert is a flag to invert the filter
-	Invert string
+	Invert bool
+}
+
+// GetGroup returns the group name of the filter, if it is empty it returns "default"
+func (f *Filter) GetGroup() string {
+	if f.Group == "" {
+		return "default"
+	}
+	return f.Group
 }
 
 // Validate checks if the filter is valid
@@ -205,13 +302,17 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	if m["invert"] == nil {
-		f.Invert = ""
+		f.Invert = false
 	} else {
-		switch v := m["invert"].(type) {
+		switch m["invert"].(type) {
 		case bool:
-			f.Invert = strconv.FormatBool(v)
-		default:
-			f.Invert = v.(string)
+			f.Invert = m["invert"].(bool)
+		case string:
+			invert, err := strconv.ParseBool(m["invert"].(string))
+			if err != nil {
+				return err
+			}
+			f.Invert = invert
 		}
 	}
 

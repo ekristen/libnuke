@@ -88,7 +88,7 @@ func Test_NukeFiltersMatchInverted(t *testing.T) {
 				Type:     filter.Exact,
 				Property: "test",
 				Value:    "testing",
-				Invert:   "true",
+				Invert:   true,
 			},
 		},
 	}

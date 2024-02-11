@@ -74,6 +74,102 @@ func TestFilter_GlobalYAML(t *testing.T) {
 	assert.Equal(t, expected["Resource2"], config.Filters.Get("Resource2"))
 }
 
+func TestFilter_GetByGroup(t *testing.T) {
+	f := filter.Filters{
+		"resource1": []filter.Filter{
+			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+		},
+	}
+
+	rf := f.GetByGroup("resource1")
+
+	for g, filters := range rf {
+		assert.Equal(t, "default", g)
+		assert.Len(t, filters, 1)
+	}
+}
+
+func TestFilter_Match(t *testing.T) {
+	cases := []struct {
+		name      string
+		resource  string
+		resources []filter.Property
+		filters   []filter.Filter
+		filtered  bool
+		error     bool
+	}{
+		{
+			name:     "simple-filtered",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{},
+			},
+			filters: []filter.Filter{
+				{Property: "prop1", Type: filter.Exact, Value: "testing"},
+			},
+			filtered: true,
+			error:    false,
+		},
+		{
+			name:     "simple-no-filtered",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{},
+			},
+			filters: []filter.Filter{
+				{Property: "prop1", Type: filter.Exact, Value: "testing1"},
+			},
+			filtered: false,
+			error:    false,
+		},
+		{
+			name:     "simple-no-filtered-invert",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{},
+			},
+			filters: []filter.Filter{
+				{Property: "prop1", Type: filter.Exact, Value: "testing", Invert: true},
+			},
+			filtered: false,
+			error:    false,
+		},
+		{
+			name:     "simple-filtered-invert",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{},
+			},
+			filters: []filter.Filter{
+				{Property: "prop1", Type: filter.Exact, Value: "testing1", Invert: true},
+			},
+			filtered: true,
+			error:    false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			filters := filter.Filters{
+				tc.resource: tc.filters,
+			}
+
+			for _, r := range tc.resources {
+				res, err := filters.Match(tc.resource, r)
+				if tc.error {
+					assert.Error(t, err)
+				} else {
+					assert.NoError(t, err)
+				}
+
+				assert.Equal(t, tc.filtered, res)
+			}
+		})
+
+	}
+
+}
+
 func TestFilter_NewExactFilter(t *testing.T) {
 	f := filter.NewExactFilter("testing")
 
@@ -194,7 +290,7 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 			error: true,
 		},
 		{
-			name: "dateOlderThan-invalid-match",
+			name: "dateOlderThan-invalid-filtered",
 			yaml: `{"type":"dateOlderThan","value":"0"}`,
 			match: []string{
 				"31-12-2023",
@@ -264,7 +360,7 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 				}
 
 				if !match {
-					t.Fatalf("'%v' should match", o)
+					t.Fatalf("'%v' should filtered", o)
 				}
 			}
 
@@ -275,7 +371,7 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 				}
 
 				if match {
-					t.Fatalf("'%v' should not match", o)
+					t.Fatalf("'%v' should not filtered", o)
 				}
 			}
 		})
@@ -384,4 +480,48 @@ func TestFilter_ValidateError(t *testing.T) {
 	}
 	err := filters.Validate()
 	assert.Error(t, err)
+}
+
+// TestFilter_Invert tests the parsing of the filter and the invert property as both string and bool
+func TestFilter_InvertParsing(t *testing.T) {
+	cases := []struct {
+		name   string
+		yaml   string
+		error  bool
+		invert bool
+	}{
+		{
+			name:   "invert-true-bool",
+			yaml:   `{"type":"exact","value":"foo","invert":true}`,
+			invert: true,
+		},
+		{
+			name:   "invert-true-string",
+			yaml:   `{"type":"exact","value":"foo","invert":"true"}`,
+			invert: true,
+		},
+		{
+			name:   "invert-false-bool",
+			yaml:   `{"type":"exact","value":"foo","invert":false}`,
+			invert: false,
+		},
+		{
+			name:   "invert-false-string",
+			yaml:   `{"type":"exact","value":"foo","invert":"false"}`,
+			invert: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.yaml, func(t *testing.T) {
+			var f filter.Filter
+
+			err := yaml.Unmarshal([]byte(tc.yaml), &f)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, tc.invert, f.Invert)
+		})
+	}
 }
