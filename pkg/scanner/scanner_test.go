@@ -2,7 +2,6 @@ package scanner
 
 import (
 	"context"
-	"github.com/ekristen/libnuke/pkg/registry"
 	"strings"
 	"sync"
 	"testing"
@@ -10,6 +9,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ekristen/libnuke/pkg/registry"
 )
 
 func Test_NewScannerWithMorphOpts(t *testing.T) {

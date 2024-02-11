@@ -3,7 +3,6 @@ package nuke
 import (
 	"context"
 	"fmt"
-	"github.com/ekristen/libnuke/pkg/registry"
 	"testing"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/queue"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/scanner"
 )

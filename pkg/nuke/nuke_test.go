@@ -3,7 +3,6 @@ package nuke
 import (
 	"context"
 	"fmt"
-	"github.com/ekristen/libnuke/pkg/registry"
 	"io"
 	"os"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	liberrors "github.com/ekristen/libnuke/pkg/errors"
 
 	"github.com/ekristen/libnuke/pkg/queue"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/scanner"
 	"github.com/ekristen/libnuke/pkg/settings"

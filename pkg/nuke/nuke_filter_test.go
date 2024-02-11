@@ -2,7 +2,6 @@ package nuke
 
 import (
 	"context"
-	"github.com/ekristen/libnuke/pkg/registry"
 	"testing"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/scanner"
 	"github.com/ekristen/libnuke/pkg/types"
 )

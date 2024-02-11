@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/ekristen/libnuke/pkg/registry"
 	"io"
 	"slices"
 	"time"
@@ -19,6 +18,7 @@ import (
 
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
 	"github.com/ekristen/libnuke/pkg/utils"

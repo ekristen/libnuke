@@ -3,13 +3,13 @@ package nuke
 import (
 	"context"
 	"fmt"
-	"github.com/ekristen/libnuke/pkg/registry"
 	"testing"
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/errors"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/settings"
 	"github.com/ekristen/libnuke/pkg/types"
