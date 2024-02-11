@@ -1,3 +1,6 @@
+// Package scanner provides a mechanism for scanning resources and adding them to the item queue for processing. The
+// scope of the scanner is determined by the resource types that are passed to it. The scanner will then run the lister
+// for each resource type and add the resources to the item queue for processing.
 package scanner
 
 import (
