@@ -11,6 +11,7 @@ import (
 	"github.com/mb0/glob"
 )
 
+type OpType string
 type Type string
 
 const (
@@ -22,9 +23,34 @@ const (
 	DateOlderThan Type = "dateOlderThan"
 	Suffix        Type = "suffix"
 	Prefix        Type = "prefix"
+
+	And OpType = "and"
+	Or  OpType = "or"
+
+	Global = "__global__"
 )
 
 type Filters map[string][]Filter
+
+// Get returns the filters for a specific resource type or the global filters if they exist. If there are no filters it
+// returns nil
+func (f Filters) Get(resourceType string) []Filter {
+	var filters []Filter
+
+	if f[Global] != nil {
+		filters = append(filters, f[Global]...)
+	}
+
+	if f[resourceType] != nil {
+		filters = append(filters, f[resourceType]...)
+	}
+
+	if len(filters) == 0 {
+		return nil
+	}
+
+	return filters
+}
 
 func (f Filters) Validate() error {
 	for resourceType, filters := range f {
@@ -38,19 +64,45 @@ func (f Filters) Validate() error {
 	return nil
 }
 
-func (f Filters) Merge(f2 Filters) {
+// Append appends the filters from f2 to f
+func (f Filters) Append(f2 Filters) {
 	for resourceType, filter := range f2 {
 		f[resourceType] = append(f[resourceType], filter...)
 	}
 }
 
-type Filter struct {
-	Property string
-	Type     Type
-	Value    string
-	Invert   string
+// Merge is an alias of Append for backwards compatibility
+func (f Filters) Merge(f2 Filters) {
+	f.Append(f2)
 }
 
+// Filter is a filter to apply to a resource
+type Filter struct {
+	// Group is the name of the group of filters, all filters in a group are ANDed together
+	Group string `yaml:"group" json:"group"`
+
+	// Type is the type of filter to apply
+	Type Type `yaml:"type" json:"type"`
+
+	// Property is the name of the property to filter on
+	Property string `yaml:"property" json:"property"`
+
+	// Value is the value to filter on
+	Value string `yaml:"value" json:"value"`
+
+	// Invert is a flag to invert the filter
+	Invert string `yaml:"invert" json:"invert"`
+}
+
+// GetGroup returns the group name of the filter, if it is empty it returns "default"
+func (f *Filter) GetGroup() string {
+	if f.Group == "" {
+		return "default"
+	}
+	return f.Group
+}
+
+// Validate checks if the filter is valid
 func (f *Filter) Validate() error {
 	if f.Property == "" && f.Value == "" {
 		return fmt.Errorf("property and value cannot be empty")
@@ -59,6 +111,7 @@ func (f *Filter) Validate() error {
 	return nil
 }
 
+// Match checks if the filter matches the given value
 func (f *Filter) Match(o string) (bool, error) {
 	switch f.Type {
 	case Empty, Exact:
@@ -134,6 +187,7 @@ func NewExactFilter(value string) Filter {
 	}
 }
 
+// parseDate parses a date from a string, it supports unix timestamps and RFC3339 formatted dates
 func parseDate(input string) (time.Time, error) {
 	if i, err := strconv.ParseInt(input, 10, 64); err == nil {
 		t := time.Unix(i, 0)
