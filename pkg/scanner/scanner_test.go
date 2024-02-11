@@ -208,7 +208,7 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 				return
 			}
 
-			if strings.HasSuffix(e.Caller.File, "pkg/scanner/scanner.go") && e.Caller.Line == 107 {
+			if strings.HasSuffix(e.Caller.File, "pkg/scanner/scanner.go") && e.Caller.Line == 110 {
 				assert.Contains(t, e.Message, "Listing testResourceType failed")
 				assert.Contains(t, e.Message, "panic error for testing")
 				logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
