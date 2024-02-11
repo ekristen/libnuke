@@ -10,12 +10,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/ekristen/libnuke/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/registry"
 )
 
 func Test_NewScannerWithMorphOpts(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(testResourceRegistration)
+	registry.ClearRegistry()
+	registry.Register(testResourceRegistration)
 
 	opts := TestOpts{
 		SessionOne: "testing",
@@ -45,8 +45,8 @@ func Test_NewScannerWithMorphOpts(t *testing.T) {
 }
 
 func Test_NewScannerWithDuplicateMorphOpts(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(testResourceRegistration)
+	registry.ClearRegistry()
+	registry.Register(testResourceRegistration)
 
 	opts := TestOpts{
 		SessionOne: "testing",
@@ -67,11 +67,11 @@ func Test_NewScannerWithDuplicateMorphOpts(t *testing.T) {
 }
 
 func Test_NewScannerWithResourceListerError(t *testing.T) {
-	resource.ClearRegistry()
+	registry.ClearRegistry()
 	logrus.AddHook(&TestGlobalHook{
 		t: t,
 		tf: func(t *testing.T, e *logrus.Entry) {
-			if strings.HasSuffix(e.Caller.File, "pkg/resource/registry.go") {
+			if strings.HasSuffix(e.Caller.File, "pkg/registry/registry.go") {
 				return
 			}
 
@@ -80,7 +80,7 @@ func Test_NewScannerWithResourceListerError(t *testing.T) {
 	})
 	defer logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
 
-	resource.Register(testResourceRegistration)
+	registry.Register(testResourceRegistration)
 
 	opts := TestOpts{
 		SessionOne: "testing",
@@ -95,11 +95,11 @@ func Test_NewScannerWithResourceListerError(t *testing.T) {
 }
 
 func Test_NewScannerWithResourceListerErrorSkip(t *testing.T) {
-	resource.ClearRegistry()
+	registry.ClearRegistry()
 	logrus.AddHook(&TestGlobalHook{
 		t: t,
 		tf: func(t *testing.T, e *logrus.Entry) {
-			if strings.HasSuffix(e.Caller.File, "pkg/resource/registry.go") {
+			if strings.HasSuffix(e.Caller.File, "pkg/registry/registry.go") {
 				assert.Equal(t, logrus.TraceLevel, e.Level)
 				assert.Equal(t, "registered resource lister", e.Message)
 				return
@@ -113,7 +113,7 @@ func Test_NewScannerWithResourceListerErrorSkip(t *testing.T) {
 	})
 	defer logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
 
-	resource.Register(testResourceRegistration)
+	registry.Register(testResourceRegistration)
 
 	opts := TestOpts{
 		SessionOne:     "testing",
@@ -128,11 +128,11 @@ func Test_NewScannerWithResourceListerErrorSkip(t *testing.T) {
 }
 
 func Test_NewScannerWithResourceListerErrorUnknownEndpoint(t *testing.T) {
-	resource.ClearRegistry()
+	registry.ClearRegistry()
 	logrus.AddHook(&TestGlobalHook{
 		t: t,
 		tf: func(t *testing.T, e *logrus.Entry) {
-			if strings.HasSuffix(e.Caller.File, "pkg/resource/registry.go") {
+			if strings.HasSuffix(e.Caller.File, "pkg/registry/registry.go") {
 				assert.Equal(t, logrus.TraceLevel, e.Level)
 				assert.Equal(t, "registered resource lister", e.Message)
 				return
@@ -146,7 +146,7 @@ func Test_NewScannerWithResourceListerErrorUnknownEndpoint(t *testing.T) {
 	})
 	defer logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
 
-	resource.Register(testResourceRegistration)
+	registry.Register(testResourceRegistration)
 
 	opts := TestOpts{
 		SessionOne:         "testing",
@@ -175,8 +175,8 @@ func TestRunSemaphoreFirstAcquireError(t *testing.T) {
 }
 
 func TestRunSemaphoreSecondAcquireError(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(testResourceRegistration)
+	registry.ClearRegistry()
+	registry.Register(testResourceRegistration)
 	// Create a new scanner
 	scanner := New("owner", []string{testResourceType}, TestOpts{
 		Sleep: 45 * time.Second,
@@ -198,28 +198,28 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 
 	panicCaught := false
 
-	resource.ClearRegistry()
+	registry.ClearRegistry()
 	logrus.AddHook(&TestGlobalHook{
 		t: t,
 		tf: func(t *testing.T, e *logrus.Entry) {
-			if strings.HasSuffix(e.Caller.File, "pkg/resource/registry.go") {
-				assert.Equal(t, logrus.TraceLevel, e.Level)
+			if strings.HasSuffix(e.Caller.File, "pkg/registry/registry.go") {
 				assert.Equal(t, "registered resource lister", e.Message)
 				wg.Done()
 				return
 			}
 
-			if strings.HasSuffix(e.Caller.File, "pkg/scanner/scanner.go") && e.Caller.Line == 106 {
+			if strings.HasSuffix(e.Caller.File, "pkg/scanner/scanner.go") && e.Caller.Line == 110 {
 				assert.Contains(t, e.Message, "Listing testResourceType failed")
 				assert.Contains(t, e.Message, "panic error for testing")
 				logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
 				panicCaught = true
 				wg.Done()
+				return
 			}
 		},
 	})
 
-	resource.Register(testResourceRegistration)
+	registry.Register(testResourceRegistration)
 
 	opts := TestOpts{
 		SessionOne: "testing",

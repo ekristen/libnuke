@@ -15,6 +15,7 @@ import (
 	liberrors "github.com/ekristen/libnuke/pkg/errors"
 
 	"github.com/ekristen/libnuke/pkg/queue"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/scanner"
 	"github.com/ekristen/libnuke/pkg/settings"
@@ -34,7 +35,7 @@ var testParametersRemove = &Parameters{
 	NoDryRun:   true,
 }
 
-const testScope resource.Scope = "test"
+const testScope registry.Scope = "test"
 
 func Test_Nuke_Version(t *testing.T) {
 	n := New(testParameters, nil, nil)
@@ -228,9 +229,9 @@ func Test_Nuke_RegisterPrompt(t *testing.T) {
 // ------------------------------------------------------
 
 func Test_Nuke_Scan(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(TestResourceRegistration)
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(TestResourceRegistration)
+	registry.Register(&registry.Registration{
 		Name:  TestResourceType2,
 		Scope: "account",
 		Lister: TestResourceLister{
@@ -304,8 +305,8 @@ func Test_Nuke_HandleRemoveError(t *testing.T) {
 // ------------------------------------------------------------
 
 func Test_Nuke_Run(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(TestResourceRegistration)
+	registry.ClearRegistry()
+	registry.Register(TestResourceRegistration)
 
 	p := &Parameters{
 		Force:      true,
@@ -331,8 +332,8 @@ func Test_Nuke_Run(t *testing.T) {
 }
 
 func Test_Nuke_Run_Error(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
 		Name:  TestResourceType2,
 		Scope: "account",
 		Lister: TestResourceLister{
@@ -427,8 +428,8 @@ func Test_Nuke_Run_ItemStateHold(t *testing.T) {
 	n.SetLogger(logrus.WithField("test", true))
 	n.SetRunSleep(time.Millisecond * 5)
 
-	resource.ClearRegistry()
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
 		Name:   "TestResource4",
 		Scope:  testScope,
 		Lister: &TestResource4Lister{},

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/errors"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/settings"
 	"github.com/ekristen/libnuke/pkg/types"
@@ -27,7 +28,7 @@ func init() {
 
 var (
 	testResourceType         = "testResourceType"
-	testResourceRegistration = &resource.Registration{
+	testResourceRegistration = &registry.Registration{
 		Name:   testResourceType,
 		Scope:  "account",
 		Lister: &TestResourceLister{},

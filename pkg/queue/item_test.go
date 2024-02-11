@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
 )
@@ -66,8 +67,8 @@ func Test_Item(t *testing.T) {
 }
 
 func Test_ItemList(t *testing.T) {
-	resource.ClearRegistry()
-	resource.Register(&resource.Registration{
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
 		Name:   "TestResource",
 		Lister: &TestItemResourceLister{},
 	})

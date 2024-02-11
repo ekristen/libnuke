@@ -1,15 +1,19 @@
-package resource
+package registry
 
 import (
 	"context"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ekristen/libnuke/pkg/resource"
 )
 
 type TestLister struct{}
 
-func (l TestLister) List(_ context.Context, o interface{}) ([]Resource, error) { return nil, nil }
+func (l TestLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
+	return nil, nil
+}
 
 func Test_RegisterNoScope(t *testing.T) {
 	ClearRegistry()

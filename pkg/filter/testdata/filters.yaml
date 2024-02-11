@@ -1,0 +1,13 @@
+filters:
+  __global__:
+    - name: prop3
+      type: exact
+      value: value3
+  Resource1:
+    - name: prop1
+      type: exact
+      value: value1
+  Resource2:
+    - name: prop2
+      type: exact
+      value: value2

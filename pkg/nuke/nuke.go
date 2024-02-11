@@ -18,6 +18,7 @@ import (
 
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
 	"github.com/ekristen/libnuke/pkg/utils"
@@ -70,8 +71,8 @@ type Nuke struct {
 	Settings   *libsettings.Settings // Settings is the collection of settings that will be used to control resource behavior
 
 	ValidateHandlers []func() error
-	ResourceTypes    map[resource.Scope]types.Collection
-	Scanners         map[resource.Scope][]*scanner.Scanner
+	ResourceTypes    map[registry.Scope]types.Collection
+	Scanners         map[registry.Scope][]*scanner.Scanner
 	Queue            *queue.Queue // Queue is the queue of resources that will be processed
 
 	scannerHashes []string      // scannerHashes is used to track if a scanner has already been registered
@@ -134,9 +135,9 @@ func (n *Nuke) RegisterValidateHandler(handler func() error) {
 // RegisterResourceTypes is used to register resource types against a scope. A scope is a string that is used to
 // group resource types together. For example, you could have a scope of "aws" and register all AWS resource types.
 // For Azure, you have to register resources by tenant or subscription or even resource group.
-func (n *Nuke) RegisterResourceTypes(scope resource.Scope, resourceTypes ...string) {
+func (n *Nuke) RegisterResourceTypes(scope registry.Scope, resourceTypes ...string) {
 	if n.ResourceTypes == nil {
-		n.ResourceTypes = make(map[resource.Scope]types.Collection)
+		n.ResourceTypes = make(map[registry.Scope]types.Collection)
 	}
 
 	n.ResourceTypes[scope] = append(n.ResourceTypes[scope], resourceTypes...)
@@ -145,9 +146,9 @@ func (n *Nuke) RegisterResourceTypes(scope resource.Scope, resourceTypes ...stri
 // RegisterScanner is used to register a scanner against a scope. A scope is a string that is used to group resource
 // types together. A scanner is what is responsible for actually querying the API for resources and adding them to
 // the queue for processing.
-func (n *Nuke) RegisterScanner(scope resource.Scope, instance *scanner.Scanner) error {
+func (n *Nuke) RegisterScanner(scope registry.Scope, instance *scanner.Scanner) error {
 	if n.Scanners == nil {
-		n.Scanners = make(map[resource.Scope][]*scanner.Scanner)
+		n.Scanners = make(map[registry.Scope][]*scanner.Scanner)
 	}
 
 	hashString := fmt.Sprintf("%s-%s", scope, instance.Owner)
@@ -371,7 +372,7 @@ func (n *Nuke) runScanner(ctx context.Context, resourceScanner *scanner.Scanner,
 	for item := range resourceScanner.Items {
 		// Experimental Feature
 		if n.Parameters.WaitOnDependencies {
-			reg := resource.GetRegistration(item.Type)
+			reg := registry.GetRegistration(item.Type)
 			if len(reg.DependsOn) > 0 {
 				item.State = queue.ItemStateNewDependency
 			}
@@ -555,7 +556,7 @@ func (n *Nuke) HandleRemove(ctx context.Context, item *queue.Item) {
 // HandleWaitDependency is used to handle the waiting of a resource. It will check if the resource has any dependencies
 // and if it does, it will check if the dependencies have been removed. If they have, it will trigger the remove handler.
 func (n *Nuke) HandleWaitDependency(ctx context.Context, item *queue.Item) {
-	reg := resource.GetRegistration(item.Type)
+	reg := registry.GetRegistration(item.Type)
 	depCount := 0
 	for _, dep := range reg.DependsOn {
 		cnt := n.Queue.CountByType(dep,

@@ -1,4 +1,6 @@
-package resource
+// Package registry provides a way to register resources and their listers and obtain them after the fact. The registry
+// is currently deeply embedded with the other packages and how they access specific aspects of a resource.
+package registry
 
 import (
 	"context"
@@ -6,6 +8,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/stevenle/topsort"
+
+	"github.com/ekristen/libnuke/pkg/resource"
 )
 
 // Scope is a string in which resources are grouped against, this is meant for upstream tools to define their
@@ -75,7 +79,7 @@ type Registration struct {
 
 // Lister is an interface that represents a resource that can be listed
 type Lister interface {
-	List(ctx context.Context, opts interface{}) ([]Resource, error)
+	List(ctx context.Context, opts interface{}) ([]resource.Resource, error)
 }
 
 // RegisterOption is a function that can be used to manipulate the lister for a given resource type at

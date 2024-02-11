@@ -1,3 +1,6 @@
+// Package scanner provides a mechanism for scanning resources and adding them to the item queue for processing. The
+// scope of the scanner is determined by the resource types that are passed to it. The scanner will then run the lister
+// for each resource type and add the resources to the item queue for processing.
 package scanner
 
 import (
@@ -13,6 +16,7 @@ import (
 	liberrors "github.com/ekristen/libnuke/pkg/errors"
 
 	"github.com/ekristen/libnuke/pkg/queue"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/utils"
 )
@@ -109,7 +113,7 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 
 	defer s.semaphore.Release(1)
 
-	lister := resource.GetLister(resourceType)
+	lister := registry.GetLister(resourceType)
 	var rs []resource.Resource
 
 	if lister == nil {

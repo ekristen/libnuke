@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/errors"
+	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/settings"
 	"github.com/ekristen/libnuke/pkg/types"
@@ -33,14 +34,14 @@ func (h *TestGlobalHook) Fire(e *logrus.Entry) error {
 
 var (
 	TestResourceType         = "testResourceType"
-	TestResourceRegistration = &resource.Registration{
+	TestResourceRegistration = &registry.Registration{
 		Name:   TestResourceType,
 		Scope:  "account",
 		Lister: &TestResourceLister{},
 	}
 
 	TestResourceType2         = "testResourceType2"
-	TestResourceRegistration2 = &resource.Registration{
+	TestResourceRegistration2 = &registry.Registration{
 		Name:   TestResourceType2,
 		Scope:  "account",
 		Lister: &TestResourceLister{},
