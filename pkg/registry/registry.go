@@ -1,3 +1,5 @@
+// Package registry provides a way to register resources and their listers and obtain them after the fact. The registry
+// is currently deeply embedded with the other packages and how they access specific aspects of a resource.
 package registry
 
 import (
