@@ -23,9 +23,9 @@ type TestResourceSuccess struct {
 
 func (r *TestResourceSuccess) ID() string {
 	if r.id == "" {
-		r3 := rand.New(rand.NewSource(time.Now().UnixNano()))
+		// Note: math/rand is acceptable for this unit test, it does not need to be crypto/rand
+		r3 := rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec
 		r.id = fmt.Sprintf("TestResourceSuccess-%d", r3.Intn(100))
-
 	}
 	return r.id
 }
