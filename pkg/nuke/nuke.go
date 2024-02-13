@@ -388,9 +388,12 @@ func (n *Nuke) runScanner(ctx context.Context, resourceScanner *scanner.Scanner,
 			return err
 		}
 
-		if item.State == queue.ItemStateFiltered && !n.Parameters.Quiet {
-			item.Print()
+		// If quiet and filtered, skip printing to screen
+		if n.Parameters.Quiet && item.State == queue.ItemStateFiltered {
+			continue
 		}
+
+		item.Print()
 	}
 
 	return nil

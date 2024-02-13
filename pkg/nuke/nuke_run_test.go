@@ -3,6 +3,7 @@ package nuke
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"testing"
 	"time"
 
@@ -16,10 +17,29 @@ import (
 )
 
 type TestResourceSuccess struct {
+	id       string
+	Filtered bool
+}
+
+func (r *TestResourceSuccess) ID() string {
+	if r.id == "" {
+		// Note: math/rand is acceptable for this unit test, it does not need to be crypto/rand
+		r3 := rand.New(rand.NewSource(time.Now().UnixNano())) //nolint:gosec
+		r.id = fmt.Sprintf("TestResourceSuccess-%d", r3.Intn(100))
+	}
+	return r.id
 }
 
 func (r *TestResourceSuccess) Remove(_ context.Context) error { return nil }
-func (r *TestResourceSuccess) String() string                 { return "TestResourceSuccess" }
+func (r *TestResourceSuccess) Filter() error {
+	if r.Filtered {
+		return fmt.Errorf("filtered")
+	}
+	return nil
+}
+func (r *TestResourceSuccess) String() string {
+	return r.id
+}
 
 type TestResourceSuccessLister struct {
 	listed bool
@@ -30,7 +50,7 @@ func (l *TestResourceSuccessLister) List(_ context.Context, o interface{}) ([]re
 		return []resource.Resource{}, nil
 	}
 	l.listed = true
-	return []resource.Resource{&TestResourceSuccess{}}, nil
+	return []resource.Resource{&TestResourceSuccess{}, &TestResourceSuccess{Filtered: true}}, nil
 }
 
 type TestResourceFailure struct{}
@@ -71,7 +91,8 @@ func Test_Nuke_Run_Simple(t *testing.T) {
 	assert.NoError(t, runErr)
 
 	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateNew))
-	assert.Equal(t, 1, n.Queue.Total())
+	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFiltered))
+	assert.Equal(t, 2, n.Queue.Total())
 }
 
 // Test_Nuke_Run_ScanError tests a simple run with no dry run enabled so all resources are removed.
