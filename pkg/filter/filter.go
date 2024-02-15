@@ -11,7 +11,6 @@ import (
 	"github.com/mb0/glob"
 )
 
-type OpType string
 type Type string
 
 const (
