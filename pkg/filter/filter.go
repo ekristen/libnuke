@@ -78,9 +78,6 @@ func (f Filters) Merge(f2 Filters) {
 
 // Filter is a filter to apply to a resource
 type Filter struct {
-	// Group is the name of the group of filters, all filters in a group are ANDed together
-	Group string
-
 	// Type is the type of filter to apply
 	Type Type
 
@@ -177,7 +174,6 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	f.Value = m["value"]
 	f.Property = m["property"]
 	f.Invert = m["invert"]
-	f.Group = m["group"]
 	return nil
 }
 
