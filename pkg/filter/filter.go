@@ -24,9 +24,6 @@ const (
 	Suffix        Type = "suffix"
 	Prefix        Type = "prefix"
 
-	And OpType = "and"
-	Or  OpType = "or"
-
 	Global = "__global__"
 )
 
