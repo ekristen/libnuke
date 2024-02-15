@@ -91,14 +91,6 @@ type Filter struct {
 	Invert string
 }
 
-// GetGroup returns the group name of the filter, if it is empty it returns "default"
-func (f *Filter) GetGroup() string {
-	if f.Group == "" {
-		return "default"
-	}
-	return f.Group
-}
-
 // Validate checks if the filter is valid
 func (f *Filter) Validate() error {
 	if f.Property == "" && f.Value == "" {
