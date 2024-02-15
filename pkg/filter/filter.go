@@ -79,19 +79,19 @@ func (f Filters) Merge(f2 Filters) {
 // Filter is a filter to apply to a resource
 type Filter struct {
 	// Group is the name of the group of filters, all filters in a group are ANDed together
-	Group string `yaml:"group" json:"group"`
+	Group string
 
 	// Type is the type of filter to apply
-	Type Type `yaml:"type" json:"type"`
+	Type Type
 
 	// Property is the name of the property to filter on
-	Property string `yaml:"property" json:"property"`
+	Property string
 
 	// Value is the value to filter on
-	Value string `yaml:"value" json:"value"`
+	Value string
 
 	// Invert is a flag to invert the filter
-	Invert string `yaml:"invert" json:"invert"`
+	Invert string
 }
 
 // GetGroup returns the group name of the filter, if it is empty it returns "default"
@@ -177,6 +177,7 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	f.Value = m["value"]
 	f.Property = m["property"]
 	f.Invert = m["invert"]
+	f.Group = m["group"]
 	return nil
 }
 

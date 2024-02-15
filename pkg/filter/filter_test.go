@@ -1,6 +1,7 @@
 package filter_test
 
 import (
+	"os"
 	"reflect"
 	"strconv"
 	"testing"
@@ -45,6 +46,32 @@ func TestFilter_Global(t *testing.T) {
 
 	assert.Equal(t, expected["resource1"], f.Get("resource1"))
 	assert.Equal(t, expected["resource2"], f.Get("resource2"))
+}
+
+func TestFilter_GlobalYAML(t *testing.T) {
+	data, err := os.ReadFile("testdata/global.yaml")
+	assert.NoError(t, err)
+
+	config := struct {
+		Filters filter.Filters `yaml:"filters"`
+	}{}
+
+	err = yaml.Unmarshal(data, &config)
+	assert.NoError(t, err)
+
+	expected := filter.Filters{
+		"Resource1": []filter.Filter{
+			{Property: "prop3", Type: filter.Exact, Value: "value3"},
+			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+		},
+		"Resource2": []filter.Filter{
+			{Property: "prop3", Type: filter.Exact, Value: "value3"},
+			{Property: "prop2", Type: filter.Exact, Value: "value2"},
+		},
+	}
+
+	assert.Equal(t, expected["Resource1"], config.Filters.Get("Resource1"))
+	assert.Equal(t, expected["Resource2"], config.Filters.Get("Resource2"))
 }
 
 func TestFilter_NewExactFilter(t *testing.T) {

@@ -1,16 +1,16 @@
 filters:
   Resource1:
-    - name: prop1
+    - property: prop1
       type: exact
       value: value1
-    - name: prop2
+    - property: prop2
       type: exact
       value: value2
-    - name: prop3
+    - property: prop3
       type: exact
       value: value3
       group: something-else
   Resource2:
-    - name: prop2
+    - property: prop2
       type: exact
       value: value2
