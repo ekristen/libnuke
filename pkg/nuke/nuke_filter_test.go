@@ -5,13 +5,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gotidy/ptr"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/registry"
+	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/scanner"
 	"github.com/ekristen/libnuke/pkg/types"
 )
@@ -166,16 +166,11 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 }
 
 type TestResourceFilter struct {
+	Props types.Properties
 }
 
 func (r *TestResourceFilter) Properties() types.Properties {
-	props := types.NewProperties()
-
-	tagName := ptr.String("aws:cloudformation:stack-name")
-	tagVal := "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081"
-
-	props.SetTag(tagName, tagVal)
-	return props
+	return r.Props
 }
 
 func (r *TestResourceFilter) Remove(_ context.Context) error {
@@ -198,11 +193,88 @@ func Test_Nuke_Filters_Extra(t *testing.T) {
 	n.SetRunSleep(time.Millisecond * 5)
 
 	i := &queue.Item{
-		Resource: &TestResourceFilter{},
-		Type:     TestResourceType2,
+		Resource: &TestResourceFilter{
+			Props: types.Properties{
+				"tag:aws:cloudformation:stack-name": "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081",
+			},
+		},
+		Type: TestResourceType2,
 	}
 
 	err := n.Filter(i)
 	assert.NoError(t, err)
 	assert.Equal(t, i.Reason, "filtered by config")
+}
+
+func Test_Nuke_Filters_Filtered(t *testing.T) {
+	cases := []struct {
+		name      string
+		resources []resource.Resource
+		filters   filter.Filters
+	}{
+		{
+			name: "exact",
+			resources: []resource.Resource{
+				&TestResourceFilter{
+					Props: types.Properties{
+						"tag:aws:cloudformation:stack-name": "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081",
+					},
+				},
+			},
+			filters: filter.Filters{
+				TestResourceType2: []filter.Filter{
+					{
+						Type:     filter.Exact,
+						Property: "tag:aws:cloudformation:stack-name",
+						Value:    "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081",
+					},
+				},
+			},
+		},
+		{
+			name: "global",
+			resources: []resource.Resource{
+				&TestResourceFilter{
+					Props: types.Properties{
+						"tag:aws:cloudformation:stack-name": "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081",
+					},
+				},
+			},
+			filters: filter.Filters{
+				filter.Global: []filter.Filter{
+					{
+						Type:     filter.Exact,
+						Property: "tag:aws:cloudformation:stack-name",
+						Value:    "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081",
+					},
+				},
+				TestResourceType2: []filter.Filter{
+					{
+						Type:     filter.Exact,
+						Property: "tag:testing",
+						Value:    "test",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			n := New(testParameters, tc.filters, nil)
+			n.SetLogger(logrus.WithField("test", true))
+			n.SetRunSleep(time.Millisecond * 5)
+
+			for _, r := range tc.resources {
+				i := &queue.Item{
+					Resource: r,
+					Type:     TestResourceType2,
+				}
+
+				err := n.Filter(i)
+				assert.NoError(t, err)
+				assert.Equal(t, i.Reason, "filtered by config")
+			}
+		})
+	}
 }

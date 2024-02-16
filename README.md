@@ -95,7 +95,8 @@ This provides common errors that can be used throughout the library for handling
 
 ### filter
 
-This provides a way to filter resources based on a set of criteria.
+This provides a way to filter resources based on a set of criteria. See [full documentation](pkg/filter/README.md)
+for more information.
 
 ### log
 

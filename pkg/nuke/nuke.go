@@ -449,8 +449,8 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		}
 	}
 
-	itemFilters, ok := n.Filters[item.Type]
-	if !ok {
+	itemFilters := n.Filters.Get(item.Type)
+	if itemFilters == nil {
 		log.Tracef("no filters found for type: %s", item.Type)
 		return nil
 	}

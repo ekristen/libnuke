@@ -1,6 +1,7 @@
 package filter_test
 
 import (
+	"os"
 	"reflect"
 	"strconv"
 	"testing"
@@ -13,7 +14,67 @@ import (
 	"github.com/ekristen/libnuke/pkg/filter"
 )
 
-func TestNewExactFilter(t *testing.T) {
+func TestFilter_Nil(t *testing.T) {
+	f := filter.Filters{}
+
+	assert.Nil(t, f.Get("resource1"))
+}
+
+func TestFilter_Global(t *testing.T) {
+	f := filter.Filters{
+		filter.Global: []filter.Filter{
+			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+		},
+		"resource1": []filter.Filter{
+			{Property: "prop2", Type: filter.Glob, Value: "value2"},
+		},
+		"resource2": []filter.Filter{
+			{Property: "prop3", Type: filter.Regex, Value: "value3"},
+		},
+	}
+
+	expected := filter.Filters{
+		"resource1": []filter.Filter{
+			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+			{Property: "prop2", Type: filter.Glob, Value: "value2"},
+		},
+		"resource2": []filter.Filter{
+			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+			{Property: "prop3", Type: filter.Regex, Value: "value3"},
+		},
+	}
+
+	assert.Equal(t, expected["resource1"], f.Get("resource1"))
+	assert.Equal(t, expected["resource2"], f.Get("resource2"))
+}
+
+func TestFilter_GlobalYAML(t *testing.T) {
+	data, err := os.ReadFile("testdata/global.yaml")
+	assert.NoError(t, err)
+
+	config := struct {
+		Filters filter.Filters `yaml:"filters"`
+	}{}
+
+	err = yaml.Unmarshal(data, &config)
+	assert.NoError(t, err)
+
+	expected := filter.Filters{
+		"Resource1": []filter.Filter{
+			{Property: "prop3", Type: filter.Exact, Value: "value3"},
+			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+		},
+		"Resource2": []filter.Filter{
+			{Property: "prop3", Type: filter.Exact, Value: "value3"},
+			{Property: "prop2", Type: filter.Exact, Value: "value2"},
+		},
+	}
+
+	assert.Equal(t, expected["Resource1"], config.Filters.Get("Resource1"))
+	assert.Equal(t, expected["Resource2"], config.Filters.Get("Resource2"))
+}
+
+func TestFilter_NewExactFilter(t *testing.T) {
 	f := filter.NewExactFilter("testing")
 
 	assert.Equal(t, f.Type, filter.Exact)
@@ -27,7 +88,7 @@ func TestNewExactFilter(t *testing.T) {
 	assert.False(t, b2)
 }
 
-func TestValidation(t *testing.T) {
+func TestFilter_Validation(t *testing.T) {
 	cases := []struct {
 		name  string
 		yaml  string
@@ -61,7 +122,7 @@ func TestValidation(t *testing.T) {
 	}
 }
 
-func TestUnmarshalFilter(t *testing.T) {
+func TestFilter_UnmarshalFilter(t *testing.T) {
 	past := time.Now().UTC().Add(-24 * time.Hour)
 	future := time.Now().UTC().Add(24 * time.Hour)
 	cases := []struct {
@@ -197,7 +258,7 @@ func TestUnmarshalFilter(t *testing.T) {
 	}
 }
 
-func TestMerge(t *testing.T) {
+func TestFilter_Merge(t *testing.T) {
 	// Create two Filters objects
 	f1 := filter.Filters{
 		"resource1": []filter.Filter{
@@ -213,8 +274,8 @@ func TestMerge(t *testing.T) {
 		},
 	}
 
-	// Merge the two Filters objects
-	f1.Merge(f2)
+	// Append the two Filters objects
+	f1.Append(f2)
 
 	// Create the expected result
 	expected := filter.Filters{
@@ -236,7 +297,7 @@ func TestMerge(t *testing.T) {
 	}
 }
 
-func Test_FiltersValidateError(t *testing.T) {
+func TestFilter_ValidateError(t *testing.T) {
 	filters := filter.Filters{
 		"resource1": []filter.Filter{
 			{

@@ -225,7 +225,7 @@ func (c *Config) Filters(accountID string) (filter.Filters, error) {
 			return nil, notFound
 		}
 
-		filters.Merge(preset.Filters)
+		filters.Append(preset.Filters)
 	}
 
 	return filters, nil
