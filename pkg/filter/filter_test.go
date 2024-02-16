@@ -274,8 +274,8 @@ func TestFilter_Merge(t *testing.T) {
 		},
 	}
 
-	// Merge the two Filters objects
-	f1.Merge(f2)
+	// Append the two Filters objects
+	f1.Append(f2)
 
 	// Create the expected result
 	expected := filter.Filters{

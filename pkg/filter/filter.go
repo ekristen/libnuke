@@ -68,6 +68,7 @@ func (f Filters) Append(f2 Filters) {
 }
 
 // Merge is an alias of Append for backwards compatibility
+// Deprecated: use Append instead
 func (f Filters) Merge(f2 Filters) {
 	f.Append(f2)
 }
