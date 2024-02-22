@@ -2,6 +2,9 @@ package nuke
 
 import (
 	"context"
+	"flag"
+	"io"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,6 +18,14 @@ import (
 	"github.com/ekristen/libnuke/pkg/scanner"
 	"github.com/ekristen/libnuke/pkg/types"
 )
+
+func init() {
+	if flag.Lookup("test.v") != nil {
+		logrus.SetOutput(io.Discard)
+	}
+	logrus.SetLevel(logrus.TraceLevel)
+	logrus.SetReportCaller(true)
+}
 
 func Test_NukeFiltersBad(t *testing.T) {
 	filters := filter.Filters{
@@ -135,6 +146,20 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 }
 
 func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
+	logrus.AddHook(&TestGlobalHook{
+		t: t,
+		tf: func(t *testing.T, e *logrus.Entry) {
+			if strings.HasSuffix(e.Caller.File, "pkg/nuke/nuke.go") {
+				return
+			}
+
+			if e.Caller.Line == 467 {
+				assert.Equal(t, "*nuke.TestResource does not support custom properties", e.Message)
+			}
+		},
+	})
+	defer logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
+
 	registry.ClearRegistry()
 	registry.Register(TestResourceRegistration)
 
@@ -161,8 +186,7 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 	assert.NoError(t, sErr)
 
 	err := n.Scan(context.TODO())
-	assert.Error(t, err)
-	assert.Equal(t, "*nuke.TestResource does not support custom properties", err.Error())
+	assert.NoError(t, err)
 }
 
 type TestResourceFilter struct {

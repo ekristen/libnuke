@@ -464,7 +464,8 @@ func (n *Nuke) Filter(item *queue.Item) error {
 
 		prop, err := item.GetProperty(f.Property)
 		if err != nil {
-			return err
+			log.WithError(err).Warnf("unable to get property: %s", f.Property)
+			continue
 		}
 
 		log.Tracef("property: %s", prop)
