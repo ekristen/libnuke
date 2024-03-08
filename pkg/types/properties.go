@@ -82,7 +82,7 @@ func (p Properties) SetTagWithPrefix(prefix string, tagKey *string, tagValue int
 	return p.Set(keyStr, tagValue)
 }
 
-func (p Properties) SetWithPrefix(prefix string, key string, value interface{}) Properties {
+func (p Properties) SetWithPrefix(prefix, key string, value interface{}) Properties {
 	key = strings.TrimSpace(key)
 	prefix = strings.TrimSpace(prefix)
 
