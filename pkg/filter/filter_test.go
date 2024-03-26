@@ -61,12 +61,12 @@ func TestFilter_GlobalYAML(t *testing.T) {
 
 	expected := filter.Filters{
 		"Resource1": []filter.Filter{
-			{Property: "prop3", Type: filter.Exact, Value: "value3"},
-			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+			{Property: "prop3", Type: filter.Exact, Value: "value3", Values: []string{}},
+			{Property: "prop1", Type: filter.Exact, Value: "value1", Values: []string{}},
 		},
 		"Resource2": []filter.Filter{
-			{Property: "prop3", Type: filter.Exact, Value: "value3"},
-			{Property: "prop2", Type: filter.Exact, Value: "value2"},
+			{Property: "prop3", Type: filter.Exact, Value: "value3", Values: []string{}},
+			{Property: "prop2", Type: filter.Exact, Value: "value2", Values: []string{}},
 		},
 	}
 
@@ -216,6 +216,18 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 			yaml:  `{"type":"custom","value":"does-not-matter"}`,
 			match: []string{"12345-somesuffix"},
 			error: true,
+		},
+		{
+			name:     "not-in",
+			yaml:     `{"type":"NotIn","values":["foo","bar"]}`,
+			match:    []string{"baz", "qux"},
+			mismatch: []string{"foo", "bar"},
+		},
+		{
+			name:     "in",
+			yaml:     `{"type":"In","values":["foo","bar"]}`,
+			match:    []string{"foo", "bar"},
+			mismatch: []string{"baz", "qux"},
 		},
 	}
 
