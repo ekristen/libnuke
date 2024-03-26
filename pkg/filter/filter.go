@@ -4,6 +4,7 @@ package filter
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +23,8 @@ const (
 	DateOlderThan Type = "dateOlderThan"
 	Suffix        Type = "suffix"
 	Prefix        Type = "prefix"
+	NotIn         Type = "NotIn"
+	In            Type = "In"
 
 	Global = "__global__"
 )
@@ -84,6 +87,9 @@ type Filter struct {
 	// Value is the value to filter on
 	Value string
 
+	// Values allows for multiple values to be specified for a filter
+	Values []string
+
 	// Invert is a flag to invert the filter
 	Invert string
 }
@@ -138,6 +144,12 @@ func (f *Filter) Match(o string) (bool, error) {
 	case Suffix:
 		return strings.HasSuffix(o, f.Value), nil
 
+	case In:
+		return slices.Contains(f.Values, o), nil
+
+	case NotIn:
+		return !slices.Contains(f.Values, o), nil
+
 	default:
 		return false, fmt.Errorf("unknown type %s", f.Type)
 	}
@@ -152,17 +164,54 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return nil
 	}
 
-	m := map[string]string{}
+	m := map[string]interface{}{}
 	err := unmarshal(m)
 	if err != nil {
 		fmt.Println("%%%%%%%%")
 		return err
 	}
 
-	f.Type = Type(m["type"])
-	f.Value = m["value"]
-	f.Property = m["property"]
-	f.Invert = m["invert"]
+	if m["type"] == nil {
+		f.Type = Exact
+	} else {
+		f.Type = Type(m["type"].(string))
+	}
+
+	if m["value"] == nil {
+		f.Value = ""
+	} else {
+		f.Value = m["value"].(string)
+	}
+
+	if m["values"] == nil {
+		f.Values = []string{}
+	} else {
+		interfaceSlice := m["values"].([]interface{})
+		stringSlice := make([]string, len(interfaceSlice))
+		for i, v := range interfaceSlice {
+			str, ok := v.(string)
+			if !ok {
+				// Handle the case where the conversion is not possible
+				return fmt.Errorf("unable to convert %v to string", v)
+			}
+			stringSlice[i] = str
+		}
+
+		f.Values = stringSlice
+	}
+
+	if m["property"] == nil {
+		f.Property = ""
+	} else {
+		f.Property = m["property"].(string)
+	}
+
+	if m["invert"] == nil {
+		f.Invert = ""
+	} else {
+		f.Invert = m["invert"].(string)
+	}
+
 	return nil
 }
 
