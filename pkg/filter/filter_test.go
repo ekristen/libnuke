@@ -218,6 +218,12 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 			error: true,
 		},
 		{
+			name:     "invert",
+			yaml:     `{"type":"exact","value":"foo","invert":"true"}`,
+			match:    []string{"foo"},
+			mismatch: []string{"bar", "baz"},
+		},
+		{
 			name:     "not-in",
 			yaml:     `{"type":"NotIn","values":["foo","bar"]}`,
 			match:    []string{"baz", "qux"},
@@ -286,6 +292,45 @@ func TestFilter_Merge(t *testing.T) {
 		},
 	}
 
+	// Merge the two Filters objects
+	f1.Merge(f2)
+
+	// Create the expected result
+	expected := filter.Filters{
+		"resource1": []filter.Filter{
+			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+			{Property: "prop2", Type: filter.Glob, Value: "value2"},
+		},
+		"resource2": []filter.Filter{
+			{Property: "prop3", Type: filter.Regex, Value: "value3"},
+		},
+	}
+
+	validateErr := expected.Validate()
+	assert.NoError(t, validateErr)
+
+	// Check if the result is as expected
+	if !reflect.DeepEqual(f1, expected) {
+		t.Errorf("Merge() = %v, want %v", f1, expected)
+	}
+}
+
+func TestFilter_Append(t *testing.T) {
+	// Create two Filters objects
+	f1 := filter.Filters{
+		"resource1": []filter.Filter{
+			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+		},
+	}
+	f2 := filter.Filters{
+		"resource1": []filter.Filter{
+			{Property: "prop2", Type: filter.Glob, Value: "value2"},
+		},
+		"resource2": []filter.Filter{
+			{Property: "prop3", Type: filter.Regex, Value: "value3"},
+		},
+	}
+
 	// Append the two Filters objects
 	f1.Append(f2)
 
@@ -307,6 +352,19 @@ func TestFilter_Merge(t *testing.T) {
 	if !reflect.DeepEqual(f1, expected) {
 		t.Errorf("Merge() = %v, want %v", f1, expected)
 	}
+}
+
+func TestFilter_EmptyType(t *testing.T) {
+	f := filter.Filter{
+		Property: "Name",
+		Type:     "",
+		Value:    "anything",
+	}
+
+	match, err := f.Match("anything")
+	assert.NoError(t, err)
+	assert.True(t, match)
+
 }
 
 func TestFilter_ValidateError(t *testing.T) {

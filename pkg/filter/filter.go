@@ -171,11 +171,7 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	if m["type"] == nil {
-		f.Type = Exact
-	} else {
-		f.Type = Type(m["type"].(string))
-	}
+	f.Type = Type(m["type"].(string))
 
 	if m["value"] == nil {
 		f.Value = ""
@@ -189,11 +185,7 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		interfaceSlice := m["values"].([]interface{})
 		stringSlice := make([]string, len(interfaceSlice))
 		for i, v := range interfaceSlice {
-			str, ok := v.(string)
-			if !ok {
-				// Handle the case where the conversion is not possible
-				return fmt.Errorf("unable to convert %v to string", v)
-			}
+			str, _ := v.(string)
 			stringSlice[i] = str
 		}
 
@@ -215,6 +207,7 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
+// NewExactFilter creates a new filter that matches the exact value
 func NewExactFilter(value string) Filter {
 	return Filter{
 		Type:  Exact,
