@@ -4,6 +4,7 @@ package filter
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -22,6 +23,8 @@ const (
 	DateOlderThan Type = "dateOlderThan"
 	Suffix        Type = "suffix"
 	Prefix        Type = "prefix"
+	NotIn         Type = "NotIn"
+	In            Type = "In"
 
 	Global = "__global__"
 )
@@ -48,6 +51,7 @@ func (f Filters) Get(resourceType string) []Filter {
 	return filters
 }
 
+// Validate checks if the filters are valid or not and returns an error if they are not
 func (f Filters) Validate() error {
 	for resourceType, filters := range f {
 		for _, filter := range filters {
@@ -60,7 +64,8 @@ func (f Filters) Validate() error {
 	return nil
 }
 
-// Append appends the filters from f2 to f
+// Append appends the filters from f2 to f. This is primarily used to append filters from a preset
+// to a set of filters that were defined on a resource type.
 func (f Filters) Append(f2 Filters) {
 	for resourceType, filter := range f2 {
 		f[resourceType] = append(f[resourceType], filter...)
@@ -83,6 +88,9 @@ type Filter struct {
 
 	// Value is the value to filter on
 	Value string
+
+	// Values allows for multiple values to be specified for a filter
+	Values []string
 
 	// Invert is a flag to invert the filter
 	Invert string
@@ -138,6 +146,12 @@ func (f *Filter) Match(o string) (bool, error) {
 	case Suffix:
 		return strings.HasSuffix(o, f.Value), nil
 
+	case In:
+		return slices.Contains(f.Values, o), nil
+
+	case NotIn:
+		return !slices.Contains(f.Values, o), nil
+
 	default:
 		return false, fmt.Errorf("unknown type %s", f.Type)
 	}
@@ -152,20 +166,50 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return nil
 	}
 
-	m := map[string]string{}
+	m := map[string]interface{}{}
 	err := unmarshal(m)
 	if err != nil {
 		fmt.Println("%%%%%%%%")
 		return err
 	}
 
-	f.Type = Type(m["type"])
-	f.Value = m["value"]
-	f.Property = m["property"]
-	f.Invert = m["invert"]
+	f.Type = Type(m["type"].(string))
+
+	if m["value"] == nil {
+		f.Value = ""
+	} else {
+		f.Value = m["value"].(string)
+	}
+
+	if m["values"] == nil {
+		f.Values = []string{}
+	} else {
+		interfaceSlice := m["values"].([]interface{})
+		stringSlice := make([]string, len(interfaceSlice))
+		for i, v := range interfaceSlice {
+			str, _ := v.(string)
+			stringSlice[i] = str
+		}
+
+		f.Values = stringSlice
+	}
+
+	if m["property"] == nil {
+		f.Property = ""
+	} else {
+		f.Property = m["property"].(string)
+	}
+
+	if m["invert"] == nil {
+		f.Invert = ""
+	} else {
+		f.Invert = m["invert"].(string)
+	}
+
 	return nil
 }
 
+// NewExactFilter creates a new filter that matches the exact value
 func NewExactFilter(value string) Filter {
 	return Filter{
 		Type:  Exact,
