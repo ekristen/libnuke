@@ -200,6 +200,12 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 		case reflect.Map:
 			for _, key := range value.MapKeys() {
 				val := value.MapIndex(key)
+				if key.Kind() == reflect.Ptr {
+					key = key.Elem()
+				}
+				if val.Kind() == reflect.Ptr {
+					val = val.Elem()
+				}
 				name = key.String()
 				p.SetTagWithPrefix(prefix, &name, val.Interface())
 			}

@@ -372,6 +372,16 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 		Name byte
 	}
 
+	type testStruct5 struct {
+		Name string
+		Tags map[string]*string
+	}
+
+	type testStruct6 struct {
+		Name string
+		Tags map[*string]*string
+	}
+
 	cases := []struct {
 		name  string
 		s     interface{}
@@ -384,24 +394,25 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 			want: types.NewProperties(),
 		},
 		{
-			name: "nonempty",
+			name: "unsupported-type-panic",
+			s: testStruct4{
+				Name: 'a',
+			},
+			want:  types.NewProperties(),
+			error: true,
+		},
+		{
+			name: "from-struct",
+			s:    testStruct3{Name: "testing"},
+			want: types.NewPropertiesFromStruct(testStruct3{Name: "testing"}),
+		},
+		{
+			name: "simple",
 			s:    testStruct{Name: "Alice", Age: 42},
 			want: types.NewProperties().Set("Age", 42).Set("Name", "Alice"),
 		},
 		{
-			name: "nonempty-struct2",
-			s: testStruct2{
-				Name:   "Alice",
-				Region: ptr.String("us-west-2"),
-				Tags:   &map[string]string{"key": "value"},
-			},
-			want: types.NewProperties().
-				Set("Name", "Alice").
-				Set("Region", "us-west-2").
-				SetTagWithPrefix("awesome", &[]string{"key"}[0], "value"),
-		},
-		{
-			name: "nonempty-struct3",
+			name: "complex",
 			s: testStruct3{
 				Name: "Alice",
 				Age:  &[]int{42}[0],
@@ -418,7 +429,19 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 				SetTag(ptr.String("key1"), "value1"),
 		},
 		{
-			name: "nonempty-struct3-is-set",
+			name: "tags-map",
+			s: testStruct2{
+				Name:   "Alice",
+				Region: ptr.String("us-west-2"),
+				Tags:   &map[string]string{"key": "value"},
+			},
+			want: types.NewProperties().
+				Set("Name", "Alice").
+				Set("Region", "us-west-2").
+				SetTagWithPrefix("awesome", &[]string{"key"}[0], "value"),
+		},
+		{
+			name: "tags-struct",
 			s: testStruct3{
 				Name: "Alice",
 				Age:  &[]int{42}[0],
@@ -436,17 +459,20 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 				SetTag(ptr.String("key1"), "value1"),
 		},
 		{
-			name: "unsupported-type-panic",
-			s: testStruct4{
-				Name: 'a',
+			name: "tags-string-pointer",
+			s: testStruct5{
+				Name: "Alice",
+				Tags: map[string]*string{"key": ptr.String("value")},
 			},
-			want:  types.NewProperties(),
-			error: true,
+			want: types.NewProperties().Set("Name", "Alice").SetTag(ptr.String("key"), "value"),
 		},
 		{
-			name: "new-properties-from-struct",
-			s:    testStruct3{Name: "testing"},
-			want: types.NewPropertiesFromStruct(testStruct3{Name: "testing"}),
+			name: "tags-pointer-pointer",
+			s: testStruct6{
+				Name: "Alice",
+				Tags: map[*string]*string{ptr.String("key"): ptr.String("value")},
+			},
+			want: types.NewProperties().Set("Name", "Alice").SetTag(ptr.String("key"), "value"),
 		},
 	}
 
