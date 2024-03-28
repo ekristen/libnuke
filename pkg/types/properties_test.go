@@ -442,6 +442,11 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 			want:  types.NewProperties(),
 			error: true,
 		},
+		{
+			name: "new-properties-from-struct",
+			s:    testStruct3{Name: "testing"},
+			want: types.NewPropertiesFromStruct(testStruct3{Name: "testing"}),
+		},
 	}
 
 	for _, tc := range cases {
