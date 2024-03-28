@@ -395,12 +395,11 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 			want: types.NewProperties(),
 		},
 		{
-			name: "unsupported-type-panic",
+			name: "simple-byte",
 			s: testStruct4{
 				Name: 'a',
 			},
-			want:  types.NewProperties(),
-			error: true,
+			want: types.NewProperties().Set("Name", "97"),
 		},
 		{
 			name: "from-struct",
@@ -487,18 +486,55 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			p := types.NewProperties()
 
-			if tc.error {
-				assert.Panics(t, func() {
-					p.SetFromStruct(tc.s)
-				})
-				return
-			}
-
 			p.SetFromStruct(tc.s)
 
 			assert.Equal(t, tc.want, p)
 		})
 	}
+}
+
+func BenchmarkNewProperties(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = types.NewProperties().
+			Set("Name", "Alice").
+			Set("Age", 42).
+			SetTag(ptr.String("key1"), "value1")
+	}
+}
+
+func BenchmarkNewPropertiesFromStruct_Simple(b *testing.B) {
+	type testStruct struct {
+		Name string
+		Age  int
+	}
+
+	for i := 0; i < b.N; i++ {
+		_ = types.NewPropertiesFromStruct(testStruct{Name: "Alice", Age: 42})
+	}
+}
+
+func BenchmarkNewPropertiesFromStruct_Complex(b *testing.B) {
+	type keyValue struct {
+		Key   *string
+		Value *string
+	}
+
+	type testStruct struct {
+		Name string
+		Age  *int
+		Tags []*keyValue
+	}
+
+	for i := 0; i < b.N; i++ {
+		_ = types.NewPropertiesFromStruct(testStruct{
+			Name: "Alice",
+			Age:  &[]int{42}[0],
+			Tags: []*keyValue{
+				{Key: ptr.String("key1"), Value: ptr.String("value1")},
+			},
+		})
+	}
+
 }
 
 func getString(value interface{}) string {

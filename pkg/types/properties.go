@@ -239,16 +239,8 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 					}
 				}
 			}
-		case reflect.Int:
-			p.SetWithPrefix(prefix, field.Name, value.Interface().(int))
-		case reflect.Int64:
-			p.SetWithPrefix(prefix, field.Name, value.Interface().(int64))
-		case reflect.String:
-			p.SetWithPrefix(prefix, field.Name, value.Interface().(string))
-		case reflect.Bool:
-			p.SetWithPrefix(prefix, field.Name, value.Interface().(bool))
 		default:
-			panic(fmt.Errorf("unsupported type %v -> %v", value.Kind(), value.Interface()))
+			p.SetWithPrefix(prefix, field.Name, value.Interface())
 		}
 	}
 
