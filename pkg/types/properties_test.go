@@ -367,10 +367,15 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 		Tags []*keyValue `property:""`
 	}
 
+	type testStruct4 struct {
+		Name byte
+	}
+
 	cases := []struct {
-		name string
-		s    interface{}
-		want types.Properties
+		name  string
+		s     interface{}
+		want  types.Properties
+		error bool
 	}{
 		{
 			name: "empty",
@@ -429,18 +434,32 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 				Set("On", true).
 				SetTag(ptr.String("key1"), "value1"),
 		},
+		{
+			name: "unsupported-type-panic",
+			s: testStruct4{
+				Name: 'a',
+			},
+			want:  types.NewProperties(),
+			error: true,
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			p := types.NewProperties()
 
+			if tc.error {
+				assert.Panics(t, func() {
+					p.SetFromStruct(tc.s)
+				})
+				return
+			}
+
 			p.SetFromStruct(tc.s)
 
 			assert.Equal(t, tc.want, p)
 		})
 	}
-
 }
 
 func getString(value interface{}) string {

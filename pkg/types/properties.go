@@ -138,7 +138,7 @@ func (p Properties) Equals(o Properties) bool {
 	return true
 }
 
-func (p Properties) SetFromStruct(data interface{}) Properties {
+func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen,gocyclo
 	v := reflect.ValueOf(data)
 	t := reflect.TypeOf(data)
 
@@ -229,9 +229,4 @@ func (p Properties) SetFromStruct(data interface{}) Properties {
 	}
 
 	return p
-}
-
-type KeyValue struct {
-	Key   *string
-	Value *string
 }
