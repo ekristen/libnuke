@@ -12,6 +12,10 @@ func NewProperties() Properties {
 	return make(Properties)
 }
 
+func NewPropertiesFromStruct(data interface{}) Properties {
+	return NewProperties().SetFromStruct(data)
+}
+
 func (p Properties) String() string {
 	var parts []string
 	for k, v := range p {
@@ -134,9 +138,9 @@ func (p Properties) Equals(o Properties) bool {
 	return true
 }
 
-func (p Properties) SetFromStruct(er interface{}) Properties {
-	v := reflect.ValueOf(er)
-	t := reflect.TypeOf(er)
+func (p Properties) SetFromStruct(data interface{}) Properties {
+	v := reflect.ValueOf(data)
+	t := reflect.TypeOf(data)
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)

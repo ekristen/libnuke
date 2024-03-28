@@ -411,6 +411,24 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 				Set("IQ", 100).
 				SetTag(ptr.String("key1"), "value1"),
 		},
+		{
+			name: "nonempty-struct3-is-set",
+			s: testStruct3{
+				Name: "Alice",
+				Age:  &[]int{42}[0],
+				IQ:   &[]int64{100}[0],
+				On:   true,
+				Tags: []*keyValue{
+					{Key: ptr.String("key1"), Value: ptr.String("value1")},
+				},
+			},
+			want: types.NewProperties().
+				Set("Name", "Alice").
+				Set("Age", 42).
+				Set("IQ", 100).
+				Set("On", true).
+				SetTag(ptr.String("key1"), "value1"),
+		},
 	}
 
 	for _, tc := range cases {
