@@ -412,6 +412,11 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 			want: types.NewProperties().Set("Age", 42).Set("Name", "Alice"),
 		},
 		{
+			name: "simple-pointer",
+			s:    &testStruct{Name: "Alice", Age: 42},
+			want: types.NewProperties().Set("Age", 42).Set("Name", "Alice"),
+		},
+		{
 			name: "complex",
 			s: testStruct3{
 				Name: "Alice",

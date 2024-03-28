@@ -151,7 +151,10 @@ func (p Properties) Equals(o Properties) bool {
 // SetFromStruct sets the Properties map from a struct by reading the structs fields
 func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen,gocyclo
 	v := reflect.ValueOf(data)
-	t := reflect.TypeOf(data)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	t := v.Type()
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
