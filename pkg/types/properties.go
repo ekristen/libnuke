@@ -240,7 +240,7 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 				}
 			}
 		default:
-			p.SetWithPrefix(prefix, field.Name, value.Interface())
+			p.SetWithPrefix(prefix, name, value.Interface())
 		}
 	}
 
