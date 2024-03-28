@@ -120,6 +120,11 @@ func Register(r *Registration) {
 	}
 }
 
+// GetRegistrations returns all registrations
+func GetRegistrations() Registrations {
+	return registrations
+}
+
 // ClearRegistry clears the registry of all registrations
 // Designed for use for unit tests, not for production code. Only use if you know what you are doing.
 func ClearRegistry() {
