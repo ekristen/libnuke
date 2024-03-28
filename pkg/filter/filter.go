@@ -51,6 +51,7 @@ func (f Filters) Get(resourceType string) []Filter {
 	return filters
 }
 
+// Validate checks if the filters are valid or not and returns an error if they are not
 func (f Filters) Validate() error {
 	for resourceType, filters := range f {
 		for _, filter := range filters {
@@ -63,7 +64,8 @@ func (f Filters) Validate() error {
 	return nil
 }
 
-// Append appends the filters from f2 to f
+// Append appends the filters from f2 to f. This is primarily used to append filters from a preset
+// to a set of filters that were defined on a resource type.
 func (f Filters) Append(f2 Filters) {
 	for resourceType, filter := range f2 {
 		f[resourceType] = append(f[resourceType], filter...)
