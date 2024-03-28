@@ -378,8 +378,9 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 	}
 
 	type testStruct6 struct {
-		Name string
-		Tags map[*string]*string
+		Name       string
+		Tags       map[*string]*string
+		unexported string
 	}
 
 	cases := []struct {
@@ -474,8 +475,9 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 		{
 			name: "tags-pointer-pointer",
 			s: testStruct6{
-				Name: "Alice",
-				Tags: map[*string]*string{ptr.String("key"): ptr.String("value")},
+				Name:       "Alice",
+				Tags:       map[*string]*string{ptr.String("key"): ptr.String("value")},
+				unexported: "hidden",
 			},
 			want: types.NewProperties().Set("Name", "Alice").SetTag(ptr.String("key"), "value"),
 		},

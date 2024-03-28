@@ -160,6 +160,10 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 		field := t.Field(i)
 		value := v.Field(i)
 
+		if !field.IsExported() {
+			continue
+		}
+
 		isSet := false
 
 		switch value.Kind() {
