@@ -368,6 +368,7 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 	}
 
 	type testStruct4 struct {
+		Omit bool `property:"-"`
 		Name byte
 	}
 

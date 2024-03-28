@@ -6,16 +6,20 @@ import (
 	"strings"
 )
 
+// Properties is a map of key-value pairs.
 type Properties map[string]string
 
+// NewProperties creates a new Properties map.
 func NewProperties() Properties {
 	return make(Properties)
 }
 
+// NewPropertiesFromStruct creates a new Properties map from a struct.
 func NewPropertiesFromStruct(data interface{}) Properties {
 	return NewProperties().SetFromStruct(data)
 }
 
+// String returns a string representation of the Properties map.
 func (p Properties) String() string {
 	var parts []string
 	for k, v := range p {
@@ -25,6 +29,17 @@ func (p Properties) String() string {
 	return fmt.Sprintf("[%s]", strings.Join(parts, ", "))
 }
 
+// Get returns the value of a key in the Properties map.
+func (p Properties) Get(key string) string {
+	value, ok := p[key]
+	if !ok {
+		return ""
+	}
+
+	return value
+}
+
+// Set sets a key-value pair in the Properties map.
 func (p Properties) Set(key string, value interface{}) Properties {
 	if value == nil {
 		return p
@@ -62,10 +77,28 @@ func (p Properties) Set(key string, value interface{}) Properties {
 	return p
 }
 
+// SetWithPrefix sets a key-value pair in the Properties map with a prefix.
+func (p Properties) SetWithPrefix(prefix, key string, value interface{}) Properties {
+	key = strings.TrimSpace(key)
+	prefix = strings.TrimSpace(prefix)
+
+	if key == "" {
+		return p
+	}
+
+	if prefix != "" {
+		key = fmt.Sprintf("%s:%s", prefix, key)
+	}
+
+	return p.Set(key, value)
+}
+
+// SetTag sets a tag key-value pair in the Properties map.
 func (p Properties) SetTag(tagKey *string, tagValue interface{}) Properties {
 	return p.SetTagWithPrefix("", tagKey, tagValue)
 }
 
+// SetTagWithPrefix sets a tag key-value pair in the Properties map with a prefix.
 func (p Properties) SetTagWithPrefix(prefix string, tagKey *string, tagValue interface{}) Properties {
 	if tagKey == nil {
 		return p
@@ -87,30 +120,7 @@ func (p Properties) SetTagWithPrefix(prefix string, tagKey *string, tagValue int
 	return p.Set(keyStr, tagValue)
 }
 
-func (p Properties) SetWithPrefix(prefix, key string, value interface{}) Properties {
-	key = strings.TrimSpace(key)
-	prefix = strings.TrimSpace(prefix)
-
-	if key == "" {
-		return p
-	}
-
-	if prefix != "" {
-		key = fmt.Sprintf("%s:%s", prefix, key)
-	}
-
-	return p.Set(key, value)
-}
-
-func (p Properties) Get(key string) string {
-	value, ok := p[key]
-	if !ok {
-		return ""
-	}
-
-	return value
-}
-
+// Equals compares two Properties maps.
 func (p Properties) Equals(o Properties) bool {
 	if p == nil && o == nil {
 		return true
@@ -138,6 +148,7 @@ func (p Properties) Equals(o Properties) bool {
 	return true
 }
 
+// SetFromStruct sets the Properties map from a struct by reading the structs fields
 func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen,gocyclo
 	v := reflect.ValueOf(data)
 	t := reflect.TypeOf(data)
