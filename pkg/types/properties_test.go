@@ -534,7 +534,6 @@ func BenchmarkNewPropertiesFromStruct_Complex(b *testing.B) {
 			},
 		})
 	}
-
 }
 
 func getString(value interface{}) string {
