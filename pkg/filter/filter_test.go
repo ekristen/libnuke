@@ -364,7 +364,6 @@ func TestFilter_EmptyType(t *testing.T) {
 	match, err := f.Match("anything")
 	assert.NoError(t, err)
 	assert.True(t, match)
-
 }
 
 func TestFilter_ValidateError(t *testing.T) {
