@@ -173,7 +173,11 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	f.Type = Type(m["type"].(string))
+	if m["type"] == nil {
+		f.Type = Exact
+	} else {
+		f.Type = Type(m["type"].(string))
+	}
 
 	if m["value"] == nil {
 		f.Value = ""
