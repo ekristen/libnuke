@@ -340,6 +340,91 @@ func TestPropertiesSetPropertiesWithPrefix(t *testing.T) {
 	}
 }
 
+func TestPropertiesSetFromStruct(t *testing.T) {
+	type testStruct struct {
+		Name string
+		Age  int
+		Tags map[string]string
+	}
+
+	type testStruct2 struct {
+		Name   string             `property:"name=name"`
+		Region *string            `property:"name=region"`
+		Tags   *map[string]string `property:"prefix=awesome"`
+	}
+
+	type keyValue struct {
+		Key   *string
+		Value *string
+	}
+
+	type testStruct3 struct {
+		Name string `property:""`
+		Age  *int   `property:""`
+		IQ   *int64 `property:""`
+		On   bool
+		Off  *bool       `property:"-"`
+		Tags []*keyValue `property:""`
+	}
+
+	cases := []struct {
+		name string
+		s    interface{}
+		want types.Properties
+	}{
+		{
+			name: "empty",
+			s:    testStruct{},
+			want: types.NewProperties(),
+		},
+		{
+			name: "nonempty",
+			s:    testStruct{Name: "Alice", Age: 42},
+			want: types.NewProperties().Set("Age", 42).Set("Name", "Alice"),
+		},
+		{
+			name: "nonempty-struct2",
+			s: testStruct2{
+				Name:   "Alice",
+				Region: ptr.String("us-west-2"),
+				Tags:   &map[string]string{"key": "value"},
+			},
+			want: types.NewProperties().
+				Set("Name", "Alice").
+				Set("Region", "us-west-2").
+				SetTagWithPrefix("awesome", &[]string{"key"}[0], "value"),
+		},
+		{
+			name: "nonempty-struct3",
+			s: testStruct3{
+				Name: "Alice",
+				Age:  &[]int{42}[0],
+				IQ:   &[]int64{100}[0],
+				Off:  &[]bool{true}[0],
+				Tags: []*keyValue{
+					{Key: ptr.String("key1"), Value: ptr.String("value1")},
+				},
+			},
+			want: types.NewProperties().
+				Set("Name", "Alice").
+				Set("Age", 42).
+				Set("IQ", 100).
+				SetTag(ptr.String("key1"), "value1"),
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := types.NewProperties()
+
+			p.SetFromStruct(tc.s)
+
+			assert.Equal(t, tc.want, p)
+		})
+	}
+
+}
+
 func getString(value interface{}) string {
 	switch v := value.(type) {
 	case *string:

@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -131,4 +132,102 @@ func (p Properties) Equals(o Properties) bool {
 	}
 
 	return true
+}
+
+func (p Properties) SetFromStruct(er interface{}) Properties {
+	v := reflect.ValueOf(er)
+	t := reflect.TypeOf(er)
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		value := v.Field(i)
+
+		isSet := false
+
+		switch value.Kind() {
+		case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Interface, reflect.Chan:
+			isSet = !value.IsNil()
+		default:
+			isSet = value.Interface() != reflect.Zero(value.Type()).Interface()
+		}
+
+		if !isSet {
+			continue
+		}
+
+		propertyTag := field.Tag.Get("property")
+		options := strings.Split(propertyTag, ",")
+		name := field.Name
+		prefix := ""
+
+		if options[0] == "-" {
+			continue
+		}
+
+		for _, option := range options {
+			parts := strings.Split(option, "=")
+			if len(parts) != 2 {
+				continue
+			}
+			switch parts[0] {
+			case "name":
+				name = parts[1]
+			case "prefix":
+				prefix = parts[1]
+			}
+		}
+
+		if value.Kind() == reflect.Ptr {
+			value = value.Elem()
+		}
+
+		switch value.Kind() {
+		case reflect.Map:
+			for _, key := range value.MapKeys() {
+				val := value.MapIndex(key)
+				name = key.String()
+				p.SetTagWithPrefix(prefix, &name, val.Interface())
+			}
+		case reflect.Slice:
+			for j := 0; j < value.Len(); j++ {
+				sliceValue := value.Index(j)
+				if sliceValue.Kind() == reflect.Ptr {
+					sliceValue = sliceValue.Elem()
+				}
+				if sliceValue.Kind() == reflect.Struct {
+					sliceValueV := reflect.ValueOf(sliceValue.Interface())
+					keyField := sliceValueV.FieldByName("Key")
+					valueField := sliceValueV.FieldByName("Value")
+
+					if keyField.Kind() == reflect.Ptr {
+						keyField = keyField.Elem()
+					}
+					if valueField.Kind() == reflect.Ptr {
+						valueField = valueField.Elem()
+					}
+
+					if keyField.IsValid() && valueField.IsValid() {
+						p.SetTagWithPrefix(prefix, &[]string{keyField.Interface().(string)}[0], valueField.Interface())
+					}
+				}
+			}
+		case reflect.Int:
+			p.SetWithPrefix(prefix, field.Name, value.Interface().(int))
+		case reflect.Int64:
+			p.SetWithPrefix(prefix, field.Name, value.Interface().(int64))
+		case reflect.String:
+			p.SetWithPrefix(prefix, field.Name, value.Interface().(string))
+		case reflect.Bool:
+			p.SetWithPrefix(prefix, field.Name, value.Interface().(bool))
+		default:
+			panic(fmt.Errorf("unsupported type %v -> %v", value.Kind(), value.Interface()))
+		}
+	}
+
+	return p
+}
+
+type KeyValue struct {
+	Key   *string
+	Value *string
 }
