@@ -441,8 +441,8 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 				Tags:   &map[string]string{"key": "value"},
 			},
 			want: types.NewProperties().
-				Set("Name", "Alice").
-				Set("Region", "us-west-2").
+				Set("name", "Alice").
+				Set("region", "us-west-2").
 				SetTagWithPrefix("awesome", &[]string{"key"}[0], "value"),
 		},
 		{
