@@ -48,6 +48,12 @@ type Registration struct {
 	// different levels, whereas AWS has simply Account level.
 	Scope Scope
 
+	// Resource is the resource type that the lister is going to list. This is a struct that implements the Resource
+	// interface. This is primarily used to generate documentation by parsing the structs properties and generating
+	// markdown documentation.
+	// Note: it is a interface{} because we are going to inspect it, we do not need to actually call any methods on it.
+	Resource interface{}
+
 	// Lister is the lister for the resource type, it is a struct with a method called List that returns a slice
 	// of resources. The lister is responsible for filtering out any resources that should not be deleted because they
 	// are ineligible for deletion. For example, built in resources that cannot be deleted.
