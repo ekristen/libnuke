@@ -68,7 +68,7 @@ func GeneratePropertiesMap(data interface{}) map[string]string {
 			}
 		}
 
-		properties[name] = fmt.Sprintf("%s", descriptionTag)
+		properties[name] = descriptionTag
 	}
 
 	return properties
