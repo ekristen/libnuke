@@ -140,3 +140,16 @@ func Test_RegisterResourcesWithAlternative(t *testing.T) {
 	assert.Len(t, deprecatedMapping, 1)
 	assert.Equal(t, "test2", deprecatedMapping["test"])
 }
+
+func Test_GetRegistrations(t *testing.T) {
+	ClearRegistry()
+
+	Register(&Registration{
+		Name:   "test",
+		Scope:  "test",
+		Lister: TestLister{},
+	})
+
+	regs := GetRegistrations()
+	assert.Len(t, regs, 1)
+}
