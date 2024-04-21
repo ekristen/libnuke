@@ -20,6 +20,13 @@ func TestGenerateProperties(t *testing.T) {
 		Tags   map[string]string `description:"The tags associated with the resource" property:"prefix=ee"`
 	}
 
+	type TestResource3 struct {
+		Name    string `description:"The name of the resource"`
+		Ignore  string `property:"-"`
+		Example string `description:"A property rename" property:"name=Delta"`
+		skipped string
+	}
+
 	cases := []struct {
 		name string
 		in   interface{}
@@ -45,6 +52,22 @@ func TestGenerateProperties(t *testing.T) {
 				"tag:ee:<key>:": "This resource has tags with property `Tags`. These are key/value pairs that are\n\t" +
 					"added as their own property with the prefix of `tag:ee:" +
 					"` (e.g. [tag:ee:example: \"value\"]) ",
+			},
+		},
+		{
+			name: "TestResource3",
+			in:   TestResource3{},
+			want: map[string]string{
+				"Name":  "The name of the resource",
+				"Delta": "A property rename",
+			},
+		},
+		{
+			name: "PointerTestResource3",
+			in:   &TestResource3{},
+			want: map[string]string{
+				"Name":  "The name of the resource",
+				"Delta": "A property rename",
 			},
 		},
 	}
