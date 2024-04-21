@@ -24,7 +24,7 @@ func TestGenerateProperties(t *testing.T) {
 		Name    string `description:"The name of the resource"`
 		Ignore  string `property:"-"`
 		Example string `description:"A property rename" property:"name=Delta"`
-		skipped string
+		skipped string //nolint:unused
 	}
 
 	cases := []struct {
