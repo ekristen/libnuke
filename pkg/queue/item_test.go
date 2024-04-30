@@ -2,6 +2,7 @@ package queue
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -18,7 +19,7 @@ type TestItemResource struct {
 
 func (r *TestItemResource) Properties() types.Properties {
 	props := types.NewProperties()
-	props.Set(r.id, "testing")
+	props.Set("name", r.id)
 	return props
 }
 func (r *TestItemResource) Remove(_ context.Context) error {
@@ -59,9 +60,9 @@ func Test_Item(t *testing.T) {
 	assert.Equal(t, ItemStateNew, i.GetState())
 	assert.Equal(t, "brand new", i.GetReason())
 
-	propVal, err := i.GetProperty("test")
+	propVal, err := i.GetProperty("name")
 	assert.NoError(t, err)
-	assert.Equal(t, "testing", propVal)
+	assert.Equal(t, "test", propVal)
 
 	assert.True(t, i.Equals(i.Resource))
 	assert.False(t, i.Equals(testItem2.Resource))
@@ -154,13 +155,15 @@ func Test_ItemPrint(t *testing.T) {
 		},
 	}
 
-	for _, tc := range cases {
+	for i, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			i := &Item{
-				Resource: &TestItemResource{},
-				State:    tc.state,
-				Type:     "TestResource",
-				Owner:    "us-east-1",
+				Resource: &TestItemResource{
+					id: fmt.Sprintf("test%d", i),
+				},
+				State: tc.state,
+				Type:  "TestResource",
+				Owner: "us-east-1",
 			}
 			i.Print()
 		})
