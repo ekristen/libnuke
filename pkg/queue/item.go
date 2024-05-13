@@ -112,6 +112,10 @@ func (i *Item) Print() {
 	if i.Logger == nil {
 		i.Logger = logrus.New()
 		i.Logger.SetFormatter(&log.CustomFormatter{})
+	} else {
+		if i.Logger.Formatter == nil {
+			i.Logger.SetFormatter(&log.CustomFormatter{})
+		}
 	}
 
 	itemLog := i.Logger.WithFields(logrus.Fields{
