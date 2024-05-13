@@ -2,8 +2,9 @@ package log
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 type CustomFormatter struct{}

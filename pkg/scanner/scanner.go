@@ -34,6 +34,7 @@ type Scanner struct {
 	Owner           string
 	mutateOptsFunc  MutateOptsFunc `hash:"ignore"`
 	parallelQueries int64
+	logger          *logrus.Logger
 }
 
 // MutateOptsFunc is a function that can mutate the Options for a given resource type. This is useful for when you
@@ -50,6 +51,7 @@ func New(owner string, resourceTypes []string, opts interface{}) *Scanner {
 		Options:         opts,
 		Owner:           owner,
 		parallelQueries: DefaultParallelQueries,
+		logger:          logrus.New(),
 	}
 }
 
@@ -72,6 +74,11 @@ func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) error {
 func (s *Scanner) SetParallelQueries(parallelQueries int64) {
 	s.parallelQueries = parallelQueries
 	s.semaphore = semaphore.NewWeighted(s.parallelQueries)
+}
+
+// SetLogger sets the logger for the scanner.
+func (s *Scanner) SetLogger(logger *logrus.Logger) {
+	s.logger = logger
 }
 
 // Run starts the scanner and runs the lister for each resource type.
@@ -107,7 +114,7 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 		if r := recover(); r != nil {
 			err := fmt.Errorf("%v\n\n%s", r.(error), string(debug.Stack()))
 			dump := utils.Indent(fmt.Sprintf("%v", err), "    ")
-			logrus.Errorf("Listing %s failed:\n%s", resourceType, dump)
+			s.logger.Errorf("Listing %s failed:\n%s", resourceType, dump)
 		}
 	}()
 
@@ -117,7 +124,7 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 	var rs []resource.Resource
 
 	if lister == nil {
-		logrus.Errorf("lister for resource type not found: %s", resourceType)
+		s.logger.Errorf("lister for resource type not found: %s", resourceType)
 		return
 	}
 
@@ -126,19 +133,19 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 		var errSkipRequest liberrors.ErrSkipRequest
 		ok := errors.As(err, &errSkipRequest)
 		if ok {
-			logrus.Debugf("skipping request: %v", err)
+			s.logger.Debugf("skipping request: %v", err)
 			return
 		}
 
 		var errUnknownEndpoint liberrors.ErrUnknownEndpoint
 		ok = errors.As(err, &errUnknownEndpoint)
 		if ok {
-			logrus.Debugf("skipping request: %v", err)
+			s.logger.Debugf("skipping request: %v", err)
 			return
 		}
 
 		dump := utils.Indent(fmt.Sprintf("%v", err), "    ")
-		logrus.WithError(err).Errorf("Listing %s failed:\n%s", resourceType, dump)
+		s.logger.WithError(err).Errorf("Listing %s failed:\n%s", resourceType, dump)
 		return
 	}
 
@@ -149,6 +156,7 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 			Type:     resourceType,
 			Owner:    owner,
 			Opts:     opts,
+			Logger:   s.logger,
 		}
 
 		itemHook, ok := r.(resource.QueueItemHook)
