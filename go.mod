@@ -3,7 +3,7 @@ module github.com/ekristen/libnuke
 go 1.21.6
 
 require (
-	github.com/fatih/color v1.16.0
+	github.com/fatih/color v1.17.0
 	github.com/gotidy/ptr v1.4.0
 	github.com/mb0/glob v0.0.0-20160210091149-1eb79d2de6c4
 	github.com/sirupsen/logrus v1.9.3
@@ -20,7 +20,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
