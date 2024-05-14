@@ -15,6 +15,12 @@ func (err ErrUnknownEndpoint) Error() string {
 	return string(err)
 }
 
+type ErrWaitResource string
+
+func (err ErrWaitResource) Error() string {
+	return string(err)
+}
+
 type ErrHoldResource string
 
 func (err ErrHoldResource) Error() string {

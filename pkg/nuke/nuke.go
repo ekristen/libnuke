@@ -588,9 +588,15 @@ func (n *Nuke) HandleWait(ctx context.Context, item *queue.Item, cache ListCache
 
 	waitHook, hookOk := item.Resource.(resource.HandleWaitHook)
 	if hookOk {
-		if err := waitHook.HandleWait(ctx); err != nil {
+		if hookErr := waitHook.HandleWait(ctx); hookErr != nil {
+			var waitErr liberrors.ErrWaitResource
+			if errors.Is(hookErr, &waitErr) {
+				item.State = queue.ItemStateWaiting
+				return
+			}
+
 			item.State = queue.ItemStateFailed
-			item.Reason = err.Error()
+			item.Reason = hookErr.Error()
 			return
 		}
 	}
