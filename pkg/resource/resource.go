@@ -32,3 +32,8 @@ type SettingsGetter interface {
 	Resource
 	Settings(setting *settings.Setting)
 }
+
+type HandleWaitHook interface {
+	Resource
+	HandleWait(context.Context) error
+}

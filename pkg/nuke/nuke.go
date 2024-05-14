@@ -585,6 +585,16 @@ func (n *Nuke) HandleWait(ctx context.Context, item *queue.Item, cache ListCache
 	var err error
 
 	ownerID := item.Owner
+
+	waitHook, hookOk := item.Resource.(resource.HandleWaitHook)
+	if hookOk {
+		if err := waitHook.HandleWait(ctx); err != nil {
+			item.State = queue.ItemStateFailed
+			item.Reason = err.Error()
+			return
+		}
+	}
+
 	_, ok := cache[ownerID]
 	if !ok {
 		cache[ownerID] = make(map[string][]resource.Resource)
