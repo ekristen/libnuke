@@ -34,6 +34,10 @@ var (
 func Sorted(m map[string]string) string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
+		if strings.HasPrefix(k, "_") {
+			continue
+		}
+
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
