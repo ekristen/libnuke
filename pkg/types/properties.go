@@ -11,7 +11,9 @@ type Properties map[string]string
 
 // NewProperties creates a new Properties map.
 func NewProperties() Properties {
-	return make(Properties)
+	props := make(Properties)
+	props.SetTagPrefix("tag")
+	return props
 }
 
 // NewPropertiesFromStruct creates a new Properties map from a struct.
@@ -19,10 +21,18 @@ func NewPropertiesFromStruct(data interface{}) Properties {
 	return NewProperties().SetFromStruct(data)
 }
 
+func (p Properties) SetTagPrefix(prefix string) {
+	p["_tagPrefix"] = prefix
+}
+
 // String returns a string representation of the Properties map.
 func (p Properties) String() string {
 	var parts []string
 	for k, v := range p {
+		if strings.HasPrefix(k, "_") {
+			continue
+		}
+
 		parts = append(parts, fmt.Sprintf(`%s: "%v"`, k, v))
 	}
 
@@ -115,7 +125,7 @@ func (p Properties) SetTagWithPrefix(prefix string, tagKey *string, tagValue int
 		keyStr = fmt.Sprintf("%s:%s", prefix, keyStr)
 	}
 
-	keyStr = fmt.Sprintf("tag:%s", keyStr)
+	keyStr = fmt.Sprintf("%s:%s", p.Get("_tagPrefix"), keyStr)
 
 	return p.Set(keyStr, tagValue)
 }
@@ -181,6 +191,7 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 		options := strings.Split(propertyTag, ",")
 		name := field.Name
 		prefix := ""
+		tagPrefix := ""
 
 		if options[0] == "-" {
 			continue
@@ -196,7 +207,13 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 				name = parts[1]
 			case "prefix":
 				prefix = parts[1]
+			case "tagPrefix":
+				tagPrefix = parts[1]
 			}
+		}
+
+		if tagPrefix != "" {
+			p.SetTagPrefix(tagPrefix)
 		}
 
 		if value.Kind() == reflect.Ptr {

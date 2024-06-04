@@ -383,6 +383,11 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 		unexported string
 	}
 
+	type testStruct7 struct {
+		Name   string
+		Labels map[string]string
+	}
+
 	cases := []struct {
 		name  string
 		s     interface{}
@@ -479,6 +484,14 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 				unexported: "hidden",
 			},
 			want: types.NewProperties().Set("Name", "Alice").SetTag(ptr.String("key"), "value"),
+		},
+		{
+			name: "labels-map-string-string",
+			s: testStruct7{
+				Name:   "Bob",
+				Labels: map[string]string{"key": "value"},
+			},
+			want: types.NewProperties().Set("Name", "Bob").SetTag(ptr.String("key"), "value"),
 		},
 	}
 
