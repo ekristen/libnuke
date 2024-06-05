@@ -2,6 +2,7 @@ package errors_test
 
 import (
 	"errors"
+	"github.com/stretchr/testify/assert"
 	"testing"
 
 	liberrors "github.com/ekristen/libnuke/pkg/errors"
@@ -12,5 +13,30 @@ func TestErrorIs(t *testing.T) {
 	var testErr liberrors.ErrSkipRequest
 	if !errors.As(err, &testErr) {
 		t.Errorf("errors.Is failed")
+	}
+}
+
+const testStringValue = "this is just a test"
+
+func TestErrors(t *testing.T) {
+	cases := []struct {
+		err error
+	}{
+		{
+			err: liberrors.ErrSkipRequest(testStringValue),
+		},
+		{liberrors.ErrUnknownEndpoint(testStringValue)},
+		{liberrors.ErrWaitResource(testStringValue)},
+		{liberrors.ErrHoldResource(testStringValue)},
+		{liberrors.ErrUnknownPreset(testStringValue)},
+		{liberrors.ErrDeprecatedResourceType(testStringValue)},
+	}
+
+	for _, c := range cases {
+		if c.err == nil {
+			t.Errorf("error is nil")
+		}
+
+		assert.Equal(t, c.err.Error(), testStringValue)
 	}
 }
