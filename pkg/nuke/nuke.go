@@ -617,21 +617,23 @@ func (n *Nuke) HandleWait(ctx context.Context, item *queue.Item, cache ListCache
 	}
 
 	for _, r := range left {
-		if item.Equals(r) {
-			rSet, okSet := r.(resource.SettingsGetter)
-			if okSet {
-				rSet.Settings(n.Settings.Get(item.Type))
-			}
-
-			checker, filterOk := r.(resource.Filter)
-			if filterOk {
-				if filterErr := checker.Filter(); filterErr != nil {
-					break
-				}
-			}
-
-			return
+		if !item.Equals(r) {
+			continue
 		}
+
+		rSet, okSet := r.(resource.SettingsGetter)
+		if okSet {
+			rSet.Settings(n.Settings.Get(item.Type))
+		}
+
+		checker, filterOk := r.(resource.Filter)
+		if filterOk {
+			if filterErr := checker.Filter(); filterErr != nil {
+				break
+			}
+		}
+
+		return
 	}
 
 	item.State = queue.ItemStateFinished
