@@ -15,6 +15,7 @@ import (
 	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/scanner"
+	"github.com/ekristen/libnuke/pkg/settings"
 )
 
 type TestResourceSuccess struct {
@@ -243,13 +244,31 @@ func Test_NukeRunWithMaxWaitRetries(t *testing.T) {
 
 // ---------------------
 
+var testResourceAlphaFilterSecondFail = false
+
 type TestResourceAlpha struct {
-	WaitCount int
-	WaitFail  bool
+	WaitCount   int
+	WaitFail    bool
+	FilterCount int
+	FilterFail  bool
 }
 
 func (r *TestResourceAlpha) Remove(_ context.Context) error { return nil }
 func (r *TestResourceAlpha) String() string                 { return "TestResourceAlpha" }
+func (r *TestResourceAlpha) Filter() error {
+	if !r.FilterFail {
+		return nil
+	}
+
+	if testResourceAlphaFilterSecondFail {
+		return fmt.Errorf("filter operation failed")
+	}
+
+	testResourceAlphaFilterSecondFail = true
+
+	return nil
+}
+func (r *TestResourceAlpha) Settings(_ *settings.Setting) {}
 func (r *TestResourceAlpha) HandleWait(_ context.Context) error {
 	r.WaitCount++
 
@@ -265,11 +284,15 @@ func (r *TestResourceAlpha) HandleWait(_ context.Context) error {
 }
 
 type TestResourceAlphaLister struct {
-	listed   bool
-	waitFail bool
+	listed         bool
+	waitFail       bool
+	failListOnWait bool
 }
 
 func (l *TestResourceAlphaLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
+	if l.listed && l.failListOnWait {
+		return nil, fmt.Errorf("unable to list")
+	}
 	if l.listed {
 		return []resource.Resource{}, nil
 	}
@@ -365,4 +388,69 @@ func TestNuke_RunNoResources(t *testing.T) {
 	assert.NoError(t, runErr)
 
 	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateNew))
+}
+
+func TestNuke_HandleWaitListError(t *testing.T) {
+	n := New(&Parameters{
+		Force:              true,
+		ForceSleep:         3,
+		Quiet:              true,
+		NoDryRun:           true,
+		WaitOnDependencies: true,
+	}, nil, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
+
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
+		Name: "TestResourceAlpha",
+		Lister: &TestResourceAlphaLister{
+			failListOnWait: true,
+		},
+	})
+
+	newScanner := scanner.New("Owner", []string{"TestResourceAlpha"}, nil)
+	scannerErr := n.RegisterScanner(testScope, newScanner)
+	assert.NoError(t, scannerErr)
+
+	runErr := n.Run(context.TODO())
+	if assert.Error(t, runErr) {
+		assert.Equal(t, "failed", runErr.Error())
+	}
+
+	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFailed))
+}
+
+type TestResourceBetaLister struct {
+}
+
+func (l *TestResourceBetaLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
+	return []resource.Resource{&TestResourceAlpha{
+		FilterFail: true,
+	}}, nil
+}
+
+func TestNuke_SecondFilterFail(t *testing.T) {
+	n := New(&Parameters{
+		Force:              true,
+		ForceSleep:         3,
+		Quiet:              true,
+		NoDryRun:           true,
+		WaitOnDependencies: true,
+	}, nil, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
+
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
+		Name:   "TestResourceBeta",
+		Lister: &TestResourceBetaLister{},
+	})
+
+	newScanner := scanner.New("Owner", []string{"TestResourceBeta"}, nil)
+	scannerErr := n.RegisterScanner(testScope, newScanner)
+	assert.NoError(t, scannerErr)
+
+	runErr := n.Run(context.TODO())
+	assert.NoError(t, runErr)
 }
