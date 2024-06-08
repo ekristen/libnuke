@@ -344,3 +344,25 @@ func TestNuke_RunWithHandleWaitFail(t *testing.T) {
 	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFinished))
 	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFailed))
 }
+
+func TestNuke_RunNoResources(t *testing.T) {
+	n := New(&Parameters{
+		Force:              true,
+		ForceSleep:         3,
+		Quiet:              true,
+		NoDryRun:           true,
+		WaitOnDependencies: true,
+	}, nil, nil)
+	n.SetLogger(logrus.WithField("test", true))
+
+	registry.ClearRegistry()
+
+	newScanner := scanner.New("Owner", []string{}, nil)
+	scannerErr := n.RegisterScanner(testScope, newScanner)
+	assert.NoError(t, scannerErr)
+
+	runErr := n.Run(context.TODO())
+	assert.NoError(t, runErr)
+
+	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateNew))
+}

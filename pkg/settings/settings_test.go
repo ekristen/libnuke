@@ -74,3 +74,9 @@ func TestSettings_SetSetting(t *testing.T) {
 	assert.Nil(t, s.Get("DisableStopProtection"))
 	assert.Nil(t, s.Get("ForceDeleteLightsailAddOns"))
 }
+
+func TestSettings_GetNil(t *testing.T) {
+	var s *Settings = nil
+	set := s.Get("key")
+	assert.Nil(t, set)
+}

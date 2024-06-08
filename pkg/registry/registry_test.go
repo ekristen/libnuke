@@ -14,6 +14,7 @@ type TestLister struct{}
 func (l TestLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
 	return nil, nil
 }
+func (l TestLister) Close() {}
 
 func Test_RegisterNoScope(t *testing.T) {
 	ClearRegistry()
@@ -141,6 +142,33 @@ func Test_RegisterResourcesWithAlternative(t *testing.T) {
 	assert.Equal(t, "test2", deprecatedMapping["test"])
 }
 
+func Test_RegisterResourcesWithDuplicateAlternative(t *testing.T) {
+	ClearRegistry()
+
+	// Note: this is necessary to test the panic when using coverage and multiple tests
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("Recovered from panic: %v", r)
+		}
+	}()
+
+	Register(&Registration{
+		Name:                "test",
+		Scope:               "test",
+		Lister:              TestLister{},
+		AlternativeResource: "test2",
+	})
+
+	assert.PanicsWithValue(t, `an alternative resource mapping for test2 already exists`, func() {
+		Register(&Registration{
+			Name:                "test2",
+			Scope:               "test",
+			Lister:              TestLister{},
+			AlternativeResource: "test2",
+		})
+	})
+}
+
 func Test_GetRegistrations(t *testing.T) {
 	ClearRegistry()
 
@@ -152,4 +180,17 @@ func Test_GetRegistrations(t *testing.T) {
 
 	regs := GetRegistrations()
 	assert.Len(t, regs, 1)
+}
+
+func Test_GetLister(t *testing.T) {
+	ClearRegistry()
+
+	Register(&Registration{
+		Name:   "test",
+		Scope:  "test",
+		Lister: TestLister{},
+	})
+
+	l := GetLister("test")
+	assert.NotNil(t, l)
 }
