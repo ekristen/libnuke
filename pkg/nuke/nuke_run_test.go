@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/ekristen/libnuke/pkg/errors"
 	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
@@ -243,13 +244,29 @@ func Test_NukeRunWithMaxWaitRetries(t *testing.T) {
 // ---------------------
 
 type TestResourceAlpha struct {
+	WaitCount int
+	WaitFail  bool
 }
 
 func (r *TestResourceAlpha) Remove(_ context.Context) error { return nil }
 func (r *TestResourceAlpha) String() string                 { return "TestResourceAlpha" }
+func (r *TestResourceAlpha) HandleWait(_ context.Context) error {
+	r.WaitCount++
+
+	if r.WaitCount < 3 {
+		return errors.ErrWaitResource("still waiting")
+	}
+
+	if r.WaitFail {
+		return fmt.Errorf("wait operation failed")
+	}
+
+	return nil
+}
 
 type TestResourceAlphaLister struct {
-	listed bool
+	listed   bool
+	waitFail bool
 }
 
 func (l *TestResourceAlphaLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
@@ -257,7 +274,9 @@ func (l *TestResourceAlphaLister) List(_ context.Context, o interface{}) ([]reso
 		return []resource.Resource{}, nil
 	}
 	l.listed = true
-	return []resource.Resource{&TestResourceAlpha{}}, nil
+	return []resource.Resource{&TestResourceAlpha{
+		WaitFail: l.waitFail,
+	}}, nil
 }
 
 func TestNuke_RunWithWaitOnDependencies(t *testing.T) {
@@ -292,4 +311,36 @@ func TestNuke_RunWithWaitOnDependencies(t *testing.T) {
 	assert.NoError(t, runErr)
 
 	assert.Equal(t, 2, n.Queue.Count(queue.ItemStateFinished))
+}
+
+func TestNuke_RunWithHandleWaitFail(t *testing.T) {
+	n := New(&Parameters{
+		Force:              true,
+		ForceSleep:         3,
+		Quiet:              true,
+		NoDryRun:           true,
+		WaitOnDependencies: true,
+	}, nil, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
+
+	registry.ClearRegistry()
+	registry.Register(&registry.Registration{
+		Name: "TestResourceAlpha",
+		Lister: &TestResourceAlphaLister{
+			waitFail: true,
+		},
+	})
+
+	newScanner := scanner.New("Owner", []string{"TestResourceAlpha"}, nil)
+	scannerErr := n.RegisterScanner(testScope, newScanner)
+	assert.NoError(t, scannerErr)
+
+	runErr := n.Run(context.TODO())
+	if assert.Error(t, runErr) {
+		assert.Equal(t, "failed", runErr.Error())
+	}
+
+	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFinished))
+	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFailed))
 }
