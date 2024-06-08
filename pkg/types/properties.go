@@ -21,8 +21,9 @@ func NewPropertiesFromStruct(data interface{}) Properties {
 	return NewProperties().SetFromStruct(data)
 }
 
-func (p Properties) SetTagPrefix(prefix string) {
+func (p Properties) SetTagPrefix(prefix string) Properties {
 	p["_tagPrefix"] = prefix
+	return p
 }
 
 // String returns a string representation of the Properties map.

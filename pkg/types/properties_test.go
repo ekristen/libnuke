@@ -385,7 +385,7 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 
 	type testStruct7 struct {
 		Name   string
-		Labels map[string]string
+		Labels map[string]string `property:"tagPrefix=label"`
 	}
 
 	cases := []struct {
@@ -491,7 +491,7 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 				Name:   "Bob",
 				Labels: map[string]string{"key": "value"},
 			},
-			want: types.NewProperties().Set("Name", "Bob").SetTag(ptr.String("key"), "value"),
+			want: types.NewProperties().SetTagPrefix("label").Set("Name", "Bob").SetTag(ptr.String("key"), "value"),
 		},
 	}
 
