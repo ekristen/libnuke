@@ -88,6 +88,11 @@ type Lister interface {
 	List(ctx context.Context, opts interface{}) ([]resource.Resource, error)
 }
 
+// ListerWithClose is an interface that represents a lister that can be closed. Use Case: GCP clients need to be closed.
+type ListerWithClose interface {
+	Close()
+}
+
 // RegisterOption is a function that can be used to manipulate the lister for a given resource type at
 // registration time
 type RegisterOption func(name string, lister Lister)

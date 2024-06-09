@@ -584,6 +584,21 @@ func (n *Nuke) HandleWaitDependency(ctx context.Context, item *queue.Item) {
 func (n *Nuke) HandleWait(ctx context.Context, item *queue.Item, cache ListCache) {
 	var err error
 
+	waitHook, hookOk := item.Resource.(resource.HandleWaitHook)
+	if hookOk {
+		if hookErr := waitHook.HandleWait(ctx); hookErr != nil {
+			var waitErr liberrors.ErrWaitResource
+			if errors.As(hookErr, &waitErr) {
+				item.State = queue.ItemStateWaiting
+				return
+			}
+
+			item.State = queue.ItemStateFailed
+			item.Reason = hookErr.Error()
+			return
+		}
+	}
+
 	ownerID := item.Owner
 	_, ok := cache[ownerID]
 	if !ok {
@@ -602,17 +617,23 @@ func (n *Nuke) HandleWait(ctx context.Context, item *queue.Item, cache ListCache
 	}
 
 	for _, r := range left {
-		if item.Equals(r) {
-			checker, ok := r.(resource.Filter)
-			if ok {
-				err := checker.Filter()
-				if err != nil {
-					break
-				}
-			}
-
-			return
+		if !item.Equals(r) {
+			continue
 		}
+
+		rSet, okSet := r.(resource.SettingsGetter)
+		if okSet {
+			rSet.Settings(n.Settings.Get(item.Type))
+		}
+
+		checker, filterOk := r.(resource.Filter)
+		if filterOk {
+			if filterErr := checker.Filter(); filterErr != nil {
+				break
+			}
+		}
+
+		return
 	}
 
 	item.State = queue.ItemStateFinished

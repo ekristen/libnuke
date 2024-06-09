@@ -233,6 +233,7 @@ func Test_Nuke_Filters_Extra(t *testing.T) {
 func Test_Nuke_Filters_Filtered(t *testing.T) {
 	cases := []struct {
 		name      string
+		error     bool
 		resources []resource.Resource
 		filters   filter.Filters
 	}{
@@ -281,6 +282,26 @@ func Test_Nuke_Filters_Filtered(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:  "invalid",
+			error: true,
+			resources: []resource.Resource{
+				&TestResourceFilter{
+					Props: types.Properties{
+						"tag:aws:cloudformation:stack-name": "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081",
+					},
+				},
+			},
+			filters: filter.Filters{
+				TestResourceType2: []filter.Filter{
+					{
+						Type:     "invalid-filter",
+						Property: "tag:aws:cloudformation:stack-name",
+						Value:    "StackSet-AWSControlTowerBP-VPC-ACCOUNT-FACTORY-V1-c0bdd9c9-c338-4831-9c47-62443622c081",
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -296,6 +317,11 @@ func Test_Nuke_Filters_Filtered(t *testing.T) {
 				}
 
 				err := n.Filter(i)
+				if tc.error == true {
+					assert.Error(t, err)
+					continue
+				}
+
 				assert.NoError(t, err)
 				assert.Equal(t, i.Reason, "filtered by config")
 			}

@@ -94,6 +94,34 @@ func Test_NewScannerWithResourceListerError(t *testing.T) {
 	assert.Len(t, scanner.Items, 0)
 }
 
+func Test_NewScannerWithInvalidResourceListerError(t *testing.T) {
+	registry.ClearRegistry()
+	logrus.AddHook(&TestGlobalHook{
+		t: t,
+		tf: func(t *testing.T, e *logrus.Entry) {
+			if strings.HasSuffix(e.Caller.File, "pkg/registry/registry.go") {
+				return
+			}
+
+			assert.Equal(t, "lister for resource type not found: does-not-exist", e.Message)
+		},
+	})
+	defer logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
+
+	registry.Register(testResourceRegistration)
+
+	opts := TestOpts{
+		SessionOne: "testing",
+		ThrowError: true,
+	}
+
+	scanner := New("Owner", []string{"does-not-exist"}, opts)
+	err := scanner.Run(context.TODO())
+	assert.NoError(t, err)
+
+	assert.Len(t, scanner.Items, 0)
+}
+
 func Test_NewScannerWithResourceListerErrorSkip(t *testing.T) {
 	registry.ClearRegistry()
 	logrus.AddHook(&TestGlobalHook{
