@@ -218,8 +218,14 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 			error: true,
 		},
 		{
-			name:     "invert",
+			name:     "invert-truthy",
 			yaml:     `{"type":"exact","value":"foo","invert":"true"}`,
+			match:    []string{"foo"},
+			mismatch: []string{"bar", "baz"},
+		},
+		{
+			name:     "invert-true",
+			yaml:     `{"type":"exact","value":"foo","invert":true}`,
 			match:    []string{"foo"},
 			mismatch: []string{"bar", "baz"},
 		},

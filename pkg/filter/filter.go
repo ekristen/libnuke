@@ -207,7 +207,12 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if m["invert"] == nil {
 		f.Invert = ""
 	} else {
-		f.Invert = m["invert"].(string)
+		switch v := m["invert"].(type) {
+		case bool:
+			f.Invert = strconv.FormatBool(v)
+		default:
+			f.Invert = v.(string)
+		}
 	}
 
 	return nil
