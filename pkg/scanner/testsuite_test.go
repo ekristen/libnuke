@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/ekristen/libnuke/pkg/queue"
 	"io"
 	"testing"
 	"time"
@@ -57,6 +58,11 @@ func (r *TestResource) Remove(_ context.Context) error {
 
 func (r *TestResource) Settings(setting *settings.Setting) {
 
+}
+
+func (r *TestResource) ModifyItem(item interface{}) {
+	i := item.(*queue.Item)
+	i.Owner = "OwnerModded"
 }
 
 type TestResource2 struct {
