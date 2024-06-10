@@ -5,7 +5,7 @@ plugins:
     - successComment: |
         :tada: This ${issue.pull_request ? 'pull request is included' : 'issue has been resolved'} in version ${nextRelease.version} :tada:
 
-        The release is available on [GitHub release](https://github.com/ekristen/test-aws-nuke/releases/tag/${nextRelease.gitTag}) :rocket:
+        The release is available on [GitHub release](https://github.com/ekristen/libnuke/releases/tag/${nextRelease.gitTag}) :rocket:
 
 branches:
   - name: +([0-9])?(.{+([0-9]),x}).x
