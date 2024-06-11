@@ -41,6 +41,7 @@ func Test_NewScannerWithMorphOpts(t *testing.T) {
 	for item := range scanner.Items {
 		assert.Equal(t, "testing", item.Opts.(TestOpts).SessionOne)
 		assert.Equal(t, "testing-testResourceType", item.Opts.(TestOpts).SessionTwo)
+		assert.Equal(t, "OwnerModded", item.Owner)
 	}
 }
 

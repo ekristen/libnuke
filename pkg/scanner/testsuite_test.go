@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/errors"
+	"github.com/ekristen/libnuke/pkg/queue"
 	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/settings"
@@ -57,6 +58,11 @@ func (r *TestResource) Remove(_ context.Context) error {
 
 func (r *TestResource) Settings(setting *settings.Setting) {
 
+}
+
+func (r *TestResource) BeforeEnqueue(item interface{}) {
+	i := item.(*queue.Item)
+	i.Owner = "OwnerModded"
 }
 
 type TestResource2 struct {
