@@ -193,9 +193,14 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 		name := field.Name
 		prefix := ""
 		tagPrefix := ""
+		inline := false
 
 		if options[0] == "-" {
 			continue
+		}
+
+		if len(options) == 2 && options[1] == "inline" {
+			inline = true
 		}
 
 		for _, option := range options {
@@ -213,6 +218,11 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 			}
 		}
 
+		if inline {
+			p.SetFromStruct(value.Interface())
+			//continue
+		}
+
 		if tagPrefix != "" {
 			p.SetTagPrefix(tagPrefix)
 		}
@@ -222,6 +232,8 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 		}
 
 		switch value.Kind() {
+		case reflect.Struct:
+			// do nothing
 		case reflect.Map:
 			for _, key := range value.MapKeys() {
 				val := value.MapIndex(key)

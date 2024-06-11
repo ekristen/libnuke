@@ -388,6 +388,22 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 		Labels map[string]string `property:"tagPrefix=label"`
 	}
 
+	type TestStruct8 struct {
+		Name string
+	}
+
+	type testStruct9 struct {
+		*TestStruct8 `property:",inline"`
+
+		Region string
+	}
+
+	type testStruct10 struct {
+		*TestStruct8
+
+		Region string
+	}
+
 	cases := []struct {
 		name  string
 		s     interface{}
@@ -492,6 +508,22 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 				Labels: map[string]string{"key": "value"},
 			},
 			want: types.NewProperties().SetTagPrefix("label").Set("Name", "Bob").SetTag(ptr.String("key"), "value"),
+		},
+		{
+			name: "struct-with-inline",
+			s: testStruct9{
+				TestStruct8: &TestStruct8{Name: "Alice"},
+				Region:      "us-west-2",
+			},
+			want: types.NewProperties().Set("Name", "Alice").Set("Region", "us-west-2"),
+		},
+		{
+			name: "struct-without-inline",
+			s: testStruct10{
+				TestStruct8: &TestStruct8{Name: "Alice"},
+				Region:      "us-west-2",
+			},
+			want: types.NewProperties().Set("Region", "us-west-2"),
 		},
 	}
 
