@@ -45,5 +45,5 @@ type HandleWaitHook interface {
 // For advanced use only, please use with caution!
 type QueueItemHook interface {
 	Resource
-	ModifyItem(interface{})
+	BeforeQueueAdd(interface{})
 }

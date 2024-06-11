@@ -220,7 +220,7 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 
 		if inline {
 			p.SetFromStruct(value.Interface())
-			//continue
+			continue
 		}
 
 		if tagPrefix != "" {
