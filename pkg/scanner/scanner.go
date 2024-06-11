@@ -153,7 +153,7 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 
 		itemHook, ok := r.(resource.QueueItemHook)
 		if ok {
-			itemHook.ModifyItem(i)
+			itemHook.BeforeEnqueue(i)
 		}
 
 		s.Items <- i

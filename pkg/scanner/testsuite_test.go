@@ -60,7 +60,7 @@ func (r *TestResource) Settings(setting *settings.Setting) {
 
 }
 
-func (r *TestResource) ModifyItem(item interface{}) {
+func (r *TestResource) BeforeEnqueue(item interface{}) {
 	i := item.(*queue.Item)
 	i.Owner = "OwnerModded"
 }
