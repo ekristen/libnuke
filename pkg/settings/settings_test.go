@@ -85,16 +85,19 @@ func TestSetting_GetString(t *testing.T) {
 	s := Setting{}
 	s.Set("TestSetting", "test")
 	assert.Equal(t, "test", s.GetString("TestSetting"))
+	assert.Equal(t, "", s.GetString("InvalidSetting"))
 }
 
 func TestSetting_GetInt(t *testing.T) {
 	s := Setting{}
 	s.Set("TestSetting", 123)
 	assert.Equal(t, 123, s.GetInt("TestSetting"))
+	assert.Equal(t, -1, s.GetInt("InvalidSetting"))
 }
 
 func TestSetting_GetBool(t *testing.T) {
 	s := Setting{}
 	s.Set("TestSetting", true)
 	assert.Equal(t, true, s.GetBool("TestSetting"))
+	assert.Equal(t, false, s.GetBool("InvalidSetting"))
 }

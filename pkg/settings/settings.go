@@ -75,7 +75,7 @@ func (s *Setting) GetString(key string) string {
 func (s *Setting) GetInt(key string) int {
 	value, ok := (*s)[key]
 	if !ok {
-		return 0
+		return -1
 	}
 
 	return value.(int)
