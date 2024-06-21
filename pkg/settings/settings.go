@@ -10,7 +10,7 @@ func (s *Settings) Get(key string) *Setting {
 
 	set, ok := (*s)[key]
 	if !ok {
-		return nil
+		return &Setting{}
 	}
 
 	return set
