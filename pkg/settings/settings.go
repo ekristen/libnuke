@@ -31,6 +31,8 @@ func (s *Settings) Set(key string, value *Setting) {
 
 type Setting map[string]interface{}
 
+// Get returns the value of a key in the Setting
+// Deprecated: use GetBool, GetString, or GetInt instead
 func (s *Setting) Get(key string) interface{} {
 	value, ok := (*s)[key]
 	if !ok {
@@ -49,6 +51,37 @@ func (s *Setting) Get(key string) interface{} {
 	}
 }
 
+// GetBool returns the boolean value of a key in the Setting
+func (s *Setting) GetBool(key string) bool {
+	value, ok := (*s)[key]
+	if !ok {
+		return false
+	}
+
+	return value.(bool)
+}
+
+// GetString returns the string value of a key in the Setting
+func (s *Setting) GetString(key string) string {
+	value, ok := (*s)[key]
+	if !ok {
+		return ""
+	}
+
+	return value.(string)
+}
+
+// GetInt returns the integer value of a key in the Setting
+func (s *Setting) GetInt(key string) int {
+	value, ok := (*s)[key]
+	if !ok {
+		return 0
+	}
+
+	return value.(int)
+}
+
+// Set sets a key value pair in the Setting
 func (s *Setting) Set(key string, value interface{}) {
 	(*s)[key] = value
 }

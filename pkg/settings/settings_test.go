@@ -80,3 +80,21 @@ func TestSettings_GetNil(t *testing.T) {
 	set := s.Get("key")
 	assert.Nil(t, set)
 }
+
+func TestSetting_GetString(t *testing.T) {
+	s := Setting{}
+	s.Set("TestSetting", "test")
+	assert.Equal(t, "test", s.GetString("TestSetting"))
+}
+
+func TestSetting_GetInt(t *testing.T) {
+	s := Setting{}
+	s.Set("TestSetting", 123)
+	assert.Equal(t, 123, s.GetInt("TestSetting"))
+}
+
+func TestSetting_GetBool(t *testing.T) {
+	s := Setting{}
+	s.Set("TestSetting", true)
+	assert.Equal(t, true, s.GetBool("TestSetting"))
+}
