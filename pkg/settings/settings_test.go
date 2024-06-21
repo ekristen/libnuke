@@ -30,7 +30,7 @@ func TestSettings_ParseYAML(t *testing.T) {
 	assert.Nil(t, ec2Settings.Get("ForceDeleteLightsailAddOns"))
 
 	invalidSettings := cfg.Settings.Get("OtherInstance")
-	assert.Nil(t, invalidSettings)
+	assert.NotNil(t, invalidSettings)
 
 	typeSettings := cfg.Settings.Get("Types")
 	assert.NotNil(t, typeSettings)
@@ -49,9 +49,9 @@ func TestSettings_ParseYAMLInvalid(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestSettings_Nil(t *testing.T) {
+func TestSettings_NotNil(t *testing.T) {
 	s := Settings{}
-	assert.Nil(t, s.Get("EC2Instance"))
+	assert.NotNil(t, s.Get("EC2Instance"))
 }
 
 func TestSettings_Set(t *testing.T) {
