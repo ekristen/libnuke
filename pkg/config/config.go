@@ -147,7 +147,7 @@ func (c *Config) ResolveBlocklist() []string {
 	if len(c.AccountBlocklist) > 0 {
 		blocklist = append(blocklist, c.AccountBlocklist...)
 		c.AccountBlocklist = nil
-		c.Log.Warn("deprecated configuration key 'account-blacklist' - please use 'blocklist' instead")
+		c.Log.Warn("deprecated configuration key 'account-blocklist' - please use 'blocklist' instead")
 	}
 
 	if len(c.AccountBlacklist) > 0 {
