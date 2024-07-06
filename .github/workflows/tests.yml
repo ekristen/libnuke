@@ -24,7 +24,6 @@ jobs:
         run: |
           go test -timeout 60s -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload coverage reports to Codecov
-        if: github.event_name != 'pull_request'
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
