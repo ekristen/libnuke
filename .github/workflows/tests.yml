@@ -24,10 +24,12 @@ jobs:
         run: |
           go test -timeout 60s -coverprofile=coverage.txt -covermode=atomic ./...
       - name: Upload coverage reports to Codecov
+        if: github.event_name != 'pull_request'
         uses: codecov/codecov-action@v4
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Upload coverage reports to Codeclimate
+        if: github.event_name != 'pull_request'
         uses: paambaati/codeclimate-action@v6.0.0
         env:
           CC_TEST_REPORTER_ID: ${{ secrets.CODECLIMATE_TEST_REPORTER_ID }}
