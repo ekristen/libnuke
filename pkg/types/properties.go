@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 // Properties is a map of key-value pairs.
@@ -51,7 +52,7 @@ func (p Properties) Get(key string) string {
 }
 
 // Set sets a key-value pair in the Properties map.
-func (p Properties) Set(key string, value interface{}) Properties {
+func (p Properties) Set(key string, value interface{}) Properties { //nolint:gocyclo
 	if value == nil {
 		return p
 	}
@@ -62,6 +63,8 @@ func (p Properties) Set(key string, value interface{}) Properties {
 			return p
 		}
 		p[key] = *v
+	case string:
+		p[key] = v
 	case []byte:
 		p[key] = string(v)
 	case *bool:
@@ -69,16 +72,24 @@ func (p Properties) Set(key string, value interface{}) Properties {
 			return p
 		}
 		p[key] = fmt.Sprint(*v)
+	case bool:
+		p[key] = fmt.Sprint(v)
 	case *int64:
 		if v == nil {
 			return p
 		}
 		p[key] = fmt.Sprint(*v)
+	case int64:
+		p[key] = fmt.Sprint(v)
 	case *int:
 		if v == nil {
 			return p
 		}
 		p[key] = fmt.Sprint(*v)
+	case int:
+		p[key] = fmt.Sprint(v)
+	case time.Time:
+		p[key] = v.Format(time.RFC3339)
 	default:
 		// Fallback to Stringer interface. This produces gibberish on pointers,
 		// but is the only way to avoid reflection.
@@ -233,7 +244,9 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 
 		switch value.Kind() {
 		case reflect.Struct:
-			// do nothing
+			if value.Type().String() == "time.Time" {
+				p.SetWithPrefix(prefix, name, value.Interface())
+			}
 		case reflect.Map:
 			for _, key := range value.MapKeys() {
 				val := value.MapIndex(key)
