@@ -3,6 +3,7 @@ package types_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/gotidy/ptr"
 	"github.com/stretchr/testify/assert"
@@ -404,6 +405,18 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 		Region string
 	}
 
+	type testStruct11 struct {
+		Name        string
+		CreatedTime time.Time
+		DeletedTime *time.Time
+	}
+
+	type testStruct12 struct {
+		Name        string
+		CreatedTime time.Time  `property:"prefix=created"`
+		DeletedTime *time.Time `property:"prefix=deleted"`
+	}
+
 	cases := []struct {
 		name  string
 		s     interface{}
@@ -524,6 +537,30 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 				Region:      "us-west-2",
 			},
 			want: types.NewProperties().Set("Region", "us-west-2"),
+		},
+		{
+			name: "time",
+			s: testStruct11{
+				Name:        "Alice",
+				CreatedTime: time.Date(2021, 1, 5, 10, 12, 56, 3309, time.UTC),
+				DeletedTime: ptr.Time(time.Date(2023, 7, 15, 5, 32, 12, 4506, time.UTC)),
+			},
+			want: types.NewProperties().
+				Set("Name", "Alice").
+				Set("CreatedTime", "2021-01-05T10:12:56Z").
+				Set("DeletedTime", "2023-07-15T05:32:12Z"),
+		},
+		{
+			name: "time-with-prefix",
+			s: testStruct12{
+				Name:        "Alice",
+				CreatedTime: time.Date(2021, 1, 5, 10, 12, 56, 3309, time.UTC),
+				DeletedTime: ptr.Time(time.Date(2023, 7, 15, 5, 32, 12, 4506, time.UTC)),
+			},
+			want: types.NewProperties().
+				Set("Name", "Alice").
+				Set("created:CreatedTime", "2021-01-05T10:12:56Z").
+				Set("deleted:DeletedTime", "2023-07-15T05:32:12Z"),
 		},
 	}
 
