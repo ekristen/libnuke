@@ -511,8 +511,8 @@ func (n *Nuke) HandleQueue(ctx context.Context) {
 			n.HandleWait(ctx, item, listCache)
 			item.Print()
 		case queue.ItemStatePending:
-			n.HandleWait(ctx, item, listCache)
 			item.State = queue.ItemStateWaiting
+			n.HandleWait(ctx, item, listCache)
 			item.Print()
 		case queue.ItemStateWaiting:
 			n.HandleWait(ctx, item, listCache)
