@@ -488,16 +488,12 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		if utils.IsTrue(f.Invert) {
 			log.WithField("orig", match).WithField("new", !match).Trace("filter inverted")
 			match = !match
+
+			log.Tracef("match inverted: %t", match)
 		}
 
 		if match {
-			if len(filterGroups) > 0 {
-				filterGroups[f.Group]++
-				continue
-			}
-
-			isFiltered = true
-			break
+			filterGroups[f.Group]++
 		}
 	}
 
@@ -508,6 +504,8 @@ func (n *Nuke) Filter(item *queue.Item) error {
 				groupsMatched++
 			}
 		}
+
+		log.Tracef("groups matched: %d -> %d", groupsMatched, len(filterGroups))
 
 		if groupsMatched == len(filterGroups) {
 			isFiltered = true

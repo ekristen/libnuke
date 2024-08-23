@@ -393,6 +393,84 @@ func Test_Nuke_Filters_FilterGroups(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "group-invert-date-no-match",
+			expected: "",
+			resources: []resource.Resource{
+				&TestResourceFilter{
+					Props: types.Properties{
+						"Name":      "just-something-else",
+						"CreatedAt": time.Now().UTC().Format(time.RFC3339),
+					},
+				},
+			},
+			filters: filter.Filters{
+				TestResourceType2: []filter.Filter{
+					{
+						Type:     filter.Exact,
+						Property: "Name",
+						Value:    "test",
+						Invert:   "true",
+						Group:    "one",
+					},
+					{
+						Type:     filter.Exact,
+						Property: "Name",
+						Value:    "test-testing",
+						Invert:   "true",
+						Group:    "two",
+					},
+					{
+						Type:     filter.DateOlderThan,
+						Property: "CreatedAt",
+						Value:    "-72h",
+						Group:    "three",
+					},
+				},
+			},
+		},
+		{
+			name:     "group-invert-date-no-match",
+			expected: "filtered by config",
+			resources: []resource.Resource{
+				&TestResourceFilter{
+					Props: types.Properties{
+						"Name":      "test-exclude",
+						"CreatedAt": "2024-08-20T18:24:21Z",
+					},
+				},
+			},
+			filters: filter.Filters{
+				TestResourceType2: []filter.Filter{
+					{
+						Type:     filter.Exact,
+						Property: "Name",
+						Value:    "test",
+						Invert:   "true",
+						Group:    "one",
+					},
+					{
+						Type:     filter.Exact,
+						Property: "Name",
+						Value:    "test-testing",
+						Invert:   "true",
+						Group:    "two",
+					},
+					{
+						Type:     filter.DateOlderThan,
+						Property: "CreatedAt",
+						Value:    "-72h",
+						Group:    "one",
+					},
+					{
+						Type:     filter.DateOlderThan,
+						Property: "CreatedAt",
+						Value:    "-72h",
+						Group:    "two",
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range cases {
@@ -414,7 +492,7 @@ func Test_Nuke_Filters_FilterGroups(t *testing.T) {
 				}
 
 				assert.NoError(t, err)
-				assert.Equal(t, i.Reason, tc.expected)
+				assert.Equal(t, tc.expected, i.Reason)
 			}
 		})
 	}
