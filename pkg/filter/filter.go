@@ -92,6 +92,8 @@ type Filter struct {
 	// Values allows for multiple values to be specified for a filter
 	Values []string
 
+	Group string
+
 	// Invert is a flag to invert the filter
 	Invert string
 }
@@ -163,6 +165,7 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if unmarshal(&value) == nil {
 		f.Type = Exact
 		f.Value = value
+		f.Group = "default"
 		return nil
 	}
 
@@ -171,6 +174,12 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err != nil {
 		fmt.Println("%%%%%%%%")
 		return err
+	}
+
+	if m["group"] == nil {
+		f.Group = "default"
+	} else {
+		f.Group = m["group"].(string)
 	}
 
 	if m["type"] == nil {

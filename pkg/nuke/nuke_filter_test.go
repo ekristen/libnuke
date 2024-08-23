@@ -328,3 +328,94 @@ func Test_Nuke_Filters_Filtered(t *testing.T) {
 		})
 	}
 }
+
+func Test_Nuke_Filters_FilterGroups(t *testing.T) {
+	cases := []struct {
+		name      string
+		error     bool
+		resources []resource.Resource
+		filters   filter.Filters
+		expected  string
+	}{
+		{
+			name:     "exact-group-matched",
+			expected: "filtered by config",
+			resources: []resource.Resource{
+				&TestResourceFilter{
+					Props: types.Properties{
+						"Name":  "test",
+						"Other": "test2",
+					},
+				},
+			},
+			filters: filter.Filters{
+				TestResourceType2: []filter.Filter{
+					{
+						Type:     filter.Exact,
+						Property: "Name",
+						Value:    "test",
+						Group:    "one",
+					},
+					{
+						Type:     filter.Exact,
+						Property: "Other",
+						Value:    "test2",
+						Group:    "two",
+					},
+				},
+			},
+		},
+		{
+			name:     "exact-group-non-matched",
+			expected: "",
+			resources: []resource.Resource{
+				&TestResourceFilter{
+					Props: types.Properties{
+						"Name":  "test",
+						"Other": "test2",
+					},
+				},
+			},
+			filters: filter.Filters{
+				TestResourceType2: []filter.Filter{
+					{
+						Type:     filter.Exact,
+						Property: "Name",
+						Value:    "test1",
+						Group:    "one",
+					},
+					{
+						Type:     filter.Exact,
+						Property: "Other",
+						Value:    "test2",
+						Group:    "two",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			n := New(testParameters, tc.filters, nil)
+			n.SetLogger(logrus.WithField("test", true))
+			n.SetRunSleep(time.Millisecond * 5)
+
+			for _, r := range tc.resources {
+				i := &queue.Item{
+					Resource: r,
+					Type:     TestResourceType2,
+				}
+
+				err := n.Filter(i)
+				if tc.error == true {
+					assert.Error(t, err)
+					continue
+				}
+
+				assert.NoError(t, err)
+				assert.Equal(t, i.Reason, tc.expected)
+			}
+		})
+	}
+}

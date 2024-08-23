@@ -61,12 +61,12 @@ func TestFilter_GlobalYAML(t *testing.T) {
 
 	expected := filter.Filters{
 		"Resource1": []filter.Filter{
-			{Property: "prop3", Type: filter.Exact, Value: "value3", Values: []string{}},
-			{Property: "prop1", Type: filter.Exact, Value: "value1", Values: []string{}},
+			{Property: "prop3", Type: filter.Exact, Value: "value3", Values: []string{}, Group: "default"},
+			{Property: "prop1", Type: filter.Exact, Value: "value1", Values: []string{}, Group: "default"},
 		},
 		"Resource2": []filter.Filter{
-			{Property: "prop3", Type: filter.Exact, Value: "value3", Values: []string{}},
-			{Property: "prop2", Type: filter.Exact, Value: "value2", Values: []string{}},
+			{Property: "prop3", Type: filter.Exact, Value: "value3", Values: []string{}, Group: "default"},
+			{Property: "prop2", Type: filter.Exact, Value: "value2", Values: []string{}, Group: "default"},
 		},
 	}
 

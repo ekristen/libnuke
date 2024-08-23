@@ -455,11 +455,19 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		return nil
 	}
 
+	isFiltered := false
+	filterGroups := make(map[string]int)
+
+	for _, f := range itemFilters {
+		filterGroups[f.Group] = 0
+	}
+
 	for _, f := range itemFilters {
 		log.
 			WithField("prop", f.Property).
 			WithField("type", f.Type).
 			WithField("value", f.Value).
+			WithField("group", f.Group).
 			Trace("filter details")
 
 		prop, err := item.GetProperty(f.Property)
@@ -483,11 +491,34 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		}
 
 		if match {
-			log.Trace("filter matched")
-			item.State = queue.ItemStateFiltered
-			item.Reason = "filtered by config"
-			return nil
+			if len(filterGroups) > 0 {
+				filterGroups[f.Group]++
+				continue
+			}
+
+			isFiltered = true
+			break
 		}
+	}
+
+	if len(filterGroups) > 0 {
+		var groupsMatched int
+		for _, count := range filterGroups {
+			if count > 0 {
+				groupsMatched++
+			}
+		}
+
+		if groupsMatched == len(filterGroups) {
+			isFiltered = true
+		}
+	}
+
+	if isFiltered {
+		log.Trace("filter matched by group")
+		item.State = queue.ItemStateFiltered
+		item.Reason = "filtered by config"
+		return nil
 	}
 
 	return nil
