@@ -460,13 +460,45 @@ func Test_Nuke_Filters_FilterGroups(t *testing.T) {
 						Type:     filter.DateOlderThan,
 						Property: "CreatedAt",
 						Value:    "-72h",
+						Invert:   "true",
+						Group:    "three",
+					},
+				},
+			},
+		},
+		{
+			name:     "group-invert-date-no-match",
+			expected: "",
+			resources: []resource.Resource{
+				&TestResourceFilter{
+					Props: types.Properties{
+						"Name":      "test-testing",
+						"CreatedAt": "2024-08-20T18:24:21Z",
+					},
+				},
+			},
+			filters: filter.Filters{
+				TestResourceType2: []filter.Filter{
+					{
+						Type:     filter.Exact,
+						Property: "Name",
+						Value:    "test",
+						Invert:   "true",
 						Group:    "one",
+					},
+					{
+						Type:     filter.Exact,
+						Property: "Name",
+						Value:    "test-testing",
+						Invert:   "true",
+						Group:    "two",
 					},
 					{
 						Type:     filter.DateOlderThan,
 						Property: "CreatedAt",
 						Value:    "-72h",
-						Group:    "two",
+						Invert:   "true",
+						Group:    "three",
 					},
 				},
 			},
