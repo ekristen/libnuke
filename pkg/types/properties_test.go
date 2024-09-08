@@ -359,6 +359,16 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 		Value *string
 	}
 
+	type tagKeyValue struct {
+		TagKey   *string
+		TagValue *string
+	}
+
+	type customKeyValue struct {
+		Name   *string
+		Result *string
+	}
+
 	type testStruct3 struct {
 		Name string `property:""`
 		Age  *int   `property:""`
@@ -366,6 +376,15 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 		On   bool
 		Off  *bool       `property:"-"`
 		Tags []*keyValue `property:""`
+	}
+
+	type testStruct3a struct {
+		Name string `property:""`
+		Age  *int   `property:""`
+		IQ   *int64 `property:""`
+		On   bool
+		Off  *bool          `property:"-"`
+		Tags []*tagKeyValue `property:""`
 	}
 
 	type testStruct4 struct {
@@ -376,6 +395,11 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 	type testStruct5 struct {
 		Name string
 		Tags map[string]*string
+	}
+
+	type testStruct5a struct {
+		Name string
+		Tags []*customKeyValue `property:"keyField=Name,valueField=Result"`
 	}
 
 	type testStruct6 struct {
@@ -498,6 +522,34 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 				SetTag(ptr.String("key1"), "value1"),
 		},
 		{
+			name: "tags-struct-tag-key",
+			s: testStruct3a{
+				Name: "Alice",
+				Age:  &[]int{42}[0],
+				IQ:   &[]int64{100}[0],
+				On:   true,
+				Tags: []*tagKeyValue{
+					{TagKey: ptr.String("key1"), TagValue: ptr.String("value1")},
+				},
+			},
+			want: types.NewProperties().
+				Set("Name", "Alice").
+				Set("Age", 42).
+				Set("IQ", 100).
+				Set("On", true).
+				SetTag(ptr.String("key1"), "value1"),
+		},
+		{
+			name: "tags-struct-tag-custom",
+			s: testStruct5a{
+				Name: "Alice",
+				Tags: []*customKeyValue{
+					{Name: ptr.String("key1"), Result: ptr.String("value1")},
+				},
+			},
+			want: types.NewProperties().Set("Name", "Alice").SetTag(ptr.String("key1"), "value1"),
+		},
+		{
 			name: "tags-string-pointer",
 			s: testStruct5{
 				Name: "Alice",
@@ -613,6 +665,29 @@ func BenchmarkNewPropertiesFromStruct_Complex(b *testing.B) {
 			Age:  &[]int{42}[0],
 			Tags: []*keyValue{
 				{Key: ptr.String("key1"), Value: ptr.String("value1")},
+			},
+		})
+	}
+}
+
+func BenchmarkNewPropertiesFromStruct_Complex2(b *testing.B) {
+	type keyValue struct {
+		TagKey   *string
+		TagValue *string
+	}
+
+	type testStruct struct {
+		Name string
+		Age  *int
+		Tags []*keyValue
+	}
+
+	for i := 0; i < b.N; i++ {
+		_ = types.NewPropertiesFromStruct(testStruct{
+			Name: "Alice",
+			Age:  &[]int{42}[0],
+			Tags: []*keyValue{
+				{TagKey: ptr.String("key1"), TagValue: ptr.String("value1")},
 			},
 		})
 	}

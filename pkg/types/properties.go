@@ -204,6 +204,8 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 		name := field.Name
 		prefix := ""
 		tagPrefix := ""
+		keyFieldName := ""
+		valueFieldName := ""
 		inline := false
 
 		if options[0] == "-" {
@@ -226,6 +228,10 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 				prefix = parts[1]
 			case "tagPrefix":
 				tagPrefix = parts[1]
+			case "keyField":
+				keyFieldName = parts[1]
+			case "valueField":
+				valueFieldName = parts[1]
 			}
 		}
 
@@ -267,8 +273,25 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 				}
 				if sliceValue.Kind() == reflect.Struct {
 					sliceValueV := reflect.ValueOf(sliceValue.Interface())
-					keyField := sliceValueV.FieldByName("Key")
-					valueField := sliceValueV.FieldByName("Value")
+
+					var keyField, valueField reflect.Value
+					if keyFieldName != "" {
+						keyField = sliceValueV.FieldByName(keyFieldName)
+					} else {
+						keyField = sliceValueV.FieldByName("Key")
+						if !keyField.IsValid() {
+							keyField = sliceValueV.FieldByName("TagKey")
+						}
+					}
+
+					if valueFieldName != "" {
+						valueField = sliceValueV.FieldByName(valueFieldName)
+					} else {
+						valueField = sliceValueV.FieldByName("Value")
+						if !valueField.IsValid() {
+							valueField = sliceValueV.FieldByName("TagValue")
+						}
+					}
 
 					if keyField.Kind() == reflect.Ptr {
 						keyField = keyField.Elem()
