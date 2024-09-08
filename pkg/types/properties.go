@@ -89,7 +89,7 @@ func (p Properties) Set(key string, value interface{}) Properties { //nolint:goc
 	case int:
 		p[key] = fmt.Sprint(v)
 	case time.Time:
-		p[key] = v.Format(time.RFC3339)
+		p[key] = v.UTC().Format(time.RFC3339)
 	default:
 		// Fallback to Stringer interface. This produces gibberish on pointers,
 		// but is the only way to avoid reflection.
