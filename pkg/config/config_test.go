@@ -160,6 +160,20 @@ func TestResourceTypeDeprecations(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestResourceTypeDeprecationsNoFilters(t *testing.T) {
+	opts := Options{
+		Path:                  "testdata/deprecated-resources-no-filters.yaml",
+		Deprecations:          map[string]string{"IamRole": "IAMRole"},
+		NoResolveDeprecations: true,
+	}
+	c, err := New(opts)
+	assert.NoError(t, err)
+	assert.NotNil(t, c)
+
+	err = c.ResolveDeprecations()
+	assert.NoError(t, err)
+}
+
 func TestResourceTypeDeprecationsError(t *testing.T) {
 	logrus.AddHook(&TestGlobalHook{
 		t: t,
