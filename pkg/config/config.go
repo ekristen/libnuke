@@ -236,6 +236,11 @@ func (c *Config) Filters(accountID string) (filter.Filters, error) {
 // new resource type.
 func (c *Config) ResolveDeprecations() error {
 	for _, a := range c.Accounts {
+		// Note: if there are no filters defined, then there's no substitution to perform.
+		if a.Filters == nil {
+			return nil
+		}
+
 		for resourceType, resources := range a.Filters {
 			replacement, ok := c.Deprecations[resourceType]
 			if !ok {
