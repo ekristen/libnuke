@@ -3,11 +3,13 @@ package queue
 import (
 	"context"
 	"fmt"
+	"sort"
+
+	"github.com/sirupsen/logrus"
+
 	"github.com/ekristen/libnuke/pkg/log"
 	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
-	"github.com/sirupsen/logrus"
-	"sort"
 )
 
 type ItemState int

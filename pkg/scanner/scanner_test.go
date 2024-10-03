@@ -234,16 +234,13 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 			if strings.HasSuffix(e.Caller.File, "pkg/registry/registry.go") {
 				assert.Equal(t, "registered resource lister", e.Message)
 				wg.Done()
-				return
 			}
 
-			if strings.HasSuffix(e.Caller.File, "pkg/scanner/scanner.go") && e.Caller.Line == 110 {
+			if strings.HasSuffix(e.Caller.File, "pkg/scanner/scanner.go") && e.Caller.Line == 117 {
 				assert.Contains(t, e.Message, "Listing testResourceType failed")
 				assert.Contains(t, e.Message, "panic error for testing")
-				logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
 				panicCaught = true
 				wg.Done()
-				return
 			}
 		},
 	})
@@ -256,6 +253,7 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 	}
 
 	scanner := New("Owner", []string{testResourceType}, opts)
+	scanner.SetLogger(logrus.StandardLogger())
 	_ = scanner.Run(context.TODO())
 
 	if waitTimeout(&wg, 10*time.Second) {
@@ -264,6 +262,10 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 	}
 
 	assert.True(t, panicCaught)
+
+	defer func() {
+		logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
+	}()
 }
 
 func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
