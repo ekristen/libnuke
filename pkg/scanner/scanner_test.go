@@ -262,6 +262,7 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 	}
 
 	scanner := New("Owner", []string{testResourceType}, opts)
+	scanner.SetLogger(logrus.StandardLogger())
 	_ = scanner.Run(context.TODO())
 
 	if waitTimeout(&wg, 10*time.Second) {
@@ -270,6 +271,10 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 	}
 
 	assert.True(t, panicCaught)
+
+	defer func() {
+		logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
+	}()
 }
 
 func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
