@@ -228,6 +228,9 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 	panicCaught := false
 
 	registry.ClearRegistry()
+	defer func() {
+		logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
+	}()
 	logrus.AddHook(&TestGlobalHook{
 		t: t,
 		tf: func(t *testing.T, e *logrus.Entry) {
@@ -262,10 +265,6 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 	}
 
 	assert.True(t, panicCaught)
-
-	defer func() {
-		logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
-	}()
 }
 
 func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
