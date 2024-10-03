@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/registry"
@@ -274,4 +275,77 @@ func Test_ItemRevenant(t *testing.T) {
 	}
 
 	assert.False(t, j.Equals(i.Resource))
+}
+
+// ------------------------------------------------------------------------
+
+type TestGlobalHook struct {
+	t  *testing.T
+	tf func(t *testing.T, e *logrus.Entry)
+}
+
+func (h *TestGlobalHook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+func (h *TestGlobalHook) Fire(e *logrus.Entry) error {
+	if h.tf != nil {
+		h.tf(h.t, e)
+	}
+
+	return nil
+}
+
+type TestItemResourceLogger struct{}
+
+func (r *TestItemResourceLogger) String() string {
+	return "test"
+}
+
+func (r *TestItemResourceLogger) Remove(_ context.Context) error {
+	return nil
+}
+
+func Test_ItemLoggerDefault(t *testing.T) {
+	i := &Item{
+		Resource: &TestItemResourceLogger{},
+		State:    ItemStateNew,
+		Reason:   "brand new",
+		Type:     "TestResource",
+		Owner:    "us-east-1",
+	}
+
+	i.Print()
+}
+
+func Test_ItemLoggerCustom(t *testing.T) {
+	logger := logrus.New()
+	defer func() {
+		logger.ReplaceHooks(make(logrus.LevelHooks))
+	}()
+
+	hookCalled := false
+	logger.AddHook(&TestGlobalHook{
+		t: t,
+		tf: func(t *testing.T, e *logrus.Entry) {
+			hookCalled = true
+			assert.Equal(t, "us-east-1", e.Data["owner"])
+			assert.Equal(t, "TestResource", e.Data["type"])
+			assert.Equal(t, 0, e.Data["state"])
+			assert.Equal(t, "would remove", e.Message)
+		},
+	})
+
+	i := &Item{
+		Resource: &TestItemResourceLogger{},
+		State:    ItemStateNew,
+		Reason:   "brand new",
+		Type:     "TestResource",
+		Owner:    "us-east-1",
+		Logger:   logger,
+	}
+
+	i.Print()
+
+	assert.True(t, hookCalled)
 }
