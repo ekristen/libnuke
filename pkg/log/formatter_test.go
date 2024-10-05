@@ -2,10 +2,11 @@ package log
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/fatih/color"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestCustomFormatter_Format(t *testing.T) {
