@@ -2,6 +2,7 @@ package log
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -10,6 +11,10 @@ import (
 type CustomFormatter struct{}
 
 func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+	if entry == nil {
+		return nil, nil
+	}
+
 	resourceType, ok := entry.Data["type"].(string)
 	if !ok {
 		return nil, nil
@@ -36,6 +41,8 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 		}
 	}
 
+	sort.Strings(sortedFields)
+
 	msgColor := ReasonSuccess
 	switch state {
 	case 0, 1, 8:
@@ -55,11 +62,11 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
 	}
 
 	msg := fmt.Sprintf("%s - %s - %s - %s - %s\n",
-		ColorRegion.Sprintf(owner),
-		ColorResourceType.Sprintf(resourceType),
-		ColorResourceID.Sprintf(resource),
+		ColorRegion.Sprint(owner),
+		ColorResourceType.Sprint(resourceType),
+		ColorResourceID.Sprint(resource),
 		ColorResourceProperties.Sprintf("[%s]", strings.Join(sortedFields, ", ")),
-		msgColor.Sprintf(entry.Message))
+		msgColor.Sprint(entry.Message))
 
 	return []byte(msg), nil
 }

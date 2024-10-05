@@ -7,8 +7,6 @@ import (
 	"strings"
 
 	"github.com/fatih/color"
-
-	"github.com/ekristen/libnuke/pkg/resource"
 )
 
 var (
@@ -46,26 +44,4 @@ func Sorted(m map[string]string) string {
 		sorted = append(sorted, fmt.Sprintf("%s: %q", keys[k], m[keys[k]]))
 	}
 	return fmt.Sprintf("[%s]", strings.Join(sorted, ", "))
-}
-
-// Log prints the line to screen with the appropriate coloring and formatting for readability
-func Log(scope, resourceType string, r resource.Resource, c color.Color, msg string) {
-	ColorRegion.Printf("%s", scope)
-	fmt.Printf(" - ")
-	ColorResourceType.Print(resourceType)
-	fmt.Printf(" - ")
-
-	rString, ok := r.(resource.LegacyStringer)
-	if ok {
-		ColorResourceID.Print(rString.String())
-		fmt.Printf(" - ")
-	}
-
-	rProp, ok := r.(resource.PropertyGetter)
-	if ok {
-		ColorResourceProperties.Print(Sorted(rProp.Properties()))
-		fmt.Printf(" - ")
-	}
-
-	c.Printf("%s\n", msg)
 }
