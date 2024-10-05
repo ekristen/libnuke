@@ -84,7 +84,8 @@ func TestCustomFormatter_Format(t *testing.T) {
 				ColorRegion.Sprint("owner"),
 				ColorResourceType.Sprint("test"),
 				ColorResourceID.Sprint("resource"),
-				ColorResourceProperties.Sprintf("[%s]", strings.Join([]string{`one: "1"`, `two: "2"`}, ", ")),
+				ColorResourceProperties.Sprintf("[%s]",
+					strings.Join([]string{`one: "1"`, `two: "2"`}, ", ")),
 				ReasonSuccess.Sprint("would remove"))),
 		},
 		{
@@ -104,7 +105,8 @@ func TestCustomFormatter_Format(t *testing.T) {
 				ColorRegion.Sprint("owner"),
 				ColorResourceType.Sprint("test"),
 				ColorResourceID.Sprint("resource"),
-				ColorResourceProperties.Sprintf("[%s]", strings.Join([]string{`one: "1"`, `two: "2"`}, ", ")),
+				ColorResourceProperties.Sprintf("[%s]",
+					strings.Join([]string{`one: "1"`, `two: "2"`}, ", ")),
 				ReasonHold.Sprint("test message"))),
 		},
 		{
@@ -124,7 +126,8 @@ func TestCustomFormatter_Format(t *testing.T) {
 				ColorRegion.Sprint("owner"),
 				ColorResourceType.Sprint("test"),
 				ColorResourceID.Sprint("resource"),
-				ColorResourceProperties.Sprintf("[%s]", strings.Join([]string{`one: "1"`, `two: "2"`}, ", ")),
+				ColorResourceProperties.Sprintf("[%s]",
+					strings.Join([]string{`one: "1"`, `two: "2"`}, ", ")),
 				ReasonRemoveTriggered.Sprint("test message"))),
 		},
 	}
@@ -203,7 +206,8 @@ func TestCustomFormatter_FormatReasons(t *testing.T) {
 				ColorRegion.Sprint("owner"),
 				ColorResourceType.Sprint("test"),
 				ColorResourceID.Sprint("resource"),
-				ColorResourceProperties.Sprintf("[%s]", strings.Join([]string{`one: "1"`, `two: "2"`}, ", ")),
+				ColorResourceProperties.Sprintf("[%s]",
+					strings.Join([]string{`one: "1"`, `two: "2"`}, ", ")),
 				tc.color.Sprint("test message")))
 
 			newTestEntry := testEntry
