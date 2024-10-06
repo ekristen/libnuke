@@ -192,6 +192,8 @@ func (n *Nuke) Prompt() error {
 func (n *Nuke) Run(ctx context.Context) error {
 	n.Version()
 
+	printLog := n.log.WithField("_handler", "println")
+
 	if err := n.Validate(); err != nil {
 		return err
 	}
@@ -205,12 +207,14 @@ func (n *Nuke) Run(ctx context.Context) error {
 	}
 
 	if n.Queue.Count(queue.ItemStateNew) == 0 {
-		fmt.Println("No resource to delete.")
+		printLog.Info("No resource to delete.")
+		// fmt.Println("No resource to delete.")
 		return nil
 	}
 
 	if !n.Parameters.NoDryRun {
-		fmt.Println("The above resources would be deleted with the supplied configuration. Provide --no-dry-run to actually destroy resources.")
+		printLog.Info("The above resources would be deleted with the supplied configuration. Provide --no-dry-run to actually destroy resources.")
+		// fmt.Println("The above resources would be deleted with the supplied configuration. Provide --no-dry-run to actually destroy resources.")
 		return nil
 	}
 
@@ -222,8 +226,11 @@ func (n *Nuke) Run(ctx context.Context) error {
 		return err
 	}
 
-	fmt.Printf("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
+	printLog.Infof("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
 		n.Queue.Count(queue.ItemStateFailed), n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
+
+	// fmt.Printf("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
+	//  	n.Queue.Count(queue.ItemStateFailed), n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
 
 	return nil
 }
@@ -231,6 +238,8 @@ func (n *Nuke) Run(ctx context.Context) error {
 // handleFailure is used to handle the failure state of resources. It will determine if there have been too many
 // failures and exit accordingly, writing to screen the failure state of each resource
 func (n *Nuke) handleFailure() error {
+	printLog := n.log.WithField("_handler", "println")
+
 	// processingCount is used to determine if there are any resources that are not in the failed state
 	processingCount := n.Queue.Count(queue.ItemStatePending, queue.ItemStatePendingDependency, queue.ItemStateHold,
 		queue.ItemStateWaiting, queue.ItemStateNew, queue.ItemStateNewDependency)
@@ -243,8 +252,7 @@ func (n *Nuke) handleFailure() error {
 	if processingCount == 0 && failedCount > 0 {
 		// if failCount is greater than 2, then we are done, print status and return failed error
 		if n.failedCount >= 2 {
-			logrus.Errorf("There are resources in failed state, but none are ready for deletion, anymore.")
-			fmt.Println()
+			printLog.Errorf("There are resources in failed state, but none are ready for deletion, anymore.")
 
 			for _, item := range n.Queue.GetItems() {
 				if item.GetState() != queue.ItemStateFailed {
@@ -252,7 +260,7 @@ func (n *Nuke) handleFailure() error {
 				}
 
 				item.Print()
-				logrus.Error(item.GetReason())
+				printLog.Error(item.GetReason())
 			}
 
 			return fmt.Errorf("failed")
@@ -419,8 +427,13 @@ func (n *Nuke) Scan(ctx context.Context) error {
 		}
 	}
 
-	fmt.Printf("Scan complete: %d total, %d nukeable, %d filtered.\n\n",
+	printLog := n.log.WithField("_handler", "println")
+
+	printLog.Infof("Scan complete: %d total, %d nukeable, %d filtered.\n\n",
 		itemQueue.Total(), itemQueue.Count(queue.ItemStateNew, queue.ItemStateNewDependency), itemQueue.Count(queue.ItemStateFiltered))
+
+	// fmt.Printf("Scan complete: %d total, %d nukeable, %d filtered.\n\n",
+	//  	itemQueue.Total(), itemQueue.Count(queue.ItemStateNew, queue.ItemStateNewDependency), itemQueue.Count(queue.ItemStateFiltered))
 
 	n.Queue = itemQueue
 
@@ -570,9 +583,13 @@ func (n *Nuke) HandleQueue(ctx context.Context) {
 	countSkipped := n.Queue.Count(queue.ItemStateFiltered)
 	countFinished := n.Queue.Count(queue.ItemStateFinished)
 
-	fmt.Println()
-	fmt.Printf("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
+	printLog := n.log.WithField("_handler", "println")
+	printLog.Infof("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
 		countWaiting, countFailed, countSkipped, countFinished)
+
+	// fmt.Println()
+	// fmt.Printf("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
+	//	countWaiting, countFailed, countSkipped, countFinished)
 }
 
 // HandleRemove is used to handle the removal of a resource. It will remove the resource and set the state of the

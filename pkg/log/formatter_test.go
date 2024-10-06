@@ -21,6 +21,16 @@ func TestCustomFormatter_Format(t *testing.T) {
 			want:  nil,
 		},
 		{
+			name: "println",
+			input: &logrus.Entry{
+				Message: "test message",
+				Data: logrus.Fields{
+					"_handler": "println",
+				},
+			},
+			want: []byte("test message"),
+		},
+		{
 			name: "invalid-type",
 			input: &logrus.Entry{
 				Data: logrus.Fields{
