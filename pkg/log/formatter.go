@@ -21,6 +21,11 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) { //nolint
 		return nil, nil
 	}
 
+	handler, ok := entry.Data["_handler"].(string)
+	if ok && handler == "println" {
+		return []byte(entry.Message), nil
+	}
+
 	resourceType, ok := entry.Data["type"].(string)
 	if !ok {
 		return f.FallbackFormatter.Format(entry)
