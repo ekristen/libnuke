@@ -8,26 +8,32 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type CustomFormatter struct{}
+type CustomFormatter struct {
+	FallbackFormatter logrus.Formatter
+}
 
-func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) {
+func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) { //nolint:gocyclo
+	if f.FallbackFormatter == nil {
+		f.FallbackFormatter = &logrus.TextFormatter{}
+	}
+
 	if entry == nil {
 		return nil, nil
 	}
 
 	resourceType, ok := entry.Data["type"].(string)
 	if !ok {
-		return nil, nil
+		return f.FallbackFormatter.Format(entry)
 	}
 
 	if _, ok := entry.Data["owner"]; !ok {
-		return nil, nil
+		return f.FallbackFormatter.Format(entry)
 	}
 	if _, ok := entry.Data["resource"]; !ok {
-		return nil, nil
+		return f.FallbackFormatter.Format(entry)
 	}
 	if _, ok := entry.Data["state"]; !ok {
-		return nil, nil
+		return f.FallbackFormatter.Format(entry)
 	}
 
 	owner := entry.Data["owner"].(string)
