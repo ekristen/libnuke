@@ -34,11 +34,11 @@ func TestCustomFormatter_Format(t *testing.T) {
 			name: "missing-type",
 			input: &logrus.Entry{
 				Data: logrus.Fields{
-					"owner":    "owner",
-					"resource": "resource",
+					"owner": "owner",
+					"name":  "resource",
 				},
 			},
-			want: []byte(`time="0001-01-01T00:00:00Z" level=panic owner=owner resource=resource
+			want: []byte(`time="0001-01-01T00:00:00Z" level=panic name=resource owner=owner
 `),
 		},
 		{
@@ -66,12 +66,12 @@ func TestCustomFormatter_Format(t *testing.T) {
 			name: "missing-state",
 			input: &logrus.Entry{
 				Data: logrus.Fields{
-					"type":     "test",
-					"owner":    "owner",
-					"resource": "resource",
+					"type":  "test",
+					"owner": "owner",
+					"name":  "resource",
 				},
 			},
-			want: []byte(`time="0001-01-01T00:00:00Z" level=panic owner=owner resource=resource type=test
+			want: []byte(`time="0001-01-01T00:00:00Z" level=panic name=resource owner=owner type=test
 `),
 		},
 		{
@@ -81,7 +81,7 @@ func TestCustomFormatter_Format(t *testing.T) {
 				Data: logrus.Fields{
 					"type":     "test",
 					"owner":    "owner",
-					"resource": "resource",
+					"name":     "resource",
 					"state":    0,
 					"prop:one": "1",
 					"prop:two": "2",
@@ -101,7 +101,7 @@ func TestCustomFormatter_Format(t *testing.T) {
 				Data: logrus.Fields{
 					"type":            "test",
 					"owner":           "owner",
-					"resource":        "resource",
+					"name":            "resource",
 					"state":           2,
 					"prop:one":        "1",
 					"prop:two":        "2",
@@ -122,7 +122,7 @@ func TestCustomFormatter_Format(t *testing.T) {
 				Data: logrus.Fields{
 					"type":     "test",
 					"owner":    "owner",
-					"resource": "resource",
+					"name":     "resource",
 					"state":    3,
 					"prop:one": "1",
 					"prop:two": "2",
@@ -158,7 +158,7 @@ func TestCustomFormatter_FormatReasons(t *testing.T) {
 		Data: logrus.Fields{
 			"type":     "test",
 			"owner":    "owner",
-			"resource": "resource",
+			"name":     "resource",
 			"state":    0,
 			"prop:one": "1",
 			"prop:two": "2",

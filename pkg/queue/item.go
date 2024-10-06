@@ -125,7 +125,7 @@ func (i *Item) Print() {
 
 	rString, ok := i.Resource.(resource.LegacyStringer)
 	if ok {
-		itemLog = itemLog.WithField("resource", rString.String())
+		itemLog = itemLog.WithField("name", rString.String())
 	}
 
 	rProp, ok := i.Resource.(resource.PropertyGetter)

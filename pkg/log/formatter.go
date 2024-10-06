@@ -29,15 +29,15 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) { //nolint
 	if _, ok := entry.Data["owner"]; !ok {
 		return f.FallbackFormatter.Format(entry)
 	}
-	if _, ok := entry.Data["resource"]; !ok {
+	if _, ok := entry.Data["state"]; !ok {
 		return f.FallbackFormatter.Format(entry)
 	}
-	if _, ok := entry.Data["state"]; !ok {
+	if _, ok := entry.Data["name"]; !ok {
 		return f.FallbackFormatter.Format(entry)
 	}
 
 	owner := entry.Data["owner"].(string)
-	resource := entry.Data["resource"].(string)
+	resourceName := entry.Data["name"].(string)
 	state := entry.Data["state"].(int)
 
 	var sortedFields = make([]string, 0)
@@ -74,7 +74,7 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) { //nolint
 	msg := fmt.Sprintf("%s - %s - %s - %s - %s\n",
 		ColorRegion.Sprint(owner),
 		ColorResourceType.Sprint(resourceType),
-		ColorResourceID.Sprint(resource),
+		ColorResourceID.Sprint(resourceName),
 		ColorResourceProperties.Sprintf("[%s]", strings.Join(sortedFields, ", ")),
 		msgColor.Sprint(entry.Message))
 
