@@ -27,7 +27,8 @@ func TestCustomFormatter_Format(t *testing.T) {
 					"type": "test",
 				},
 			},
-			want: nil,
+			want: []byte(`time="0001-01-01T00:00:00Z" level=panic type=test
+`),
 		},
 		{
 			name: "missing-type",
@@ -37,6 +38,8 @@ func TestCustomFormatter_Format(t *testing.T) {
 					"resource": "resource",
 				},
 			},
+			want: []byte(`time="0001-01-01T00:00:00Z" level=panic owner=owner resource=resource
+`),
 		},
 		{
 			name: "missing-owner",
@@ -45,7 +48,8 @@ func TestCustomFormatter_Format(t *testing.T) {
 					"type": "test",
 				},
 			},
-			want: nil,
+			want: []byte(`time="0001-01-01T00:00:00Z" level=panic type=test
+`),
 		},
 		{
 			name: "missing-resource",
@@ -55,7 +59,8 @@ func TestCustomFormatter_Format(t *testing.T) {
 					"owner": "owner",
 				},
 			},
-			want: nil,
+			want: []byte(`time="0001-01-01T00:00:00Z" level=panic owner=owner type=test
+`),
 		},
 		{
 			name: "missing-state",
@@ -66,6 +71,8 @@ func TestCustomFormatter_Format(t *testing.T) {
 					"resource": "resource",
 				},
 			},
+			want: []byte(`time="0001-01-01T00:00:00Z" level=panic owner=owner resource=resource type=test
+`),
 		},
 		{
 			name: "reason-success",
@@ -135,7 +142,11 @@ func TestCustomFormatter_Format(t *testing.T) {
 
 			got, err := cf.Format(tc.input)
 			assert.NoError(t, err)
-			assert.EqualValuesf(t, tc.want, got, "expected %v, got %v", tc.want, got)
+			equal := assert.EqualValuesf(t, tc.want, got, "expected %v, got %v", tc.want, got)
+			if !equal {
+				fmt.Println("`" + string(tc.want) + "`")
+				fmt.Println("`" + string(got) + "`")
+			}
 		})
 	}
 }

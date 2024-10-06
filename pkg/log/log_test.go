@@ -38,6 +38,13 @@ func TestSorted(t *testing.T) {
 			},
 			want: `[one: "1", two: "2"]`,
 		},
+		{
+			name: "underscore",
+			input: map[string]string{
+				"_one": "1",
+			},
+			want: "[]",
+		},
 	}
 
 	for _, tc := range cases {
