@@ -23,6 +23,7 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) { //nolint
 
 	handler, ok := entry.Data["_handler"].(string)
 	if ok && handler == "println" {
+		delete(entry.Data, "_handler")
 		return []byte(entry.Message), nil
 	}
 
