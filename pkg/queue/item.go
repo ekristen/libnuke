@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 
@@ -165,6 +166,10 @@ func sorted(m map[string]string) logrus.Fields {
 	}
 	sort.Strings(keys)
 	for k := range keys {
+		if strings.HasPrefix(keys[k], "_") {
+			continue
+		}
+
 		out[fmt.Sprintf("prop:%s", keys[k])] = m[keys[k]]
 	}
 	return out
