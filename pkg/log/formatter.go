@@ -43,6 +43,10 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) { //nolint
 	var sortedFields = make([]string, 0)
 	for k, v := range entry.Data {
 		if strings.HasPrefix(k, "prop:") {
+			if strings.HasPrefix(k, "prop:_") {
+				continue
+			}
+
 			sortedFields = append(sortedFields, fmt.Sprintf("%s: %q", k[5:], v))
 		}
 	}
