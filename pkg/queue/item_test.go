@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 
@@ -235,4 +236,39 @@ func Test_ItemEqualNothing(t *testing.T) {
 	}
 
 	assert.False(t, i.Equals(i.Resource))
+}
+
+// ------------------------------------------------------------------------
+
+type TestItemResourceRevenant struct {
+	Props types.Properties
+}
+
+func (r *TestItemResourceRevenant) Remove(_ context.Context) error {
+	return nil
+}
+func (r *TestItemResourceRevenant) Properties() types.Properties {
+	return r.Props
+}
+
+func Test_ItemRevenant(t *testing.T) {
+	i := &Item{
+		Resource: &TestItemResourceRevenant{
+			Props: types.NewProperties().Set("CreatedAt", time.Now().UTC()),
+		},
+		State:  ItemStateNew,
+		Reason: "brand new",
+		Type:   "TestResource",
+	}
+
+	j := &Item{
+		Resource: &TestItemResourceRevenant{
+			Props: types.NewProperties().Set("CreatedAt", time.Now().UTC().Add(4*time.Minute)),
+		},
+		State:  ItemStateNew,
+		Reason: "brand new",
+		Type:   "TestResource",
+	}
+
+	assert.False(t, j.Equals(i.Resource))
 }
