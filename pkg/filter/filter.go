@@ -111,7 +111,7 @@ func (f Filters) Merge(f2 Filters) {
 func (f Filters) Match(resourceType string, p Property) (bool, error) {
 	resourceFilters := f.GetByGroup(resourceType)
 	if resourceFilters == nil {
-		return true, nil
+		return false, nil
 	}
 
 	groupCount := make(map[string]int)
@@ -125,16 +125,16 @@ func (f Filters) Match(resourceType string, p Property) (bool, error) {
 			prop, err := p.GetProperty(filter.Property)
 			if err != nil {
 				logrus.WithError(err).Warn("error getting property")
-				continue
+				return false, err
 			}
 
 			match, err := filter.Match(prop)
 			if err != nil {
 				logrus.WithError(err).Warn("error matching filter")
-				continue
+				return false, err
 			}
 
-			fmt.Println(match, filter.Invert)
+			logrus.Trace(match, filter.Invert)
 
 			if filter.Invert {
 				match = !match
@@ -145,9 +145,9 @@ func (f Filters) Match(resourceType string, p Property) (bool, error) {
 			}
 		}
 
-		fmt.Println("groupCount", groupCount)
-		fmt.Println("totalCount", totalCount)
-		fmt.Println("matchCount", matchCount)
+		logrus.Trace("groupCount", groupCount)
+		logrus.Trace("totalCount", totalCount)
+		logrus.Trace("matchCount", matchCount)
 
 		if totalCount[group] == matchCount[group] {
 			groupCount[group]++
