@@ -194,3 +194,44 @@ func Test_GetLister(t *testing.T) {
 	l := GetLister("test")
 	assert.NotNil(t, l)
 }
+
+func Test_GetListersV2_CircularDependency(t *testing.T) {
+	ClearRegistry()
+
+	// Note: this is necessary to test the panic when using coverage and multiple tests
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("Recovered from panic: %v", r)
+		}
+	}()
+
+	Register(&Registration{
+		Name:   "A",
+		Scope:  "test",
+		Lister: TestLister{},
+		DependsOn: []string{
+			"B",
+			"C",
+		},
+	})
+
+	Register(&Registration{
+		Name:   "B",
+		Scope:  "test",
+		Lister: TestLister{},
+		DependsOn: []string{
+			"A",
+			"C",
+		},
+	})
+
+	Register(&Registration{
+		Name:   "C",
+		Scope:  "test",
+		Lister: TestLister{},
+	})
+
+	assert.Panics(t, func() {
+		GetListersV2()
+	})
+}
