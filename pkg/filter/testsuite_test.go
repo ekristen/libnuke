@@ -2,6 +2,7 @@ package filter_test
 
 import (
 	"fmt"
+
 	"github.com/ekristen/libnuke/pkg/types"
 )
 

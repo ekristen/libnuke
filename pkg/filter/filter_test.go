@@ -1,7 +1,6 @@
 package filter_test
 
 import (
-	"github.com/ekristen/libnuke/pkg/types"
 	"os"
 	"reflect"
 	"strconv"
@@ -13,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/filter"
+	"github.com/ekristen/libnuke/pkg/types"
 )
 
 func TestFilter_Nil(t *testing.T) {

@@ -3,7 +3,6 @@ package filter
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"regexp"
 	"slices"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mb0/glob"
+	"github.com/sirupsen/logrus"
 )
 
 type OpType string
@@ -307,11 +307,11 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if m["invert"] == nil {
 		f.Invert = false
 	} else {
-		switch m["invert"].(type) {
+		switch val := m["invert"].(type) {
 		case bool:
-			f.Invert = m["invert"].(bool)
+			f.Invert = val
 		case string:
-			invert, err := strconv.ParseBool(m["invert"].(string))
+			invert, err := strconv.ParseBool(val)
 			if err != nil {
 				return err
 			}
