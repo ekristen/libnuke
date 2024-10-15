@@ -40,6 +40,12 @@ type Parameters struct {
 	// processed
 	WaitOnDependencies bool
 
+	// UseFilterGroups controls whether the filter groups are used or not. If set to true, then the filters will be
+	// processed by groups, where each group is a list of filters that are processed together. A single filter in a
+	// group must match for the group to match. If set to false, then the filters will be processed individually and
+	// a single filter must match for the resource to be filtered.
+	UseFilterGroups bool
+
 	// Includes is a list of resource types that are to be included during the nuke process. If a resource type is
 	// listed in both the Includes and Excludes fields then the Excludes field will take precedence.
 	Includes []string
@@ -448,6 +454,18 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		}
 	}
 
+	if n.Parameters.UseFilterGroups {
+		return n.filterWithGroups(item)
+	}
+
+	return n.filterWithoutGroups(item)
+}
+
+func (n *Nuke) filterWithGroups(item *queue.Item) error {
+	log := n.log.
+		WithField("handler", "Filter").
+		WithField("type", item.Type)
+
 	matched, err := n.Filters.Match(item.Type, item)
 	if err != nil {
 		return err
@@ -457,50 +475,55 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		log.Trace("resource was filtered by config")
 		item.State = queue.ItemStateFiltered
 		item.Reason = "filtered by config"
+	}
+
+	return nil
+}
+
+func (n *Nuke) filterWithoutGroups(item *queue.Item) error {
+	log := n.log.
+		WithField("handler", "Filter").
+		WithField("type", item.Type)
+
+	itemFilters := n.Filters.Get(item.Type)
+	if itemFilters == nil {
+		log.Tracef("no filters found for type: %s", item.Type)
 		return nil
 	}
 
-	/*
-		itemFilters := n.Filters.Get(item.Type)
-		if itemFilters == nil {
-			log.Tracef("no filters found for type: %s", item.Type)
+	for _, f := range itemFilters {
+		log.
+			WithField("prop", f.Property).
+			WithField("type", f.Type).
+			WithField("value", f.Value).
+			Trace("filter details")
+
+		prop, err := item.GetProperty(f.Property)
+		if err != nil {
+			return err
+		}
+
+		log.Tracef("property: %s", prop)
+
+		match, err := f.Match(prop)
+		if err != nil {
+			return err
+		}
+
+		log.Tracef("match: %t", match)
+
+		if f.Invert {
+			log.WithField("orig", match).WithField("new", !match).Trace("filter inverted")
+			match = !match
+		}
+
+		if match {
+			log.Trace("filter matched")
+			item.State = queue.ItemStateFiltered
+			item.Reason = "filtered by config"
 			return nil
 		}
-
-		for _, f := range itemFilters {
-			log.
-				WithField("prop", f.Property).
-				WithField("type", f.Type).
-				WithField("value", f.Value).
-				Trace("filter details")
-
-			prop, err := item.GetProperty(f.Property)
-			if err != nil {
-				return err
-			}
-
-			log.Tracef("property: %s", prop)
-
-			match, err := f.Match(prop)
-			if err != nil {
-				return err
-			}
-
-			log.Tracef("match: %t", match)
-
-			if f.Invert {
-				log.WithField("orig", match).WithField("new", !match).Trace("filter inverted")
-				match = !match
-			}
-
-			if match {
-				log.Trace("filter matched")
-				item.State = queue.ItemStateFiltered
-				item.Reason = "filtered by config"
-				return nil
-			}
-		}
-	*/
+	}
 
 	return nil
 }
