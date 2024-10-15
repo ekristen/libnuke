@@ -35,6 +35,14 @@ var testParametersRemove = &Parameters{
 	NoDryRun:   true,
 }
 
+var testParametersGroups = &Parameters{
+	Force:           true,
+	ForceSleep:      3,
+	Quiet:           false,
+	NoDryRun:        false,
+	UseFilterGroups: true,
+}
+
 const testScope registry.Scope = "test"
 
 func Test_Nuke_Version(t *testing.T) {

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/filter"
+	"github.com/ekristen/libnuke/pkg/types"
 )
 
 func TestFilter_Nil(t *testing.T) {
@@ -74,6 +75,244 @@ func TestFilter_GlobalYAML(t *testing.T) {
 	assert.Equal(t, expected["Resource2"], config.Filters.Get("Resource2"))
 }
 
+func TestFilter_UnmarshalYAML_Error(t *testing.T) {
+	invalidYAML := `
+- invalid
+- yaml
+`
+
+	var f filter.Filter
+	err := yaml.Unmarshal([]byte(invalidYAML), &f)
+	assert.Error(t, err, "expected an error when unmarshaling invalid YAML")
+}
+
+func TestFilter_GetByGroup(t *testing.T) {
+	f := filter.Filters{
+		"resource1": []filter.Filter{
+			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+		},
+	}
+
+	rf := f.GetByGroup("resource1")
+
+	for g, filters := range rf {
+		assert.Equal(t, "default", g)
+		assert.Len(t, filters, 1)
+	}
+
+	rf1 := f.GetByGroup("invalidResource1")
+	assert.Nil(t, rf1)
+
+	matched, err := f.Match("invalidResourceType", filter.Property(&TestResource{}))
+	assert.NoError(t, err)
+	assert.False(t, matched)
+}
+
+func TestFilter_Match(t *testing.T) {
+	cases := []struct {
+		name      string
+		resource  string
+		resources []filter.Property
+		filters   []filter.Filter
+		filtered  bool
+		error     bool
+	}{
+		{
+			name:     "simple-filtered",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{},
+			},
+			filters: []filter.Filter{
+				{Property: "prop1", Type: filter.Exact, Value: "testing"},
+			},
+			filtered: true,
+			error:    false,
+		},
+		{
+			name:     "simple-no-filtered",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{},
+			},
+			filters: []filter.Filter{
+				{Property: "prop1", Type: filter.Exact, Value: "testing1"},
+			},
+			filtered: false,
+			error:    false,
+		},
+		{
+			name:     "simple-no-filtered-invert",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{},
+			},
+			filters: []filter.Filter{
+				{Property: "prop1", Type: filter.Exact, Value: "testing", Invert: true},
+			},
+			filtered: false,
+			error:    false,
+		},
+		{
+			name:     "simple-filtered-invert",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{},
+			},
+			filters: []filter.Filter{
+				{Property: "prop1", Type: filter.Exact, Value: "testing1", Invert: true},
+			},
+			filtered: true,
+			error:    false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			filters := filter.Filters{
+				tc.resource: tc.filters,
+			}
+
+			for _, r := range tc.resources {
+				res, err := filters.Match(tc.resource, r)
+				if tc.error {
+					assert.Error(t, err)
+				} else {
+					assert.NoError(t, err)
+				}
+
+				assert.Equal(t, tc.filtered, res)
+			}
+		})
+	}
+}
+
+func TestFilter_MatchGroup(t *testing.T) {
+	cases := []struct {
+		name      string
+		resource  string
+		resources []filter.Property
+		filters   filter.Filters
+		filtered  bool
+		error     bool
+	}{
+		{
+			name:     "single-group-filtered",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing"),
+				},
+			},
+			filters: filter.Filters{
+				"resource1": []filter.Filter{
+					{Property: "prop1", Type: filter.Exact, Value: "testing"},
+				},
+			},
+			filtered: true,
+			error:    false,
+		},
+		{
+			name:     "single-group-not-filtered",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing"),
+				},
+			},
+			filters: filter.Filters{
+				"resource1": []filter.Filter{
+					{Property: "prop1", Type: filter.Exact, Value: "testing1"},
+				},
+			},
+			filtered: false,
+			error:    false,
+		},
+		{
+			name:     "multiple-group-filtered",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing").Set("prop2", "testing2"),
+				},
+			},
+			filters: filter.Filters{
+				"resource1": []filter.Filter{
+					{Property: "prop1", Type: filter.Exact, Value: "testing", Group: "group1"},
+					{Property: "prop2", Type: filter.Exact, Value: "testing2", Group: "group2"},
+				},
+			},
+			filtered: true,
+			error:    false,
+		},
+		{
+			name:     "multiple-group-not-filtered",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing").Set("prop2", "testing2"),
+				},
+			},
+			filters: filter.Filters{
+				"resource1": []filter.Filter{
+					{Property: "prop1", Type: filter.Exact, Value: "testing", Group: "group1"},
+					{Property: "prop2", Type: filter.Exact, Value: "testing2", Group: "group2"},
+					{Property: "prop3", Type: filter.Exact, Value: "testing3", Group: "group3"},
+				},
+			},
+			filtered: true,
+			error:    false,
+		},
+		{
+			name:     "single-group-error",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing"),
+				},
+			},
+			filters: filter.Filters{
+				"resource1": []filter.Filter{
+					{Property: "no_stringer", Type: filter.Exact, Value: "testing"},
+				},
+			},
+			filtered: false,
+			error:    true,
+		},
+		{
+			name:     "single-group-invalid-type",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing"),
+				},
+			},
+			filters: filter.Filters{
+				"resource1": []filter.Filter{
+					{Property: "prop1", Type: "NonExistent", Value: "testing"},
+				},
+			},
+			filtered: false,
+			error:    true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			for _, r := range tc.resources {
+				res, err := tc.filters.Match(tc.resource, r)
+				if tc.error {
+					assert.Error(t, err)
+				} else {
+					assert.NoError(t, err)
+				}
+
+				assert.Equal(t, tc.filtered, res)
+			}
+		})
+	}
+}
+
 func TestFilter_NewExactFilter(t *testing.T) {
 	f := filter.NewExactFilter("testing")
 
@@ -130,6 +369,7 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 		yaml            string
 		match, mismatch []string
 		error           bool
+		yamlError       bool
 	}{
 		{
 			yaml:     `foo`,
@@ -194,7 +434,7 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 			error: true,
 		},
 		{
-			name: "dateOlderThan-invalid-match",
+			name: "dateOlderThan-invalid-filtered",
 			yaml: `{"type":"dateOlderThan","value":"0"}`,
 			match: []string{
 				"31-12-2023",
@@ -224,6 +464,13 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 			mismatch: []string{"bar", "baz"},
 		},
 		{
+			name:      "invert-bad-truthy-value",
+			yaml:      `{"type":"exact","value":"foo","invert":"this-is-not-a-bool"}`,
+			match:     []string{"foo"},
+			mismatch:  []string{"bar", "baz"},
+			yamlError: true,
+		},
+		{
 			name:     "invert-true",
 			yaml:     `{"type":"exact","value":"foo","invert":true}`,
 			match:    []string{"foo"},
@@ -241,6 +488,12 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 			match:    []string{"foo", "bar"},
 			mismatch: []string{"baz", "qux"},
 		},
+		{
+			name:     "no-type",
+			yaml:     `{"value":"foo"}`,
+			match:    []string{"foo"},
+			mismatch: []string{"fo", "fooo", "o", "fo"},
+		},
 	}
 
 	for _, tc := range cases {
@@ -249,6 +502,11 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 
 			err := yaml.Unmarshal([]byte(tc.yaml), &f)
 			if err != nil {
+				if tc.yamlError {
+					assert.Error(t, err)
+					return
+				}
+
 				t.Fatal(err)
 			}
 
@@ -264,7 +522,7 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 				}
 
 				if !match {
-					t.Fatalf("'%v' should match", o)
+					t.Fatalf("'%v' should filtered", o)
 				}
 			}
 
@@ -275,7 +533,7 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 				}
 
 				if match {
-					t.Fatalf("'%v' should not match", o)
+					t.Fatalf("'%v' should not filtered", o)
 				}
 			}
 		})
@@ -384,4 +642,48 @@ func TestFilter_ValidateError(t *testing.T) {
 	}
 	err := filters.Validate()
 	assert.Error(t, err)
+}
+
+// TestFilter_Invert tests the parsing of the filter and the invert property as both string and bool
+func TestFilter_InvertParsing(t *testing.T) {
+	cases := []struct {
+		name   string
+		yaml   string
+		error  bool
+		invert bool
+	}{
+		{
+			name:   "invert-true-bool",
+			yaml:   `{"type":"exact","value":"foo","invert":true}`,
+			invert: true,
+		},
+		{
+			name:   "invert-true-string",
+			yaml:   `{"type":"exact","value":"foo","invert":"true"}`,
+			invert: true,
+		},
+		{
+			name:   "invert-false-bool",
+			yaml:   `{"type":"exact","value":"foo","invert":false}`,
+			invert: false,
+		},
+		{
+			name:   "invert-false-string",
+			yaml:   `{"type":"exact","value":"foo","invert":"false"}`,
+			invert: false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.yaml, func(t *testing.T) {
+			var f filter.Filter
+
+			err := yaml.Unmarshal([]byte(tc.yaml), &f)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			assert.Equal(t, tc.invert, f.Invert)
+		})
+	}
 }

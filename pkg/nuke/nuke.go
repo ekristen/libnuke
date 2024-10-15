@@ -21,7 +21,6 @@ import (
 	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
-	"github.com/ekristen/libnuke/pkg/utils"
 )
 
 // ListCache is used to cache the list of resources that are returned from the API.
@@ -40,6 +39,12 @@ type Parameters struct {
 	// depends on ResourceB, all ResourceB has to be in a completed state (removed or failed) before ResourceA will be
 	// processed
 	WaitOnDependencies bool
+
+	// UseFilterGroups controls whether the filter groups are used or not. If set to true, then the filters will be
+	// processed by groups, where each group is a list of filters that are processed together. A single filter in a
+	// group must match for the group to match. If set to false, then the filters will be processed individually and
+	// a single filter must match for the resource to be filtered.
+	UseFilterGroups bool
 
 	// Includes is a list of resource types that are to be included during the nuke process. If a resource type is
 	// listed in both the Includes and Excludes fields then the Excludes field will take precedence.
@@ -449,6 +454,37 @@ func (n *Nuke) Filter(item *queue.Item) error {
 		}
 	}
 
+	if n.Parameters.UseFilterGroups {
+		return n.filterWithGroups(item)
+	}
+
+	return n.filterWithoutGroups(item)
+}
+
+func (n *Nuke) filterWithGroups(item *queue.Item) error {
+	log := n.log.
+		WithField("handler", "Filter").
+		WithField("type", item.Type)
+
+	matched, err := n.Filters.Match(item.Type, item)
+	if err != nil {
+		return err
+	}
+
+	if matched {
+		log.Trace("resource was filtered by config")
+		item.State = queue.ItemStateFiltered
+		item.Reason = "filtered by config"
+	}
+
+	return nil
+}
+
+func (n *Nuke) filterWithoutGroups(item *queue.Item) error {
+	log := n.log.
+		WithField("handler", "Filter").
+		WithField("type", item.Type)
+
 	itemFilters := n.Filters.Get(item.Type)
 	if itemFilters == nil {
 		log.Tracef("no filters found for type: %s", item.Type)
@@ -464,8 +500,7 @@ func (n *Nuke) Filter(item *queue.Item) error {
 
 		prop, err := item.GetProperty(f.Property)
 		if err != nil {
-			log.WithError(err).Warnf("unable to get property: %s", f.Property)
-			continue
+			return err
 		}
 
 		log.Tracef("property: %s", prop)
@@ -477,7 +512,7 @@ func (n *Nuke) Filter(item *queue.Item) error {
 
 		log.Tracef("match: %t", match)
 
-		if utils.IsTrue(f.Invert) {
+		if f.Invert {
 			log.WithField("orig", match).WithField("new", !match).Trace("filter inverted")
 			match = !match
 		}

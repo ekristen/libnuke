@@ -86,18 +86,12 @@ func (i *Item) Equals(o resource.Resource) bool {
 
 	iStringer, iOK := i.Resource.(resource.LegacyStringer)
 	oStringer, oOK := o.(resource.LegacyStringer)
-	if iOK != oOK {
-		return false
-	}
 	if iOK && oOK {
 		return iStringer.String() == oStringer.String()
 	}
 
 	iGetter, iOK := i.Resource.(resource.PropertyGetter)
 	oGetter, oOK := o.(resource.PropertyGetter)
-	if iOK != oOK {
-		return false
-	}
 	if iOK && oOK {
 		return iGetter.Properties().Equals(oGetter.Properties())
 	}
