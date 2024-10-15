@@ -75,6 +75,17 @@ func TestFilter_GlobalYAML(t *testing.T) {
 	assert.Equal(t, expected["Resource2"], config.Filters.Get("Resource2"))
 }
 
+func TestFilter_UnmarshalYAML_Error(t *testing.T) {
+	invalidYAML := `
+- invalid
+- yaml
+`
+
+	var f filter.Filter
+	err := yaml.Unmarshal([]byte(invalidYAML), &f)
+	assert.Error(t, err, "expected an error when unmarshaling invalid YAML")
+}
+
 func TestFilter_GetByGroup(t *testing.T) {
 	f := filter.Filters{
 		"resource1": []filter.Filter{
@@ -358,6 +369,7 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 		yaml            string
 		match, mismatch []string
 		error           bool
+		yamlError       bool
 	}{
 		{
 			yaml:     `foo`,
@@ -452,6 +464,13 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 			mismatch: []string{"bar", "baz"},
 		},
 		{
+			name:      "invert-bad-truthy-value",
+			yaml:      `{"type":"exact","value":"foo","invert":"this-is-not-a-bool"}`,
+			match:     []string{"foo"},
+			mismatch:  []string{"bar", "baz"},
+			yamlError: true,
+		},
+		{
 			name:     "invert-true",
 			yaml:     `{"type":"exact","value":"foo","invert":true}`,
 			match:    []string{"foo"},
@@ -469,6 +488,12 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 			match:    []string{"foo", "bar"},
 			mismatch: []string{"baz", "qux"},
 		},
+		{
+			name:     "no-type",
+			yaml:     `{"value":"foo"}`,
+			match:    []string{"foo"},
+			mismatch: []string{"fo", "fooo", "o", "fo"},
+		},
 	}
 
 	for _, tc := range cases {
@@ -477,6 +502,11 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 
 			err := yaml.Unmarshal([]byte(tc.yaml), &f)
 			if err != nil {
+				if tc.yamlError {
+					assert.Error(t, err)
+					return
+				}
+
 				t.Fatal(err)
 			}
 

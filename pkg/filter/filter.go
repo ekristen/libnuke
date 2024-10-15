@@ -60,6 +60,8 @@ func (f Filters) Get(resourceType string) []Filter {
 	return filters
 }
 
+// GetByGroup returns the filters grouped by the group name for a specific resource type. If there are no filters it
+// returns nil
 func (f Filters) GetByGroup(resourceType string) map[string][]Filter {
 	filters := make(Filters)
 
@@ -108,6 +110,8 @@ func (f Filters) Merge(f2 Filters) {
 	f.Append(f2)
 }
 
+// Match checks if the filters match the given property which is actually a queue item that meats the
+// property interface requirements
 func (f Filters) Match(resourceType string, p Property) (bool, error) {
 	resourceFilters := f.GetByGroup(resourceType)
 	if resourceFilters == nil {
@@ -162,27 +166,25 @@ func (f Filters) Match(resourceType string, p Property) (bool, error) {
 	return false, nil
 }
 
-// ----------------
-
 // Filter is a filter to apply to a resource
 type Filter struct {
 	// Group is the name of the group of filters, all filters in a group are ANDed together
-	Group string
+	Group string `yaml:"group" json:"group"`
 
 	// Type is the type of filter to apply
-	Type Type
+	Type Type `yaml:"type" json:"type"`
 
 	// Property is the name of the property to filter on
-	Property string
+	Property string `yaml:"property" json:"property"`
 
 	// Value is the value to filter on
-	Value string
+	Value string `yaml:"value" json:"value"`
 
 	// Values allows for multiple values to be specified for a filter
 	Values []string `yaml:"values" json:"values"`
 
 	// Invert is a flag to invert the filter
-	Invert bool
+	Invert bool `yaml:"invert" json:"invert"`
 }
 
 // GetGroup returns the group name of the filter, if it is empty it returns "default"
@@ -254,6 +256,7 @@ func (f *Filter) Match(o string) (bool, error) {
 	}
 }
 
+// UnmarshalYAML unmarshals a filter from YAML data
 func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var value string
 
