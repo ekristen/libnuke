@@ -81,6 +81,11 @@ func TestGenerateProperties(t *testing.T) {
 			in:   TestResource4{},
 			want: map[string]string{},
 		},
+		{
+			name: "nil",
+			in:   nil,
+			want: map[string]string{},
+		},
 	}
 
 	for _, c := range cases {
