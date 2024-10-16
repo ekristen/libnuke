@@ -17,16 +17,17 @@ type OpType string
 type Type string
 
 const (
-	Empty         Type = ""
-	Exact         Type = "exact"
-	Glob          Type = "glob"
-	Regex         Type = "regex"
-	Contains      Type = "contains"
-	DateOlderThan Type = "dateOlderThan"
-	Suffix        Type = "suffix"
-	Prefix        Type = "prefix"
-	NotIn         Type = "NotIn"
-	In            Type = "In"
+	Empty            Type = ""
+	Exact            Type = "exact"
+	Glob             Type = "glob"
+	Regex            Type = "regex"
+	Contains         Type = "contains"
+	DateOlderThan    Type = "dateOlderThan"
+	DateOlderThanNow Type = "dateOlderThanNow"
+	Suffix           Type = "suffix"
+	Prefix           Type = "prefix"
+	NotIn            Type = "NotIn"
+	In               Type = "In"
 
 	And OpType = "and"
 	Or  OpType = "or"
@@ -205,7 +206,7 @@ func (f *Filter) Validate() error {
 }
 
 // Match checks if the filter matches the given value
-func (f *Filter) Match(o string) (bool, error) {
+func (f *Filter) Match(o string) (bool, error) { //nolint:gocyclo
 	switch f.Type {
 	case Empty, Exact:
 		return f.Value == o, nil
@@ -238,6 +239,23 @@ func (f *Filter) Match(o string) (bool, error) {
 		fieldTimeWithOffset := fieldTime.Add(duration)
 
 		return fieldTimeWithOffset.After(time.Now()), nil
+
+	case DateOlderThanNow:
+		if o == "" {
+			return false, nil
+		}
+		duration, err := time.ParseDuration(f.Value)
+		if err != nil {
+			return false, err
+		}
+		fieldTime, err := parseDate(o)
+		if err != nil {
+			return false, err
+		}
+
+		adjustedTime := time.Now().UTC().Add(duration)
+
+		return adjustedTime.After(fieldTime), nil
 
 	case Prefix:
 		return strings.HasPrefix(o, f.Value), nil
