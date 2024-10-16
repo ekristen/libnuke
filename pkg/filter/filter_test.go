@@ -202,6 +202,27 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 			error: true,
 		},
 		{
+			name: "dateOlderThanNow",
+			yaml: `{"type":"dateOlderThanNow","value":"0"}`,
+			match: []string{
+				past.Format(time.RFC3339),
+			},
+			mismatch: []string{
+				future.Format(time.RFC3339),
+			},
+		},
+		{
+			name: "dateOlderThanNow2",
+			yaml: `{"type": "dateOlderThanNow", "value": "-36h"}`, // -36 hours
+			match: []string{
+				past.Add(-13 * time.Hour).Format(time.RFC3339),
+			},
+			mismatch: []string{
+				past.Format(time.RFC3339),   // -24 hours
+				future.Format(time.RFC3339), // +24 hours
+			},
+		},
+		{
 			yaml:     `{"type":"prefix","value":"someprefix-"}`,
 			match:    []string{"someprefix-1234", "someprefix-someprefix", "someprefix-asdafd"},
 			mismatch: []string{"not-someprefix-1234", "not-someprefix-asfda"},
