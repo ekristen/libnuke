@@ -107,7 +107,7 @@ func (f *Filter) Validate() error {
 }
 
 // Match checks if the filter matches the given value
-func (f *Filter) Match(o string) (bool, error) {
+func (f *Filter) Match(o string) (bool, error) { //nolint:gocyclo
 	switch f.Type {
 	case Empty, Exact:
 		return f.Value == o, nil

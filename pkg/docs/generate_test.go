@@ -28,9 +28,9 @@ func TestGenerateProperties(t *testing.T) {
 	}
 
 	type TestResource4 struct {
-		name    string
-		ignore  string
-		example string
+		name    string //nolint:unused
+		ignore  string //nolint:unused
+		example string //nolint:unused
 	}
 
 	cases := []struct {
