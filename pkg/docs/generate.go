@@ -9,6 +9,10 @@ import (
 func GeneratePropertiesMap(data interface{}) map[string]string {
 	properties := map[string]string{}
 
+	if data == nil {
+		return properties
+	}
+
 	v := reflect.ValueOf(data)
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
