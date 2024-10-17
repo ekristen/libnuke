@@ -441,6 +441,12 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 		DeletedTime *time.Time `property:"prefix=deleted"`
 	}
 
+	type testStruct13 struct {
+		Name        string     `property:"deprecatedAlias=RuleName"`
+		CreatedTime time.Time  `property:"deprecatedAlias=RuleCreatedTime"`
+		DeletedTime *time.Time `property:"deprecatedAlias=RuleDeletedTime"`
+	}
+
 	cases := []struct {
 		name  string
 		s     interface{}
@@ -613,6 +619,21 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 				Set("Name", "Alice").
 				Set("created:CreatedTime", "2021-01-05T10:12:56Z").
 				Set("deleted:DeletedTime", "2023-07-15T05:32:12Z"),
+		},
+		{
+			name: "deprecated-alias",
+			s: testStruct13{
+				Name:        "Alice",
+				CreatedTime: time.Date(2021, 1, 5, 10, 12, 56, 3309, time.UTC),
+				DeletedTime: ptr.Time(time.Date(2023, 7, 15, 5, 32, 12, 4506, time.UTC)),
+			},
+			want: types.NewProperties().
+				Set("Name", "Alice").
+				Set("RuleName", "Alice").
+				Set("CreatedTime", "2021-01-05T10:12:56Z").
+				Set("DeletedTime", "2023-07-15T05:32:12Z").
+				Set("RuleCreatedTime", "2021-01-05T10:12:56Z").
+				Set("RuleDeletedTime", "2023-07-15T05:32:12Z"),
 		},
 	}
 

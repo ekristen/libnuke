@@ -206,6 +206,7 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 		tagPrefix := ""
 		keyFieldName := ""
 		valueFieldName := ""
+		deprecatedAlias := ""
 		inline := false
 
 		if options[0] == "-" {
@@ -232,6 +233,8 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 				keyFieldName = parts[1]
 			case "valueField":
 				valueFieldName = parts[1]
+			case "deprecatedAlias":
+				deprecatedAlias = parts[1]
 			}
 		}
 
@@ -252,6 +255,9 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 		case reflect.Struct:
 			if value.Type().String() == "time.Time" {
 				p.SetWithPrefix(prefix, name, value.Interface())
+				if deprecatedAlias != "" {
+					p.SetWithPrefix(prefix, deprecatedAlias, value.Interface())
+				}
 			}
 		case reflect.Map:
 			for _, key := range value.MapKeys() {
@@ -307,6 +313,9 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 			}
 		default:
 			p.SetWithPrefix(prefix, name, value.Interface())
+			if deprecatedAlias != "" {
+				p.SetWithPrefix(prefix, deprecatedAlias, value.Interface())
+			}
 		}
 	}
 
