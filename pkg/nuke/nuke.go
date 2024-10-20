@@ -500,7 +500,11 @@ func (n *Nuke) filterWithoutGroups(item *queue.Item) error {
 
 		prop, err := item.GetProperty(f.Property)
 		if err != nil {
-			return err
+			// Note: this needs to remain a warning. There needs to be additional logic and handling for
+			// properties that do not exist if we wish to do something about it. Additionally, the __global__ is
+			// a special case that is used to filter all resources.
+			log.WithError(err).Warnf("unable to get property: %s", f.Property)
+			continue
 		}
 
 		log.Tracef("property: %s", prop)

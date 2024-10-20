@@ -277,7 +277,8 @@ func TestFilter_MatchGroup(t *testing.T) {
 				},
 			},
 			filtered: false,
-			error:    true,
+			// TODO: add in log handler checks for error as this throws a warning
+			error: false,
 		},
 		{
 			name:     "single-group-invalid-type",
@@ -461,6 +462,30 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 				past.Format(time.RFC3339),   // -24 hours
 				future.Format(time.RFC3339), // +24 hours
 			},
+		},
+		{
+			name: "dateOlderThanNow-invalid-input",
+			yaml: `{"type":"dateOlderThanNow","value":"-360d4h"}`,
+			match: []string{strconv.Itoa(int(future.Unix())),
+				future.Format("2006-01-02"),
+			},
+			error: true,
+		},
+		{
+			name: "dateOlderThanNow-invalid-filtered",
+			yaml: `{"type":"dateOlderThanNow","value":"0"}`,
+			match: []string{
+				"31-12-2023",
+			},
+			error: true,
+		},
+		{
+			name: "dateOlderThanNow-invalid-filtered2",
+			yaml: `{"type":"dateOlderThanNow","value":"-34h"}`,
+			mismatch: []string{
+				"",
+			},
+			error: true,
 		},
 		{
 			yaml:     `{"type":"prefix","value":"someprefix-"}`,
