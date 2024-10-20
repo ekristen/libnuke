@@ -464,6 +464,30 @@ func TestFilter_UnmarshalFilter(t *testing.T) {
 			},
 		},
 		{
+			name: "dateOlderThanNow-invalid-input",
+			yaml: `{"type":"dateOlderThanNow","value":"-360d4h"}`,
+			match: []string{strconv.Itoa(int(future.Unix())),
+				future.Format("2006-01-02"),
+			},
+			error: true,
+		},
+		{
+			name: "dateOlderThanNow-invalid-filtered",
+			yaml: `{"type":"dateOlderThanNow","value":"0"}`,
+			match: []string{
+				"31-12-2023",
+			},
+			error: true,
+		},
+		{
+			name: "dateOlderThanNow-invalid-filtered2",
+			yaml: `{"type":"dateOlderThanNow","value":"-34h"}`,
+			mismatch: []string{
+				"",
+			},
+			error: true,
+		},
+		{
 			yaml:     `{"type":"prefix","value":"someprefix-"}`,
 			match:    []string{"someprefix-1234", "someprefix-someprefix", "someprefix-asdafd"},
 			mismatch: []string{"not-someprefix-1234", "not-someprefix-asfda"},
