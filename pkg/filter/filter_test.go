@@ -277,7 +277,8 @@ func TestFilter_MatchGroup(t *testing.T) {
 				},
 			},
 			filtered: false,
-			error:    true,
+			// TODO: add in log handler checks for error as this throws a warning
+			error: false,
 		},
 		{
 			name:     "single-group-invalid-type",

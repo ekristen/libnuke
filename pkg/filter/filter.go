@@ -129,8 +129,11 @@ func (f Filters) Match(resourceType string, p Property) (bool, error) {
 		for _, filter := range groupFilters {
 			prop, err := p.GetProperty(filter.Property)
 			if err != nil {
+				// Note: this continues because we want it to continue if a property is not found for the time
+				// being. This can also return an error we want as a warning if a resource does not support
+				// custom properties. This can be triggered by __global__ filters that are applied to all resources.
 				logrus.WithError(err).Warn("error getting property")
-				return false, err
+				continue
 			}
 
 			match, err := filter.Match(prop)

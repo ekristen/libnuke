@@ -290,8 +290,11 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 	assert.NoError(t, sErr)
 
 	err := n.Scan(context.TODO())
-	assert.Error(t, err)
-	assert.Equal(t, "*nuke.TestResource does not support custom properties", err.Error())
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, n.Queue.Total())
+	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateNew))
+	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFiltered))
 }
 
 type TestResourceFilter struct {
