@@ -233,3 +233,12 @@ func TestNoBlocklist(t *testing.T) {
 	err = c.ValidateAccount("555133742")
 	assert.Error(t, err)
 }
+
+func TestIncomplete(t *testing.T) {
+	opts := Options{
+		Path: "testdata/incomplete.yaml",
+	}
+	c, err := New(opts)
+	assert.NoError(t, err)
+	_ = c
+}
