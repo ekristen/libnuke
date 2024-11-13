@@ -204,6 +204,11 @@ func (c *Config) Filters(accountID string) (filter.Filters, error) {
 	}
 
 	account := c.Accounts[accountID]
+
+	if account == nil {
+		return nil, errors.ErrAccountNotConfigured
+	}
+
 	filters := account.Filters
 
 	if filters == nil {

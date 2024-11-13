@@ -1,0 +1,17 @@
+regions:
+- global
+- us-east-1
+- ap-southeast-2
+
+blocklist:
+- "000000000000"
+
+accounts:
+  "000000000000": {}
+  "111111111111":
+    filters:
+      __global__:
+        - property: tag:aws-nuke
+          value: "Disable"
+        - property: tag:aws-nuke
+          value: "disable"

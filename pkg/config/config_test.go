@@ -9,6 +9,8 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/ekristen/libnuke/pkg/errors"
 )
 
 func init() {
@@ -241,4 +243,35 @@ func TestIncomplete(t *testing.T) {
 	c, err := New(opts)
 	assert.NoError(t, err)
 	_ = c
+}
+
+// TestBroken tests a broken configuration file with an incomplete account that is not properly
+// configured. This should return an error when trying to get the filters for the account.
+func TestBroken(t *testing.T) {
+	opts := Options{
+		Path: "testdata/broken.yaml",
+	}
+	c, err := New(opts)
+	assert.NoError(t, err)
+	_ = c
+
+	_, err = c.Filters("000000000000")
+	assert.ErrorIs(t, err, errors.ErrAccountNotConfigured)
+}
+
+// TestBrokenFixed tests a fixed broken configuration where there is at minimum an empty object provided for the
+// account. This should return an empty set of filters and no errors.
+func TestBrokenFixed(t *testing.T) {
+	opts := Options{
+		Path: "testdata/broken-fixed.yaml",
+	}
+	c, err := New(opts)
+	assert.NoError(t, err)
+	_ = c
+
+	_, err = c.Filters("000000000000")
+	assert.NoError(t, err)
+
+	_, err = c.Filters("111111111111")
+	assert.NoError(t, err)
 }
