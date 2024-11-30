@@ -2,8 +2,10 @@ package queue
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/registry"
@@ -17,7 +19,7 @@ type TestItemResource struct {
 
 func (r *TestItemResource) Properties() types.Properties {
 	props := types.NewProperties()
-	props.Set(r.id, "testing")
+	props.Set("name", r.id)
 	return props
 }
 func (r *TestItemResource) Remove(_ context.Context) error {
@@ -58,9 +60,9 @@ func Test_Item(t *testing.T) {
 	assert.Equal(t, ItemStateNew, i.GetState())
 	assert.Equal(t, "brand new", i.GetReason())
 
-	propVal, err := i.GetProperty("test")
+	propVal, err := i.GetProperty("name")
 	assert.NoError(t, err)
-	assert.Equal(t, "testing", propVal)
+	assert.Equal(t, "test", propVal)
 
 	assert.True(t, i.Equals(i.Resource))
 	assert.False(t, i.Equals(testItem2.Resource))
@@ -153,13 +155,15 @@ func Test_ItemPrint(t *testing.T) {
 		},
 	}
 
-	for _, tc := range cases {
+	for i, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			i := &Item{
-				Resource: &TestItemResource{},
-				State:    tc.state,
-				Type:     "TestResource",
-				Owner:    "us-east-1",
+				Resource: &TestItemResource{
+					id: fmt.Sprintf("test%d", i),
+				},
+				State: tc.state,
+				Type:  "TestResource",
+				Owner: "us-east-1",
 			}
 			i.Print()
 		})
@@ -235,4 +239,77 @@ func Test_ItemEqualNothing(t *testing.T) {
 	}
 
 	assert.False(t, i.Equals(i.Resource))
+}
+
+// ------------------------------------------------------------------------
+
+type TestGlobalHook struct {
+	t  *testing.T
+	tf func(t *testing.T, e *logrus.Entry)
+}
+
+func (h *TestGlobalHook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+func (h *TestGlobalHook) Fire(e *logrus.Entry) error {
+	if h.tf != nil {
+		h.tf(h.t, e)
+	}
+
+	return nil
+}
+
+type TestItemResourceLogger struct{}
+
+func (r *TestItemResourceLogger) String() string {
+	return "test"
+}
+
+func (r *TestItemResourceLogger) Remove(_ context.Context) error {
+	return nil
+}
+
+func Test_ItemLoggerDefault(t *testing.T) {
+	i := &Item{
+		Resource: &TestItemResourceLogger{},
+		State:    ItemStateNew,
+		Reason:   "brand new",
+		Type:     "TestResource",
+		Owner:    "us-east-1",
+	}
+
+	i.Print()
+}
+
+func Test_ItemLoggerCustom(t *testing.T) {
+	logger := logrus.New()
+	defer func() {
+		logger.ReplaceHooks(make(logrus.LevelHooks))
+	}()
+
+	hookCalled := false
+	logger.AddHook(&TestGlobalHook{
+		t: t,
+		tf: func(t *testing.T, e *logrus.Entry) {
+			hookCalled = true
+			assert.Equal(t, "us-east-1", e.Data["owner"])
+			assert.Equal(t, "TestResource", e.Data["type"])
+			assert.Equal(t, 0, e.Data["state"])
+			assert.Equal(t, "would remove", e.Message)
+		},
+	})
+
+	i := &Item{
+		Resource: &TestItemResourceLogger{},
+		State:    ItemStateNew,
+		Reason:   "brand new",
+		Type:     "TestResource",
+		Owner:    "us-east-1",
+		Logger:   logger,
+	}
+
+	i.Print()
+
+	assert.True(t, hookCalled)
 }
