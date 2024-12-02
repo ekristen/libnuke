@@ -27,6 +27,12 @@ func TestGenerateProperties(t *testing.T) {
 		skipped string //nolint:unused
 	}
 
+	type TestResource4 struct {
+		name    string //nolint:unused
+		ignore  string //nolint:unused
+		example string //nolint:unused
+	}
+
 	cases := []struct {
 		name string
 		in   interface{}
@@ -69,6 +75,16 @@ func TestGenerateProperties(t *testing.T) {
 				"Name":  "The name of the resource",
 				"Delta": "A property rename",
 			},
+		},
+		{
+			name: "TestResource4",
+			in:   TestResource4{},
+			want: map[string]string{},
+		},
+		{
+			name: "nil",
+			in:   nil,
+			want: map[string]string{},
 		},
 	}
 

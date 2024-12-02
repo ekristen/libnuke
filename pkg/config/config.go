@@ -204,6 +204,11 @@ func (c *Config) Filters(accountID string) (filter.Filters, error) {
 	}
 
 	account := c.Accounts[accountID]
+
+	if account == nil {
+		return nil, errors.ErrAccountNotConfigured
+	}
+
 	filters := account.Filters
 
 	if filters == nil {
@@ -236,6 +241,10 @@ func (c *Config) Filters(accountID string) (filter.Filters, error) {
 // new resource type.
 func (c *Config) ResolveDeprecations() error {
 	for _, a := range c.Accounts {
+		if a == nil {
+			return nil
+		}
+
 		// Note: if there are no filters defined, then there's no substitution to perform.
 		if a.Filters == nil {
 			return nil

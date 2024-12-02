@@ -10,24 +10,34 @@ import (
 	"time"
 
 	"github.com/mb0/glob"
+	"github.com/sirupsen/logrus"
 )
 
+type OpType string
 type Type string
 
 const (
-	Empty         Type = ""
-	Exact         Type = "exact"
-	Glob          Type = "glob"
-	Regex         Type = "regex"
-	Contains      Type = "contains"
-	DateOlderThan Type = "dateOlderThan"
-	Suffix        Type = "suffix"
-	Prefix        Type = "prefix"
-	NotIn         Type = "NotIn"
-	In            Type = "In"
+	Empty            Type = ""
+	Exact            Type = "exact"
+	Glob             Type = "glob"
+	Regex            Type = "regex"
+	Contains         Type = "contains"
+	DateOlderThan    Type = "dateOlderThan"
+	DateOlderThanNow Type = "dateOlderThanNow"
+	Suffix           Type = "suffix"
+	Prefix           Type = "prefix"
+	NotIn            Type = "NotIn"
+	In               Type = "In"
+
+	And OpType = "and"
+	Or  OpType = "or"
 
 	Global = "__global__"
 )
+
+type Property interface {
+	GetProperty(string) (string, error)
+}
 
 type Filters map[string][]Filter
 
@@ -42,6 +52,29 @@ func (f Filters) Get(resourceType string) []Filter {
 
 	if f[resourceType] != nil {
 		filters = append(filters, f[resourceType]...)
+	}
+
+	if len(filters) == 0 {
+		return nil
+	}
+
+	return filters
+}
+
+// GetByGroup returns the filters grouped by the group name for a specific resource type. If there are no filters it
+// returns nil
+func (f Filters) GetByGroup(resourceType string) map[string][]Filter {
+	filters := make(Filters)
+
+	if f[resourceType] != nil {
+		for _, filter := range f[resourceType] {
+			group := filter.GetGroup()
+			if filters[group] == nil {
+				filters[group] = []Filter{}
+			}
+
+			filters[group] = append(filters[group], filter)
+		}
 	}
 
 	if len(filters) == 0 {
@@ -78,22 +111,92 @@ func (f Filters) Merge(f2 Filters) {
 	f.Append(f2)
 }
 
+// Match checks if the filters match the given property which is actually a queue item that meats the
+// property interface requirements
+func (f Filters) Match(resourceType string, p Property) (bool, error) {
+	resourceFilters := f.GetByGroup(resourceType)
+	if resourceFilters == nil {
+		return false, nil
+	}
+
+	groupCount := make(map[string]int)
+	totalCount := make(map[string]int)
+	matchCount := make(map[string]int)
+
+	for group, groupFilters := range resourceFilters {
+		totalCount[group] = len(groupFilters)
+
+		for _, filter := range groupFilters {
+			prop, err := p.GetProperty(filter.Property)
+			if err != nil {
+				// Note: this continues because we want it to continue if a property is not found for the time
+				// being. This can also return an error we want as a warning if a resource does not support
+				// custom properties. This can be triggered by __global__ filters that are applied to all resources.
+				logrus.WithError(err).Warn("error getting property")
+				continue
+			}
+
+			match, err := filter.Match(prop)
+			if err != nil {
+				logrus.WithError(err).Warn("error matching filter")
+				return false, err
+			}
+
+			logrus.Trace(match, filter.Invert)
+
+			if filter.Invert {
+				match = !match
+			}
+
+			if match {
+				matchCount[group]++
+			}
+		}
+
+		logrus.Trace("groupCount", groupCount)
+		logrus.Trace("totalCount", totalCount)
+		logrus.Trace("matchCount", matchCount)
+
+		if totalCount[group] == matchCount[group] {
+			groupCount[group]++
+		}
+	}
+
+	// If the group count is greater than 0, then one of the groups matched
+	if len(groupCount) > 0 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 // Filter is a filter to apply to a resource
 type Filter struct {
+	// Group is the name of the group of filters, all filters in a group are ANDed together
+	Group string `yaml:"group" json:"group"`
+
 	// Type is the type of filter to apply
-	Type Type
+	Type Type `yaml:"type" json:"type"`
 
 	// Property is the name of the property to filter on
-	Property string
+	Property string `yaml:"property" json:"property"`
 
 	// Value is the value to filter on
-	Value string
+	Value string `yaml:"value" json:"value"`
 
 	// Values allows for multiple values to be specified for a filter
-	Values []string
+	Values []string `yaml:"values" json:"values"`
 
 	// Invert is a flag to invert the filter
-	Invert string
+	Invert bool `yaml:"invert" json:"invert"`
+}
+
+// GetGroup returns the group name of the filter, if it is empty it returns "default"
+func (f *Filter) GetGroup() string {
+	if f.Group == "" {
+		return "default"
+	}
+	return f.Group
 }
 
 // Validate checks if the filter is valid
@@ -106,7 +209,7 @@ func (f *Filter) Validate() error {
 }
 
 // Match checks if the filter matches the given value
-func (f *Filter) Match(o string) (bool, error) {
+func (f *Filter) Match(o string) (bool, error) { //nolint:gocyclo
 	switch f.Type {
 	case Empty, Exact:
 		return f.Value == o, nil
@@ -140,6 +243,23 @@ func (f *Filter) Match(o string) (bool, error) {
 
 		return fieldTimeWithOffset.After(time.Now()), nil
 
+	case DateOlderThanNow:
+		if o == "" {
+			return false, nil
+		}
+		duration, err := time.ParseDuration(f.Value)
+		if err != nil {
+			return false, err
+		}
+		fieldTime, err := parseDate(o)
+		if err != nil {
+			return false, err
+		}
+
+		adjustedTime := time.Now().UTC().Add(duration)
+
+		return adjustedTime.After(fieldTime), nil
+
 	case Prefix:
 		return strings.HasPrefix(o, f.Value), nil
 
@@ -157,6 +277,7 @@ func (f *Filter) Match(o string) (bool, error) {
 	}
 }
 
+// UnmarshalYAML unmarshals a filter from YAML data
 func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var value string
 
@@ -205,13 +326,17 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	}
 
 	if m["invert"] == nil {
-		f.Invert = ""
+		f.Invert = false
 	} else {
-		switch v := m["invert"].(type) {
+		switch val := m["invert"].(type) {
 		case bool:
-			f.Invert = strconv.FormatBool(v)
-		default:
-			f.Invert = v.(string)
+			f.Invert = val
+		case string:
+			invert, err := strconv.ParseBool(val)
+			if err != nil {
+				return err
+			}
+			f.Invert = invert
 		}
 	}
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"io"
-	"strings"
 	"testing"
 	"time"
 
@@ -78,6 +77,125 @@ func Test_NukeFiltersMatch(t *testing.T) {
 	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFiltered))
 }
 
+func Test_NukeFiltersMatchGroups_Match(t *testing.T) {
+	registry.ClearRegistry()
+	registry.Register(TestResourceRegistration2)
+
+	filters := filter.Filters{
+		TestResourceType2: []filter.Filter{
+			{
+				Type:     filter.Exact,
+				Property: "test",
+				Value:    "testing",
+				Group:    "group1",
+			},
+			{
+				Type:     filter.Exact,
+				Property: "test2",
+				Value:    "testing",
+				Group:    "group2",
+			},
+		},
+	}
+
+	n := New(testParametersGroups, filters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
+
+	opts := TestOpts{
+		SessionOne:     "testing",
+		SecondResource: true,
+	}
+	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
+
+	sErr := n.RegisterScanner(testScope, newScanner)
+	assert.NoError(t, sErr)
+
+	err := n.Scan(context.TODO())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, n.Queue.Total())
+	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFiltered))
+}
+
+func Test_NukeFiltersMatchGroups_NoMatch(t *testing.T) {
+	registry.ClearRegistry()
+	registry.Register(TestResourceRegistration2)
+
+	filters := filter.Filters{
+		TestResourceType2: []filter.Filter{
+			{
+				Type:     filter.Exact,
+				Property: "test",
+				Value:    "testing",
+				Group:    "group1",
+			},
+			{
+				Type:     filter.Exact,
+				Property: "test2",
+				Value:    "testing!!!",
+				Group:    "group2",
+			},
+		},
+	}
+
+	n := New(testParametersGroups, filters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
+
+	opts := TestOpts{
+		SessionOne:     "testing",
+		SecondResource: true,
+	}
+	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
+
+	sErr := n.RegisterScanner(testScope, newScanner)
+	assert.NoError(t, sErr)
+
+	err := n.Scan(context.TODO())
+	assert.NoError(t, err)
+	assert.Equal(t, 1, n.Queue.Total())
+	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFiltered))
+}
+
+func Test_NukeFiltersMatchGroups_NoMatch_WithError(t *testing.T) {
+	registry.ClearRegistry()
+	registry.Register(TestResourceRegistration2)
+
+	filters := filter.Filters{
+		TestResourceType2: []filter.Filter{
+			{
+				Type:     filter.Exact,
+				Property: "test",
+				Value:    "testing",
+				Group:    "group1",
+			},
+			{
+				Type:     filter.Regex,
+				Property: "test2",
+				Value:    "^(testing$",
+				Group:    "group2",
+			},
+		},
+	}
+
+	n := New(testParametersGroups, filters, nil)
+	n.SetLogger(logrus.WithField("test", true))
+	n.SetRunSleep(time.Millisecond * 5)
+
+	opts := TestOpts{
+		SessionOne:     "testing",
+		SecondResource: true,
+	}
+	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
+
+	sErr := n.RegisterScanner(testScope, newScanner)
+	assert.NoError(t, sErr)
+
+	err := n.Scan(context.TODO())
+	assert.Error(t, err)
+	assert.Equal(t, "error parsing regexp: missing closing ): `^(testing$`", err.Error())
+}
+
 func Test_NukeFiltersMatchInverted(t *testing.T) {
 	registry.ClearRegistry()
 	registry.Register(TestResourceRegistration2)
@@ -88,7 +206,7 @@ func Test_NukeFiltersMatchInverted(t *testing.T) {
 				Type:     filter.Exact,
 				Property: "test",
 				Value:    "testing",
-				Invert:   "true",
+				Invert:   true,
 			},
 		},
 	}
@@ -146,20 +264,6 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 }
 
 func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
-	logrus.AddHook(&TestGlobalHook{
-		t: t,
-		tf: func(t *testing.T, e *logrus.Entry) {
-			if strings.HasSuffix(e.Caller.File, "pkg/nuke/nuke.go") {
-				return
-			}
-
-			if e.Caller.Line == 467 {
-				assert.Equal(t, "*nuke.TestResource does not support custom properties", e.Message)
-			}
-		},
-	})
-	defer logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
-
 	registry.ClearRegistry()
 	registry.Register(TestResourceRegistration)
 
@@ -187,6 +291,10 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 
 	err := n.Scan(context.TODO())
 	assert.NoError(t, err)
+
+	assert.Equal(t, 1, n.Queue.Total())
+	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateNew))
+	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFiltered))
 }
 
 type TestResourceFilter struct {

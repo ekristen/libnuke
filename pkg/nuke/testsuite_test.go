@@ -152,5 +152,6 @@ func (r *TestResource2) Remove(_ context.Context) error {
 func (r *TestResource2) Properties() types.Properties {
 	props := types.NewProperties()
 	props.Set("test", "testing")
+	props.Set("test2", "testing")
 	return props
 }
