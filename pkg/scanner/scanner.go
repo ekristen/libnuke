@@ -103,7 +103,7 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	logger := logrus.WithField("resource_type", resourceType)
+	logger := logrus.WithField("resource_type", resourceType).WithField("owner", owner)
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -123,7 +123,7 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 		return
 	}
 
-	logrus.Debugf("listing %s", resourceType)
+	logger.Debug("attempting to run lister")
 
 	rs, err := lister.List(ctx, opts)
 	if err != nil {
@@ -165,5 +165,5 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 		s.Items <- i
 	}
 
-	logger.Debugf("listing items added to queue complete")
+	logger.Debugf("resources enqueue complete")
 }
