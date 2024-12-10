@@ -103,11 +103,13 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	logger := logrus.WithField("resource_type", resourceType)
+
 	defer func() {
 		if r := recover(); r != nil {
 			err := fmt.Errorf("%v\n\n%s", r.(error), string(debug.Stack()))
 			dump := utils.Indent(fmt.Sprintf("%v", err), "    ")
-			logrus.Errorf("Listing %s failed:\n%s", resourceType, dump)
+			logger.Errorf("listing failed:\n%s", dump)
 		}
 	}()
 
@@ -117,30 +119,34 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 	var rs []resource.Resource
 
 	if lister == nil {
-		logrus.Errorf("lister for resource type not found: %s", resourceType)
+		logger.Error("lister for resource type not found")
 		return
 	}
+
+	logrus.Debugf("listing %s", resourceType)
 
 	rs, err := lister.List(ctx, opts)
 	if err != nil {
 		var errSkipRequest liberrors.ErrSkipRequest
 		ok := errors.As(err, &errSkipRequest)
 		if ok {
-			logrus.Debugf("skipping request: %v", err)
+			logger.Debugf("skipping request: %v", err)
 			return
 		}
 
 		var errUnknownEndpoint liberrors.ErrUnknownEndpoint
 		ok = errors.As(err, &errUnknownEndpoint)
 		if ok {
-			logrus.Debugf("skipping request: %v", err)
+			logger.Debugf("skipping request: %v", err)
 			return
 		}
 
 		dump := utils.Indent(fmt.Sprintf("%v", err), "    ")
-		logrus.WithError(err).Errorf("Listing %s failed:\n%s", resourceType, dump)
+		logger.WithError(err).Errorf("listing failed:\n%s", dump)
 		return
 	}
+
+	logger.WithField("count", len(rs)).Debugf("listing complete")
 
 	for _, r := range rs {
 		i := &queue.Item{
@@ -158,4 +164,6 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 
 		s.Items <- i
 	}
+
+	logger.Debugf("listing items added to queue complete")
 }

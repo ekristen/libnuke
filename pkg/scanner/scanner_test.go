@@ -76,7 +76,10 @@ func Test_NewScannerWithResourceListerError(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, "Listing testResourceType failed:\n    assert.AnError general error for testing", e.Message)
+			if e.Level == logrus.ErrorLevel {
+				assert.Equal(t, e.Data["resource_type"], testResourceType)
+				assert.Equal(t, "listing failed:\n    assert.AnError general error for testing", e.Message)
+			}
 		},
 	})
 	defer logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
@@ -104,7 +107,10 @@ func Test_NewScannerWithInvalidResourceListerError(t *testing.T) {
 				return
 			}
 
-			assert.Equal(t, "lister for resource type not found: does-not-exist", e.Message)
+			if e.Level == logrus.ErrorLevel {
+				assert.Equal(t, e.Data["resource_type"], "does-not-exist")
+				assert.Equal(t, "lister for resource type not found", e.Message)
+			}
 		},
 	})
 	defer logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
@@ -237,8 +243,8 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 				return
 			}
 
-			if strings.HasSuffix(e.Caller.File, "pkg/scanner/scanner.go") && e.Caller.Line == 110 {
-				assert.Contains(t, e.Message, "Listing testResourceType failed")
+			if e.Level == logrus.ErrorLevel && strings.HasSuffix(e.Caller.File, "pkg/scanner/scanner.go") {
+				assert.Contains(t, e.Message, "listing failed")
 				assert.Contains(t, e.Message, "panic error for testing")
 				logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
 				panicCaught = true
