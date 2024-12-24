@@ -346,7 +346,7 @@ func (n *Nuke) run(ctx context.Context) error {
 
 // Version prints the version that was registered with the library by the invoking tool.
 func (n *Nuke) Version() {
-	fmt.Println(n.version)
+	n.log.Infof(n.version)
 }
 
 // Validate is used to run the validation handlers that were registered with the library by the invoking tool.
