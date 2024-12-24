@@ -46,12 +46,26 @@ func TestCustomFormatter_Format(t *testing.T) {
 			name: "missing-name",
 			input: &logrus.Entry{
 				Data: logrus.Fields{
-					"type":  "test",
-					"owner": "owner",
-					"state": 0,
+					"type":       "test",
+					"owner":      "owner",
+					"state":      "new",
+					"state_code": 0,
 				},
 			},
-			want: []byte(`time="0001-01-01T00:00:00Z" level=panic owner=owner state=0 type=test
+			want: []byte(`time="0001-01-01T00:00:00Z" level=panic owner=owner state=new state_code=0 type=test
+`),
+		},
+		{
+			name: "missing-state-code",
+			input: &logrus.Entry{
+				Data: logrus.Fields{
+					"type":  "test",
+					"owner": "owner",
+					"state": "new",
+					"name":  "resource",
+				},
+			},
+			want: []byte(`time="0001-01-01T00:00:00Z" level=panic name=resource owner=owner state=new type=test
 `),
 		},
 		{
