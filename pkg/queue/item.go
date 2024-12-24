@@ -15,6 +15,30 @@ import (
 
 type ItemState int
 
+func (s ItemState) String() string {
+	switch s {
+	case ItemStateNew:
+		return "new"
+	case ItemStateNewDependency:
+		return "new-dependency"
+	case ItemStateHold:
+		return "hold"
+	case ItemStatePending:
+		return "pending"
+	case ItemStatePendingDependency:
+		return "pending-dependency"
+	case ItemStateWaiting:
+		return "waiting"
+	case ItemStateFailed:
+		return "failed"
+	case ItemStateFiltered:
+		return "filtered"
+	case ItemStateFinished:
+		return "finished"
+	}
+	return "unknown"
+}
+
 const (
 	ItemStateNew ItemState = iota
 	ItemStateNewDependency

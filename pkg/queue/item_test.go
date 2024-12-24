@@ -107,6 +107,58 @@ func Test_Item_Properties_NoSupport(t *testing.T) {
 	assert.Equal(t, "*queue.TestItemResource2 does not support custom properties", err.Error())
 }
 
+func Test_ItemState_Stringer(t *testing.T) {
+	cases := []struct {
+		state ItemState
+		want  string
+	}{
+		{
+			state: ItemStateNew,
+			want:  "new",
+		},
+		{
+			state: ItemStatePending,
+			want:  "pending",
+		},
+		{
+			state: ItemStateNewDependency,
+			want:  "new-dependency",
+		},
+		{
+			state: ItemStatePendingDependency,
+			want:  "pending-dependency",
+		},
+		{
+			state: ItemStateWaiting,
+			want:  "waiting",
+		},
+		{
+			state: ItemStateFailed,
+			want:  "failed",
+		},
+		{
+			state: ItemStateFiltered,
+			want:  "filtered",
+		},
+		{
+			state: ItemStateFinished,
+			want:  "finished",
+		},
+		{
+			state: ItemStateHold,
+			want:  "hold",
+		},
+		{
+			state: ItemState(999),
+			want:  "unknown",
+		},
+	}
+
+	for _, tc := range cases {
+		assert.Equal(t, tc.want, tc.state.String())
+	}
+}
+
 func Test_ItemPrint(t *testing.T) {
 	cases := []struct {
 		name  string
