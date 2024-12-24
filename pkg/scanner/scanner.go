@@ -51,7 +51,7 @@ func New(owner string, resourceTypes []string, opts interface{}) *Scanner {
 		Options:         opts,
 		Owner:           owner,
 		parallelQueries: DefaultParallelQueries,
-		logger:          logrus.New(),
+		logger:          logrus.StandardLogger(),
 	}
 }
 

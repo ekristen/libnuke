@@ -14,6 +14,10 @@ import (
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
+func init() {
+	logrus.SetLevel(logrus.TraceLevel)
+}
+
 type TestItemResource struct {
 	id string
 }

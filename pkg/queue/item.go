@@ -113,7 +113,7 @@ func (i *Item) Equals(o resource.Resource) bool {
 // Print displays the current status of an Item based on it's State
 func (i *Item) Print() {
 	if i.Logger == nil {
-		i.Logger = logrus.New()
+		i.Logger = logrus.StandardLogger()
 		i.Logger.SetFormatter(&log.CustomFormatter{})
 	}
 
