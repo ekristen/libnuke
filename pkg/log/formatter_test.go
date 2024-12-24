@@ -28,7 +28,7 @@ func TestCustomFormatter_Format(t *testing.T) {
 					"_handler": "println",
 				},
 			},
-			want: []byte("test message"),
+			want: []byte("test message\n"),
 		},
 		{
 			name: "invalid-type",
