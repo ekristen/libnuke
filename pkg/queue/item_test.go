@@ -387,7 +387,7 @@ func Test_ItemLoggerCustom(t *testing.T) {
 			hookCalled = true
 			assert.Equal(t, "us-east-1", e.Data["owner"])
 			assert.Equal(t, "TestResource", e.Data["type"])
-			assert.Equal(t, 0, e.Data["state"])
+			assert.Equal(t, 0, e.Data["state_code"])
 			assert.Equal(t, "would remove", e.Message)
 		},
 	})

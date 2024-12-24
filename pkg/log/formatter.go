@@ -38,13 +38,16 @@ func (f *CustomFormatter) Format(entry *logrus.Entry) ([]byte, error) { //nolint
 	if _, ok := entry.Data["state"]; !ok {
 		return f.FallbackFormatter.Format(entry)
 	}
+	if _, ok := entry.Data["state_code"]; !ok {
+		return f.FallbackFormatter.Format(entry)
+	}
 	if _, ok := entry.Data["name"]; !ok {
 		return f.FallbackFormatter.Format(entry)
 	}
 
 	owner := entry.Data["owner"].(string)
 	resourceName := entry.Data["name"].(string)
-	state := entry.Data["state"].(int)
+	state := entry.Data["state_code"].(int)
 
 	var sortedFields = make([]string, 0)
 	for k, v := range entry.Data {

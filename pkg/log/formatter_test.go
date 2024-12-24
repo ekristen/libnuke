@@ -10,6 +10,8 @@ import (
 )
 
 func TestCustomFormatter_Format(t *testing.T) {
+	logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
+
 	cases := []struct {
 		name  string
 		input *logrus.Entry
@@ -101,12 +103,13 @@ func TestCustomFormatter_Format(t *testing.T) {
 			input: &logrus.Entry{
 				Message: "would remove",
 				Data: logrus.Fields{
-					"type":     "test",
-					"owner":    "owner",
-					"name":     "resource",
-					"state":    0,
-					"prop:one": "1",
-					"prop:two": "2",
+					"type":       "test",
+					"owner":      "owner",
+					"name":       "resource",
+					"state":      "new",
+					"state_code": 0,
+					"prop:one":   "1",
+					"prop:two":   "2",
 				},
 			},
 			want: []byte(fmt.Sprintf("%s - %s - %s - %s - %s\n",
@@ -124,7 +127,8 @@ func TestCustomFormatter_Format(t *testing.T) {
 					"type":            "test",
 					"owner":           "owner",
 					"name":            "resource",
-					"state":           2,
+					"state":           "hold",
+					"state_code":      2,
 					"prop:one":        "1",
 					"prop:two":        "2",
 					"prop:_tagPrefix": "tag",
@@ -142,12 +146,13 @@ func TestCustomFormatter_Format(t *testing.T) {
 			input: &logrus.Entry{
 				Message: "test message",
 				Data: logrus.Fields{
-					"type":     "test",
-					"owner":    "owner",
-					"name":     "resource",
-					"state":    3,
-					"prop:one": "1",
-					"prop:two": "2",
+					"type":       "test",
+					"owner":      "owner",
+					"name":       "resource",
+					"state":      "pending",
+					"state_code": 3,
+					"prop:one":   "1",
+					"prop:two":   "2",
 				},
 			},
 			want: []byte(fmt.Sprintf("%s - %s - %s - %s - %s\n",
@@ -188,44 +193,52 @@ func TestCustomFormatter_FormatReasons(t *testing.T) {
 	}
 
 	cases := []struct {
-		name  string
-		state int
-		color color.Color
+		name      string
+		state     string
+		stateCode int
+		color     color.Color
 	}{
 		{
-			name:  "reason-success",
-			state: 0,
-			color: ReasonSuccess,
+			name:      "reason-success",
+			state:     "new",
+			stateCode: 0,
+			color:     ReasonSuccess,
 		},
 		{
-			name:  "reason-hold",
-			state: 2,
-			color: ReasonHold,
+			name:      "reason-hold",
+			state:     "hold",
+			stateCode: 2,
+			color:     ReasonHold,
 		},
 		{
-			name:  "reason-remove-triggered",
-			state: 3,
-			color: ReasonRemoveTriggered,
+			name:      "reason-remove-triggered",
+			state:     "pending",
+			stateCode: 3,
+			color:     ReasonRemoveTriggered,
 		},
 		{
-			name:  "reason-wait-dependency",
-			state: 4,
-			color: ReasonWaitDependency,
+			name:      "reason-wait-dependency",
+			state:     "pending-dependency",
+			stateCode: 4,
+			color:     ReasonWaitDependency,
 		},
 		{
-			name:  "reason-wait-pending",
-			state: 5,
-			color: ReasonWaitPending,
+			name:      "reason-wait-pending",
+			state:     "waiting",
+			stateCode: 5,
+			color:     ReasonWaitPending,
 		},
 		{
-			name:  "reason-error",
-			state: 6,
-			color: ReasonError,
+			name:      "reason-error",
+			state:     "failed",
+			stateCode: 6,
+			color:     ReasonError,
 		},
 		{
-			name:  "reason-skip",
-			state: 7,
-			color: ReasonSkip,
+			name:      "reason-skip",
+			state:     "filtered",
+			stateCode: 7,
+			color:     ReasonSkip,
 		},
 	}
 
@@ -242,6 +255,7 @@ func TestCustomFormatter_FormatReasons(t *testing.T) {
 
 			newTestEntry := testEntry
 			newTestEntry.Data["state"] = tc.state
+			newTestEntry.Data["state_code"] = tc.stateCode
 
 			got, err := cf.Format(newTestEntry)
 			assert.NoError(t, err)

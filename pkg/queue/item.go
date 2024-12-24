@@ -142,9 +142,10 @@ func (i *Item) Print() {
 	}
 
 	itemLog := i.Logger.WithFields(logrus.Fields{
-		"owner": i.Owner,
-		"type":  i.Type,
-		"state": int(i.State),
+		"owner":      i.Owner,
+		"type":       i.Type,
+		"state":      i.State.String(),
+		"state_code": int(i.State),
 	})
 
 	rString, ok := i.Resource.(resource.LegacyStringer)
