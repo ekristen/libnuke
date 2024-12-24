@@ -232,7 +232,7 @@ func (n *Nuke) Run(ctx context.Context) error {
 			"skipped":  n.Queue.Count(queue.ItemStateFiltered),
 			"finished": n.Queue.Count(queue.ItemStateFinished),
 		}).
-		Infof("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
+		Infof("Nuke complete: %d failed, %d skipped, %d finished.\n",
 			n.Queue.Count(queue.ItemStateFailed), n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
 
 	return nil
@@ -438,7 +438,7 @@ func (n *Nuke) Scan(ctx context.Context) error {
 			"nukeable": itemQueue.Count(queue.ItemStateNew, queue.ItemStateNewDependency),
 			"filtered": itemQueue.Count(queue.ItemStateFiltered),
 		}).
-		Infof("Scan complete: %d total, %d nukeable, %d filtered.\n\n",
+		Infof("Scan complete: %d total, %d nukeable, %d filtered.\n",
 			itemQueue.Total(), itemQueue.Count(queue.ItemStateNew, queue.ItemStateNewDependency), itemQueue.Count(queue.ItemStateFiltered))
 
 	n.Queue = itemQueue
