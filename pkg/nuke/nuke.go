@@ -208,13 +208,11 @@ func (n *Nuke) Run(ctx context.Context) error {
 
 	if n.Queue.Count(queue.ItemStateNew) == 0 {
 		printLog.Info("No resource to delete.")
-		// fmt.Println("No resource to delete.")
 		return nil
 	}
 
 	if !n.Parameters.NoDryRun {
 		printLog.Info("The above resources would be deleted with the supplied configuration. Provide --no-dry-run to actually destroy resources.")
-		// fmt.Println("The above resources would be deleted with the supplied configuration. Provide --no-dry-run to actually destroy resources.")
 		return nil
 	}
 
@@ -226,11 +224,14 @@ func (n *Nuke) Run(ctx context.Context) error {
 		return err
 	}
 
-	printLog.Infof("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
-		n.Queue.Count(queue.ItemStateFailed), n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
-
-	// fmt.Printf("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
-	//  	n.Queue.Count(queue.ItemStateFailed), n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
+	printLog.
+		WithFields(logrus.Fields{
+			"failed":   n.Queue.Count(queue.ItemStateFailed),
+			"skipped":  n.Queue.Count(queue.ItemStateFiltered),
+			"finished": n.Queue.Count(queue.ItemStateFinished),
+		}).
+		Infof("Nuke complete: %d failed, %d skipped, %d finished.\n\n",
+			n.Queue.Count(queue.ItemStateFailed), n.Queue.Count(queue.ItemStateFiltered), n.Queue.Count(queue.ItemStateFinished))
 
 	return nil
 }
@@ -429,11 +430,14 @@ func (n *Nuke) Scan(ctx context.Context) error {
 
 	printLog := n.log.WithField("_handler", "println")
 
-	printLog.Infof("Scan complete: %d total, %d nukeable, %d filtered.\n\n",
-		itemQueue.Total(), itemQueue.Count(queue.ItemStateNew, queue.ItemStateNewDependency), itemQueue.Count(queue.ItemStateFiltered))
-
-	// fmt.Printf("Scan complete: %d total, %d nukeable, %d filtered.\n\n",
-	//  	itemQueue.Total(), itemQueue.Count(queue.ItemStateNew, queue.ItemStateNewDependency), itemQueue.Count(queue.ItemStateFiltered))
+	printLog.
+		WithFields(logrus.Fields{
+			"total":    itemQueue.Total(),
+			"nukeable": itemQueue.Count(queue.ItemStateNew, queue.ItemStateNewDependency),
+			"filtered": itemQueue.Count(queue.ItemStateFiltered),
+		}).
+		Infof("Scan complete: %d total, %d nukeable, %d filtered.\n\n",
+			itemQueue.Total(), itemQueue.Count(queue.ItemStateNew, queue.ItemStateNewDependency), itemQueue.Count(queue.ItemStateFiltered))
 
 	n.Queue = itemQueue
 
@@ -584,12 +588,15 @@ func (n *Nuke) HandleQueue(ctx context.Context) {
 	countFinished := n.Queue.Count(queue.ItemStateFinished)
 
 	printLog := n.log.WithField("_handler", "println")
-	printLog.Infof("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
-		countWaiting, countFailed, countSkipped, countFinished)
-
-	// fmt.Println()
-	// fmt.Printf("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
-	//	countWaiting, countFailed, countSkipped, countFinished)
+	printLog.
+		WithFields(logrus.Fields{
+			"waiting":  countWaiting,
+			"failed":   countFailed,
+			"skipped":  countSkipped,
+			"finished": countFinished,
+		}).
+		Infof("Removal requested: %d waiting, %d failed, %d skipped, %d finished\n\n",
+			countWaiting, countFailed, countSkipped, countFinished)
 }
 
 // HandleRemove is used to handle the removal of a resource. It will remove the resource and set the state of the
