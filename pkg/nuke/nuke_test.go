@@ -55,8 +55,7 @@ func Test_Nuke_Version(t *testing.T) {
 				return
 			}
 
-			switch e.Caller.Line {
-			case 351:
+			if e.Caller.Line == 351 {
 				assert.Equal(t, "1.0.0-test", e.Message)
 				assertions++
 			}
