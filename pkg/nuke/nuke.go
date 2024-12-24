@@ -202,6 +202,8 @@ func (n *Nuke) Run(ctx context.Context) error {
 		return err
 	}
 
+	printLog.Info("starting scan for resources")
+
 	if err := n.Scan(ctx); err != nil {
 		return err
 	}
