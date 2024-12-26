@@ -9,28 +9,32 @@ func ResolveResourceTypes(
 	base Collection,
 	includes, excludes, alternatives []Collection,
 	alternativeMappings map[string]string) Collection {
+
 	// Loop over the alternatives and build a list of the old style resource types
 	for _, cl := range alternatives {
+		expandedCl := cl.Expand(base)
 		oldStyle := Collection{}
-		for _, c := range cl {
+		for _, c := range expandedCl {
 			os, found := alternativeMappings[c]
 			if found {
 				oldStyle = append(oldStyle, os)
 			}
 		}
 
-		base = base.Union(cl)
+		base = base.Union(expandedCl)
 		base = base.Remove(oldStyle)
 	}
 
 	for _, i := range includes {
+		expandedI := i.Expand(base)
 		if len(i) > 0 {
-			base = base.Intersect(i)
+			base = base.Intersect(expandedI)
 		}
 	}
 
 	for _, e := range excludes {
-		base = base.Remove(e)
+		expandedE := e.Expand(base)
+		base = base.Remove(expandedE)
 	}
 
 	return base

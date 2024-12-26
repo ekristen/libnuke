@@ -5,6 +5,7 @@ package registry
 import (
 	"context"
 	"fmt"
+	"sort"
 
 	"github.com/mb0/glob"
 	"github.com/sirupsen/logrus"
@@ -222,6 +223,9 @@ func ExpandNames(names []string) []string {
 
 		expandedNames = append(expandedNames, matches...)
 	}
+
+	// Ensure predictable order
+	sort.Strings(expandedNames)
 
 	return expandedNames
 }
