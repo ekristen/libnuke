@@ -9,7 +9,6 @@ func ResolveResourceTypes(
 	base Collection,
 	includes, excludes, alternatives []Collection,
 	alternativeMappings map[string]string) Collection {
-
 	// Loop over the alternatives and build a list of the old style resource types
 	for _, cl := range alternatives {
 		expandedCl := cl.Expand(base)
