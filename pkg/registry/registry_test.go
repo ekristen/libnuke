@@ -235,3 +235,54 @@ func Test_GetListersV2_CircularDependency(t *testing.T) {
 		GetListersV2()
 	})
 }
+
+func TestExpandNames(t *testing.T) {
+	ClearRegistry()
+
+	// Note: this is necessary to test the panic when using coverage and multiple tests
+	defer func() {
+		if r := recover(); r != nil {
+			t.Logf("Recovered from panic: %v", r)
+		}
+	}()
+
+	rs := []string{"OpsOne", "OpsTwo", "TestingOne", "TestingTwo"}
+
+	for _, r := range rs {
+		Register(&Registration{
+			Name:   r,
+			Scope:  "test",
+			Lister: TestLister{},
+		})
+	}
+
+	cases := []struct {
+		name     string
+		expected []string
+	}{
+		{
+			name:     "Ops*",
+			expected: []string{"OpsOne", "OpsTwo"},
+		},
+		{
+			name:     "OpsOne",
+			expected: []string{"OpsOne"},
+		},
+		{
+			name:     "OpsThree",
+			expected: []string{"OpsThree"},
+		},
+		{
+			name:     "Ops* Testing*",
+			expected: []string{"Ops* Testing*"},
+		},
+	}
+
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			expanded := ExpandNames([]string{c.name})
+
+			assert.Equal(t, c.expected, expanded)
+		})
+	}
+}

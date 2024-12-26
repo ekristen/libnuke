@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/mb0/glob"
 	"github.com/sirupsen/logrus"
 	"github.com/stevenle/topsort"
 
@@ -194,6 +195,35 @@ func GetNames() []string {
 	}
 
 	return names
+}
+
+// ExpandNames takes a list of names and expands them based on a wildcard and returns all the names that match
+func ExpandNames(names []string) []string {
+	var expandedNames []string
+	registeredNames := GetNames()
+
+	for _, name := range names {
+		matches, _ := glob.GlobStrings(registeredNames, name)
+		if matches == nil {
+			logrus.
+				WithField("handler", "ExpandNames").
+				WithField("name", name).
+				Trace("no expansion for name")
+
+			expandedNames = append(expandedNames, name)
+			continue
+		}
+
+		logrus.
+			WithField("handler", "ExpandNames").
+			WithField("name", name).
+			WithField("matches", matches).
+			Trace("expanded name")
+
+		expandedNames = append(expandedNames, matches...)
+	}
+
+	return expandedNames
 }
 
 // GetNamesForScope provides a string slice of all listers for a particular scope
