@@ -3,8 +3,6 @@ package nuke
 import (
 	"context"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"testing"
 	"time"
@@ -46,32 +44,35 @@ var testParametersGroups = &Parameters{
 const testScope registry.Scope = "test"
 
 func Test_Nuke_Version(t *testing.T) {
+	logger := logrus.WithField("test", true)
+
+	assertions := 0
+
+	logrus.AddHook(&TestGlobalHook{
+		t: t,
+		tf: func(t *testing.T, e *logrus.Entry) {
+			if !strings.HasSuffix(e.Caller.File, "pkg/nuke/nuke.go") {
+				return
+			}
+
+			if e.Caller.Line == 351 {
+				assert.Equal(t, "1.0.0-test", e.Message)
+				assertions++
+			}
+		},
+	})
+	defer logrus.StandardLogger().ReplaceHooks(nil)
+
 	n := New(testParameters, nil, nil)
-	n.SetLogger(logrus.WithField("test", true))
+	n.SetLogger(logger)
 	n.SetRunSleep(time.Millisecond * 5)
 
 	n.RegisterVersion("1.0.0-test")
 
-	// Redirect stdout to a buffer
-	old := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
 	// Call the Version function
 	n.Version()
 
-	// Restore stdout
-	os.Stdout = old
-
-	w.Close()
-
-	out, _ := io.ReadAll(r)
-	outString := string(out)
-
-	// Check the output
-	if !strings.Contains(outString, "1.0.0-test") {
-		t.Errorf("Version() = %v, want %v", out, "1.0.0-test")
-	}
+	assert.Equal(t, 1, assertions)
 }
 
 func TestNuke_Settings(t *testing.T) {

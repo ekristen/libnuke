@@ -34,6 +34,7 @@ type Scanner struct {
 	Owner           string
 	mutateOptsFunc  MutateOptsFunc `hash:"ignore"`
 	parallelQueries int64
+	logger          *logrus.Logger
 }
 
 // MutateOptsFunc is a function that can mutate the Options for a given resource type. This is useful for when you
@@ -50,6 +51,7 @@ func New(owner string, resourceTypes []string, opts interface{}) *Scanner {
 		Options:         opts,
 		Owner:           owner,
 		parallelQueries: DefaultParallelQueries,
+		logger:          logrus.StandardLogger(),
 	}
 }
 
@@ -72,6 +74,11 @@ func (s *Scanner) RegisterMutateOptsFunc(morph MutateOptsFunc) error {
 func (s *Scanner) SetParallelQueries(parallelQueries int64) {
 	s.parallelQueries = parallelQueries
 	s.semaphore = semaphore.NewWeighted(s.parallelQueries)
+}
+
+// SetLogger sets the logger for the scanner.
+func (s *Scanner) SetLogger(logger *logrus.Logger) {
+	s.logger = logger
 }
 
 // Run starts the scanner and runs the lister for each resource type.
@@ -155,6 +162,7 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 			Type:     resourceType,
 			Owner:    owner,
 			Opts:     opts,
+			Logger:   s.logger,
 		}
 
 		itemHook, ok := r.(resource.QueueItemHook)

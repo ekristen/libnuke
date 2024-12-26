@@ -3,6 +3,10 @@ package queue
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/ekristen/libnuke/pkg/log"
 	"github.com/ekristen/libnuke/pkg/registry"
@@ -10,6 +14,30 @@ import (
 )
 
 type ItemState int
+
+func (s ItemState) String() string {
+	switch s {
+	case ItemStateNew:
+		return "new"
+	case ItemStateNewDependency:
+		return "new-dependency"
+	case ItemStateHold:
+		return "hold"
+	case ItemStatePending:
+		return "pending"
+	case ItemStatePendingDependency:
+		return "pending-dependency"
+	case ItemStateWaiting:
+		return "waiting"
+	case ItemStateFailed:
+		return "failed"
+	case ItemStateFiltered:
+		return "filtered"
+	case ItemStateFinished:
+		return "finished"
+	}
+	return "unknown"
+}
 
 const (
 	ItemStateNew ItemState = iota
@@ -40,6 +68,7 @@ type Item struct {
 	Type     string
 	Owner    string // region/subscription
 	Opts     interface{}
+	Logger   *logrus.Logger
 }
 
 // GetState returns the current State of the Item
@@ -107,24 +136,66 @@ func (i *Item) Equals(o resource.Resource) bool {
 
 // Print displays the current status of an Item based on it's State
 func (i *Item) Print() {
+	if i.Logger == nil {
+		i.Logger = logrus.StandardLogger()
+		i.Logger.SetFormatter(&log.CustomFormatter{})
+	}
+
+	itemLog := i.Logger.WithFields(logrus.Fields{
+		"owner":      i.Owner,
+		"type":       i.Type,
+		"state":      i.State.String(),
+		"state_code": int(i.State),
+	})
+
+	rString, ok := i.Resource.(resource.LegacyStringer)
+	if ok {
+		itemLog = itemLog.WithField("name", rString.String())
+	}
+
+	rProp, ok := i.Resource.(resource.PropertyGetter)
+	if ok {
+		itemLog = itemLog.WithFields(sorted(rProp.Properties()))
+	}
+
 	switch i.State {
 	case ItemStateNew:
-		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitPending, "would remove")
+		itemLog.Info("would remove")
 	case ItemStateNewDependency:
-		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitDependency, "would remove after dependencies")
+		itemLog.Info("would remove after dependencies")
 	case ItemStateHold:
-		log.Log(i.Owner, i.Type, i.Resource, log.ReasonHold, "waiting for parent removal")
+		itemLog.Info("waiting for parent removal")
 	case ItemStatePending:
-		log.Log(i.Owner, i.Type, i.Resource, log.ReasonRemoveTriggered, "triggered remove")
+		itemLog.Info("triggered remove")
 	case ItemStatePendingDependency:
-		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitDependency, fmt.Sprintf("waiting on dependencies (%s)", i.Reason))
+		itemLog.Infof("waiting on dependencies (%s)", i.Reason)
 	case ItemStateWaiting:
-		log.Log(i.Owner, i.Type, i.Resource, log.ReasonWaitPending, "waiting")
+		itemLog.Info("waiting for removal")
 	case ItemStateFailed:
-		log.Log(i.Owner, i.Type, i.Resource, log.ReasonError, "failed")
+		itemLog.Info("failed")
 	case ItemStateFiltered:
-		log.Log(i.Owner, i.Type, i.Resource, log.ReasonSkip, i.Reason)
+		itemLog.Infof("filtered: %s", i.Reason)
 	case ItemStateFinished:
-		log.Log(i.Owner, i.Type, i.Resource, log.ReasonSuccess, "removed")
+		itemLog.Info("removed")
 	}
+}
+
+// sorted -- Format the resource properties in sorted order ready for printing.
+// This ensures that multiple runs of aws-nuke produce stable output so
+// that they can be compared with each other.
+func sorted(m map[string]string) logrus.Fields {
+	out := logrus.Fields{}
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for k := range keys {
+		if strings.HasPrefix(keys[k], "_") {
+			continue
+		}
+
+		out[fmt.Sprintf("prop:%s", keys[k])] = m[keys[k]]
+	}
+	return out
 }
