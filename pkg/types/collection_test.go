@@ -7,7 +7,7 @@ import (
 	"github.com/ekristen/libnuke/pkg/types"
 )
 
-func TestSetInterset(t *testing.T) {
+func TestSetIntersect(t *testing.T) {
 	s1 := types.Collection{"a", "b", "c"}
 	s2 := types.Collection{"b", "a", "d"}
 

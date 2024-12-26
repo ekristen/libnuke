@@ -9,6 +9,8 @@ import (
 var emptyCollection []Collection
 var emptyMapping = map[string]string{}
 var baseCollection = Collection{"ResourceA", "ResourceB", "ResourceC", "ResourceD", "ResourceE", "ResourceF"}
+var baseGlobCollection = Collection{"ServiceA1", "ServiceA2", "ServiceA3",
+	"ServiceB1", "ServiceB2", "ServiceB3", "ServiceC1", "ServiceC2", "ServiceC3"}
 
 func TestResolveResourceTypes(t *testing.T) {
 	cases := []struct {
@@ -108,6 +110,37 @@ func TestResolveResourceTypes(t *testing.T) {
 				"AlternativeE": "ResourceE",
 			},
 			expected: Collection{"ResourceD", "ResourceF", "AlternativeA", "AlternativeC", "AlternativeE"},
+		},
+		{
+			name:     "includes and excludes with globs",
+			base:     baseGlobCollection,
+			includes: emptyCollection,
+			excludes: []Collection{
+				{"ServiceB*"},
+			},
+			expected: Collection{"ServiceA1", "ServiceA2", "ServiceA3", "ServiceC1", "ServiceC2", "ServiceC3"},
+		},
+		{
+			name: "excludes and includes with globs",
+			base: baseGlobCollection,
+			includes: []Collection{
+				{"ServiceA*"},
+			},
+			excludes: []Collection{
+				{"ServiceA2", "ServiceA3"},
+			},
+			expected: Collection{"ServiceA1"},
+		},
+		{
+			name: "excludes and includes with globs variant",
+			base: baseGlobCollection,
+			includes: []Collection{
+				{"ServiceA*", "ServiceB*"},
+			},
+			excludes: []Collection{
+				{"ServiceA2", "ServiceA3", "ServiceB2", "ServiceB3"},
+			},
+			expected: Collection{"ServiceA1", "ServiceB1"},
 		},
 	}
 
