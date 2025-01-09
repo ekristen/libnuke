@@ -139,7 +139,7 @@ func Test_RegisterResourcesWithAlternative(t *testing.T) {
 
 	deprecatedMapping := GetAlternativeResourceTypeMapping()
 	assert.Len(t, deprecatedMapping, 1)
-	assert.Equal(t, "test2", deprecatedMapping["test"])
+	assert.Equal(t, "test", deprecatedMapping["test2"])
 }
 
 func Test_RegisterResourcesWithDuplicateAlternative(t *testing.T) {
