@@ -251,7 +251,7 @@ func GetAlternativeResourceTypeMapping() map[string]string {
 	mapping := make(map[string]string)
 	for _, r := range registrations {
 		if r.AlternativeResource != "" {
-			mapping[r.Name] = r.AlternativeResource
+			mapping[r.AlternativeResource] = r.Name
 		}
 	}
 	return mapping
