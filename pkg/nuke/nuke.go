@@ -485,7 +485,7 @@ func (n *Nuke) filterWithGroups(item *queue.Item) error {
 		WithField("handler", "Filter").
 		WithField("type", item.Type)
 
-	matched, err := n.Filters.Match(item.Type, item)
+	matched, err := n.Filters.Match(item.Type, item, log)
 	if err != nil {
 		return err
 	}

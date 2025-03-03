@@ -17,7 +17,7 @@ func (t *TestResource) GetProperty(key string) (string, error) {
 		return "", fmt.Errorf("does not support custom properties")
 	}
 
-	return "testing", nil
+	return t.Props[key], nil
 }
 
 func (t *TestResource) Properties() types.Properties {

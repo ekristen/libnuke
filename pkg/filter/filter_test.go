@@ -9,11 +9,20 @@ import (
 
 	"gopkg.in/yaml.v2"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/ekristen/libnuke/pkg/filter"
 	"github.com/ekristen/libnuke/pkg/types"
 )
+
+func init() {
+	logrus.SetLevel(logrus.TraceLevel)
+}
+
+func testLogger() *logrus.Entry {
+	return logrus.NewEntry(logrus.StandardLogger())
+}
 
 func TestFilter_Nil(t *testing.T) {
 	f := filter.Filters{}
@@ -49,6 +58,32 @@ func TestFilter_Global(t *testing.T) {
 	assert.Equal(t, expected["resource2"], f.Get("resource2"))
 }
 
+func TestFilter_GroupsYAML(t *testing.T) {
+	data, err := os.ReadFile("testdata/groups.yaml")
+	assert.NoError(t, err)
+
+	config := struct {
+		Filters filter.Filters `yaml:"filters"`
+	}{}
+
+	err = yaml.Unmarshal(data, &config)
+	assert.NoError(t, err)
+
+	expected := filter.Filters{
+		"Resource1": []filter.Filter{
+			{Group: "default", Property: "prop1", Type: filter.Exact, Value: "value1", Values: []string{}},
+			{Group: "default", Property: "prop2", Type: filter.Exact, Value: "value2", Values: []string{}},
+			{Group: "something-else", Property: "prop3", Type: filter.Exact, Value: "value3", Values: []string{}},
+		},
+		"Resource2": []filter.Filter{
+			{Group: "default", Property: "prop2", Type: filter.Exact, Value: "value2", Values: []string{}},
+		},
+	}
+
+	assert.Equal(t, expected["Resource1"], config.Filters.Get("Resource1"))
+	assert.Equal(t, expected["Resource2"], config.Filters.Get("Resource2"))
+}
+
 func TestFilter_GlobalYAML(t *testing.T) {
 	data, err := os.ReadFile("testdata/global.yaml")
 	assert.NoError(t, err)
@@ -62,12 +97,12 @@ func TestFilter_GlobalYAML(t *testing.T) {
 
 	expected := filter.Filters{
 		"Resource1": []filter.Filter{
-			{Property: "prop3", Type: filter.Exact, Value: "value3", Values: []string{}},
-			{Property: "prop1", Type: filter.Exact, Value: "value1", Values: []string{}},
+			{Group: "default", Property: "prop3", Type: filter.Exact, Value: "value3", Values: []string{}},
+			{Group: "default", Property: "prop1", Type: filter.Exact, Value: "value1", Values: []string{}},
 		},
 		"Resource2": []filter.Filter{
-			{Property: "prop3", Type: filter.Exact, Value: "value3", Values: []string{}},
-			{Property: "prop2", Type: filter.Exact, Value: "value2", Values: []string{}},
+			{Group: "default", Property: "prop3", Type: filter.Exact, Value: "value3", Values: []string{}},
+			{Group: "default", Property: "prop2", Type: filter.Exact, Value: "value2", Values: []string{}},
 		},
 	}
 
@@ -89,7 +124,7 @@ func TestFilter_UnmarshalYAML_Error(t *testing.T) {
 func TestFilter_GetByGroup(t *testing.T) {
 	f := filter.Filters{
 		"resource1": []filter.Filter{
-			{Property: "prop1", Type: filter.Exact, Value: "value1"},
+			{Group: "default", Property: "prop1", Type: filter.Exact, Value: "value1"},
 		},
 	}
 
@@ -103,9 +138,41 @@ func TestFilter_GetByGroup(t *testing.T) {
 	rf1 := f.GetByGroup("invalidResource1")
 	assert.Nil(t, rf1)
 
-	matched, err := f.Match("invalidResourceType", filter.Property(&TestResource{}))
+	matched, err := f.Match("invalidResourceType", filter.Property(&TestResource{}), testLogger())
 	assert.NoError(t, err)
 	assert.False(t, matched)
+}
+
+func TestFilter_GetByGroupGlobal(t *testing.T) {
+	f := filter.Filters{
+		"__global__": []filter.Filter{
+			{Group: "default", Property: "prop1", Type: filter.Exact, Value: "value1"},
+		},
+		"resource1": []filter.Filter{
+			{Group: "default", Property: "prop2", Type: filter.Exact, Value: "value2"},
+		},
+	}
+
+	rf := f.GetByGroup("resource1")
+
+	for g, filters := range rf {
+		assert.Equal(t, "default", g)
+		assert.Len(t, filters, 2)
+		if len(filters) == 2 {
+			assert.True(t, filters[0].Global)
+			assert.False(t, filters[1].Global)
+		}
+	}
+
+	rf1 := f.GetByGroup("invalidResource1")
+
+	for g, filters := range rf1 {
+		assert.Equal(t, "default", g)
+		assert.Len(t, filters, 1)
+		if len(filters) == 1 {
+			assert.True(t, filters[0].Global)
+		}
+	}
 }
 
 func TestFilter_Match(t *testing.T) {
@@ -121,7 +188,9 @@ func TestFilter_Match(t *testing.T) {
 			name:     "simple-filtered",
 			resource: "resource1",
 			resources: []filter.Property{
-				&TestResource{},
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing"),
+				},
 			},
 			filters: []filter.Filter{
 				{Property: "prop1", Type: filter.Exact, Value: "testing"},
@@ -145,7 +214,9 @@ func TestFilter_Match(t *testing.T) {
 			name:     "simple-no-filtered-invert",
 			resource: "resource1",
 			resources: []filter.Property{
-				&TestResource{},
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing"),
+				},
 			},
 			filters: []filter.Filter{
 				{Property: "prop1", Type: filter.Exact, Value: "testing", Invert: true},
@@ -174,7 +245,7 @@ func TestFilter_Match(t *testing.T) {
 			}
 
 			for _, r := range tc.resources {
-				res, err := filters.Match(tc.resource, r)
+				res, err := filters.Match(tc.resource, r, testLogger())
 				if tc.error {
 					assert.Error(t, err)
 				} else {
@@ -213,6 +284,44 @@ func TestFilter_MatchGroup(t *testing.T) {
 			error:    false,
 		},
 		{
+			name:     "single-group-filtered-global",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing"),
+				},
+			},
+			filters: filter.Filters{
+				"__global__": []filter.Filter{
+					{Property: "prop1", Type: filter.Exact, Value: "testing"},
+				},
+				"resource1": []filter.Filter{
+					{Property: "prop2", Type: filter.Exact, Value: "testing2"},
+				},
+			},
+			filtered: true,
+			error:    false,
+		},
+		{
+			name:     "single-group-filtered-local",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{
+					Props: types.NewProperties().Set("prop2", "testing2"),
+				},
+			},
+			filters: filter.Filters{
+				"__global__": []filter.Filter{
+					{Property: "prop1", Type: filter.Exact, Value: "testing"},
+				},
+				"resource1": []filter.Filter{
+					{Property: "prop2", Type: filter.Exact, Value: "testing2"},
+				},
+			},
+			filtered: true,
+			error:    false,
+		},
+		{
 			name:     "single-group-not-filtered",
 			resource: "resource1",
 			resources: []filter.Property{
@@ -223,6 +332,25 @@ func TestFilter_MatchGroup(t *testing.T) {
 			filters: filter.Filters{
 				"resource1": []filter.Filter{
 					{Property: "prop1", Type: filter.Exact, Value: "testing1"},
+				},
+			},
+			filtered: false,
+			error:    false,
+		},
+		{
+			name:     "single-group-not-filtered-global",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing1"),
+				},
+			},
+			filters: filter.Filters{
+				"__global__": []filter.Filter{
+					{Property: "prop1", Type: filter.Exact, Value: "testing"},
+				},
+				"resource1": []filter.Filter{
+					{Property: "prop2", Type: filter.Exact, Value: "testing2"},
 				},
 			},
 			filtered: false,
@@ -246,6 +374,25 @@ func TestFilter_MatchGroup(t *testing.T) {
 			error:    false,
 		},
 		{
+			name:     "multiple-group-filtered-global",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing").Set("prop2", "testing2"),
+				},
+			},
+			filters: filter.Filters{
+				"__global__": []filter.Filter{
+					{Property: "prop1", Type: filter.Exact, Value: "testing", Group: "group1"},
+				},
+				"resource1": []filter.Filter{
+					{Property: "prop2", Type: filter.Exact, Value: "testing2", Group: "group2"},
+				},
+			},
+			filtered: true,
+			error:    false,
+		},
+		{
 			name:     "multiple-group-not-filtered",
 			resource: "resource1",
 			resources: []filter.Property{
@@ -260,7 +407,27 @@ func TestFilter_MatchGroup(t *testing.T) {
 					{Property: "prop3", Type: filter.Exact, Value: "testing3", Group: "group3"},
 				},
 			},
-			filtered: true,
+			filtered: false,
+			error:    false,
+		},
+		{
+			name:     "multiple-group-not-filtered-global",
+			resource: "resource1",
+			resources: []filter.Property{
+				&TestResource{
+					Props: types.NewProperties().Set("prop1", "testing").Set("prop2", "testing2"),
+				},
+			},
+			filters: filter.Filters{
+				"__global__": []filter.Filter{
+					{Property: "prop1", Type: filter.Exact, Value: "testing", Group: "group1"},
+				},
+				"resource1": []filter.Filter{
+					{Property: "prop2", Type: filter.Exact, Value: "testing2", Group: "group2"},
+					{Property: "prop3", Type: filter.Exact, Value: "testing3", Group: "group3"},
+				},
+			},
+			filtered: false,
 			error:    false,
 		},
 		{
@@ -301,7 +468,7 @@ func TestFilter_MatchGroup(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			for _, r := range tc.resources {
-				res, err := tc.filters.Match(tc.resource, r)
+				res, err := tc.filters.Match(tc.resource, r, testLogger())
 				if tc.error {
 					assert.Error(t, err)
 				} else {
