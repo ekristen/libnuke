@@ -281,6 +281,149 @@ func Test_ItemEqualStringer(t *testing.T) {
 
 // ------------------------------------------------------------------------
 
+type TestKeyedResource struct {
+	ID    *string `libnuke:"nonRepeatableKey"`
+	State *string
+}
+
+func (r *TestKeyedResource) Remove(_ context.Context) error {
+	return nil
+}
+
+func Test_ItemEqualNonRepeatableKeys(t *testing.T) {
+	id1 := "i-01b489457a60298dd"
+	state1 := "running"
+	r1 := &TestKeyedResource{ID: &id1, State: &state1}
+
+	id2 := "i-01b489457a60298dd" // Same ID
+	state2 := "stopping"         // Different state (should be ignored)
+	r2 := &TestKeyedResource{ID: &id2, State: &state2}
+
+	i := &Item{Resource: r1}
+	assert.True(t, i.Equals(r2), "Resources with same nonRepeatableKey should be equal")
+
+	// Test with non-matching nonRepeatableKeys
+	id3 := "i-1234567890abcdef0" // Different ID
+	state3 := "running"          // Same state (should be ignored)
+	r3 := &TestKeyedResource{ID: &id3, State: &state3}
+
+	assert.False(t, i.Equals(r3), "Resources with different nonRepeatableKey should not be equal")
+}
+
+// ------------------------------------------------------------------------
+
+type TestKeyedResourceWithTags struct {
+	ID    *string `property:"name=id" libnuke:"nonRepeatableKey,futureValue"`
+	State *string `property:"name=state"`
+}
+
+func (r *TestKeyedResourceWithTags) Remove(_ context.Context) error {
+	return nil
+}
+
+func Test_ItemEqualNonRepeatableKeyWithTags(t *testing.T) {
+	id1 := "i-01b489457a60298dd"
+	state1 := "running"
+	r1 := &TestKeyedResourceWithTags{ID: &id1, State: &state1}
+
+	id2 := "i-01b489457a60298dd" // Same ID
+	state2 := "stopping"         // Different state (should be ignored)
+	r2 := &TestKeyedResourceWithTags{ID: &id2, State: &state2}
+
+	i := &Item{Resource: r1}
+	assert.True(t, i.Equals(r2), "Should find nonRepeatableKey even when mixed with other tags")
+}
+
+// ------------------------------------------------------------------------
+
+type TestMultiKeyedResource struct {
+	Name         *string    `libnuke:"nonRepeatableKey"`
+	CreationTime *time.Time `libnuke:"nonRepeatableKey"`
+	LastEvent    *time.Time
+}
+
+func (r *TestMultiKeyedResource) Remove(_ context.Context) error {
+	return nil
+}
+
+func Test_ItemEqualMultipleNonRepeatableKeys(t *testing.T) {
+	now := time.Now()
+
+	name1 := "TestLogGroup"
+	creationTime1 := now
+	lastEvent1 := now
+	r1 := &TestMultiKeyedResource{Name: &name1, CreationTime: &creationTime1, LastEvent: &lastEvent1}
+
+	// All keys match
+	name2 := "TestLogGroup"
+	creationTime2 := now
+	lastEvent2 := now.Add(1 * time.Hour) // Should be ignored
+	r2 := &TestMultiKeyedResource{Name: &name2, CreationTime: &creationTime2, LastEvent: &lastEvent2}
+
+	i := &Item{Resource: r1}
+	assert.True(t, i.Equals(r2), "Resources with all matching keys should be equal")
+
+	// One key doesn't match
+	name3 := "TestLogGroup"
+	creationTime3 := now.Add(1 * time.Hour) // Different creation time (e.g. resource nuked but recreated before run finishes)
+	lastEvent3 := now.Add(1 * time.Hour)    // Should be ignored
+	r3 := &TestMultiKeyedResource{Name: &name3, CreationTime: &creationTime3, LastEvent: &lastEvent3}
+
+	assert.False(t, i.Equals(r3), "Resources with any non-matching key should not be equal")
+}
+
+// ------------------------------------------------------------------------
+
+type TestComplexKeyResource struct {
+	Name *string            `libnuke:"nonRepeatableKey"`
+	Tags map[string]*string `libnuke:"nonRepeatableKey"`
+}
+
+func (r *TestComplexKeyResource) Remove(_ context.Context) error {
+	return nil
+}
+
+func Test_ItemEqualComplexNonRepeatableKeys(t *testing.T) {
+	name1 := "resource-123"
+	tag1Value := "value1"
+	tag2Value := "value2"
+	tag3Value := "value3"
+
+	r1 := &TestComplexKeyResource{
+		Name: &name1,
+		Tags: map[string]*string{
+			"tag1": &tag1Value,
+			"tag2": &tag2Value,
+		},
+	}
+
+	// Same complex key values
+	name2 := "resource-123"
+	r2 := &TestComplexKeyResource{
+		Name: &name2,
+		Tags: map[string]*string{
+			"tag1": &tag1Value,
+			"tag2": &tag2Value,
+		},
+	}
+
+	// Different map contents
+	name3 := "resource-123"
+	r3 := &TestComplexKeyResource{
+		Name: &name3,
+		Tags: map[string]*string{
+			"tag1": &tag1Value,
+			"tag3": &tag3Value,
+		},
+	}
+
+	i := &Item{Resource: r1}
+	assert.True(t, i.Equals(r2), "Resources with same complex nonRepeatableKey should be equal")
+	assert.False(t, i.Equals(r3), "Resources with different complex nonRepeatableKey should not be equal")
+}
+
+// ------------------------------------------------------------------------
+
 type TestItemResourceNothing struct{}
 
 func (r *TestItemResourceNothing) Remove(_ context.Context) error {

@@ -3,6 +3,7 @@ package queue
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 
@@ -113,15 +114,15 @@ func (i *Item) Equals(o resource.Resource) bool {
 		return false
 	}
 
-	iGetter, iOK := i.Resource.(resource.PropertyGetter)
-	oGetter, oOK := o.(resource.PropertyGetter)
-	if iOK != oOK {
-		return false
-	}
-	if iOK && oOK {
-		return iGetter.Properties().Equals(oGetter.Properties())
+	// First check if the resources have nonRepeatableKey fields to compare
+	match, ok := compareNonRepeatableKeys(i.Resource, o)
+	if ok {
+		return match
 	}
 
+	// Remove below fallbacks once all resources use the libnuke:"nonRepeatableKey" struct tag
+
+	// Fall back to legacy string comparison (does not handle case when resource is recreated during nuke)
 	iStringer, iOK := i.Resource.(resource.LegacyStringer)
 	oStringer, oOK := o.(resource.LegacyStringer)
 	if iOK != oOK {
@@ -131,7 +132,60 @@ func (i *Item) Equals(o resource.Resource) bool {
 		return iStringer.String() == oStringer.String()
 	}
 
+	// Fall back to property comparison (does not handle case when properties change during nuke)
+	iGetter, iOK := i.Resource.(resource.PropertyGetter)
+	oGetter, oOK := o.(resource.PropertyGetter)
+	if iOK != oOK {
+		return false
+	}
+	if iOK && oOK {
+		return iGetter.Properties().Equals(oGetter.Properties())
+	}
+
 	return false
+}
+
+// compareNonRepeatableKeys compares the fields marked with libnuke tag containing 'nonRepeatableKey'
+// Returns (match result, whether any nonRepeatableKey fields were found)
+func compareNonRepeatableKeys(a any, b any) (bool, bool) {
+	aVal := reflect.ValueOf(a)
+	bVal := reflect.ValueOf(b)
+
+	if aVal.Kind() == reflect.Ptr {
+		aVal = aVal.Elem()
+	}
+	if bVal.Kind() == reflect.Ptr {
+		bVal = bVal.Elem()
+	}
+	if aVal.Kind() != reflect.Struct || bVal.Kind() != reflect.Struct {
+		return false, false
+	}
+
+	aType := aVal.Type()
+	foundNonRepeatableKey := false
+
+	// Iterate through struct fields looking for nonRepeatableKey tags
+	for i := 0; i < aType.NumField(); i++ {
+		field := aType.Field(i)
+		tagValue := field.Tag.Get("libnuke")
+		if tagValue == "" {
+			continue
+		}
+
+		tagParts := strings.Split(tagValue, ",")
+		for _, part := range tagParts {
+			if part == "nonRepeatableKey" {
+				foundNonRepeatableKey = true
+
+				if !reflect.DeepEqual(aVal.Field(i).Interface(), bVal.Field(i).Interface()) {
+					return false, true // Fields don't match, but we found nonRepeatableKey
+				}
+				break // No need to check other parts of this field's tag
+			}
+		}
+	}
+
+	return foundNonRepeatableKey, foundNonRepeatableKey
 }
 
 // Print displays the current status of an Item based on it's State
