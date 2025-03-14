@@ -61,19 +61,41 @@ func (f Filters) Get(resourceType string) []Filter {
 	return filters
 }
 
-// GetByGroup returns the filters grouped by the group name for a specific resource type. If there are no filters it
-// returns nil
-func (f Filters) GetByGroup(resourceType string) map[string][]Filter {
-	filters := make(Filters)
+type FilterWithScope struct {
+	Filter Filter
+	Global bool
+}
+
+// GetByGroup returns the filters grouped by the group name for a specific resource type or the global filters if they exist.
+// If there are no filters it returns nil
+func (f Filters) GetByGroup(resourceType string) map[string][]FilterWithScope {
+	filters := make(map[string][]FilterWithScope)
+
+	if f[Global] != nil {
+		for _, filter := range f[Global] {
+			group := filter.Group
+			if filters[group] == nil {
+				filters[group] = []FilterWithScope{}
+			}
+
+			filters[group] = append(filters[group], FilterWithScope{
+				Filter: filter,
+				Global: true,
+			})
+		}
+	}
 
 	if f[resourceType] != nil {
 		for _, filter := range f[resourceType] {
-			group := filter.GetGroup()
+			group := filter.Group
 			if filters[group] == nil {
-				filters[group] = []Filter{}
+				filters[group] = []FilterWithScope{}
 			}
 
-			filters[group] = append(filters[group], filter)
+			filters[group] = append(filters[group], FilterWithScope{
+				Filter: filter,
+				Global: false,
+			})
 		}
 	}
 
@@ -113,57 +135,67 @@ func (f Filters) Merge(f2 Filters) {
 
 // Match checks if the filters match the given property which is actually a queue item that meats the
 // property interface requirements
-func (f Filters) Match(resourceType string, p Property) (bool, error) {
+func (f Filters) Match(resourceType string, p Property, log *logrus.Entry) (bool, error) {
 	resourceFilters := f.GetByGroup(resourceType)
 	if resourceFilters == nil {
 		return false, nil
 	}
 
-	groupCount := make(map[string]int)
-	totalCount := make(map[string]int)
-	matchCount := make(map[string]int)
+	var groupCount int
+	var totalCount int
 
-	for group, groupFilters := range resourceFilters {
-		totalCount[group] = len(groupFilters)
+	for _, groupFilters := range resourceFilters {
+		var matchCount int
+		totalCount++
 
-		for _, filter := range groupFilters {
-			prop, err := p.GetProperty(filter.Property)
+		for _, f := range groupFilters {
+			prop, err := p.GetProperty(f.Filter.Property)
 			if err != nil {
 				// Note: this continues because we want it to continue if a property is not found for the time
 				// being. This can also return an error we want as a warning if a resource does not support
 				// custom properties. This can be triggered by __global__ filters that are applied to all resources.
-				logrus.WithError(err).Warn("error getting property")
+				log.WithError(err).Warn("error getting property")
 				continue
 			}
 
-			match, err := filter.Match(prop)
+			match, err := f.Filter.Match(prop)
 			if err != nil {
-				logrus.WithError(err).Warn("error matching filter")
+				log.WithError(err).Warn("error matching filter")
 				return false, err
 			}
 
-			logrus.Trace(match, filter.Invert)
+			log.
+				WithField("filter_group", f.Filter.Group).
+				WithField("filter_prop", f.Filter.Property).
+				WithField("filter_type", f.Filter.Type).
+				WithField("filter_value", f.Filter.Value).
+				WithField("filter_invert", f.Filter.Invert).
+				WithField("global", f.Global).
+				WithField("prop_value", prop).
+				WithField("match", match).
+				Tracef("matching filter for group '%s': match=%t, invert=%t", f.Filter.Group, match, f.Filter.Invert)
 
-			if filter.Invert {
+			if f.Filter.Invert {
 				match = !match
 			}
 
 			if match {
-				matchCount[group]++
+				matchCount++
 			}
 		}
 
-		logrus.Trace("groupCount", groupCount)
-		logrus.Trace("totalCount", totalCount)
-		logrus.Trace("matchCount", matchCount)
+		log.Trace("matchCount: ", matchCount)
 
-		if totalCount[group] == matchCount[group] {
-			groupCount[group]++
+		if matchCount > 0 {
+			groupCount++
 		}
 	}
 
-	// If the group count is greater than 0, then one of the groups matched
-	if len(groupCount) > 0 {
+	log.Trace("groupCount: ", groupCount)
+	log.Trace("totalCount: ", totalCount)
+
+	// If the group count equals the total count, then all of the groups matched
+	if groupCount == totalCount {
 		return true, nil
 	}
 
@@ -189,14 +221,6 @@ type Filter struct {
 
 	// Invert is a flag to invert the filter
 	Invert bool `yaml:"invert" json:"invert"`
-}
-
-// GetGroup returns the group name of the filter, if it is empty it returns "default"
-func (f *Filter) GetGroup() string {
-	if f.Group == "" {
-		return "default"
-	}
-	return f.Group
 }
 
 // Validate checks if the filter is valid
@@ -292,6 +316,12 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if err != nil {
 		fmt.Println("%%%%%%%%")
 		return err
+	}
+
+	if m["group"] == nil {
+		f.Group = "default"
+	} else {
+		f.Group = m["group"].(string)
 	}
 
 	if m["type"] == nil {

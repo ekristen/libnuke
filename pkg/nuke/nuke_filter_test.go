@@ -154,7 +154,7 @@ func Test_NukeFiltersMatchGroups_NoMatch(t *testing.T) {
 	err := n.Scan(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, n.Queue.Total())
-	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFiltered))
+	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFiltered))
 }
 
 func Test_NukeFiltersMatchGroups_NoMatch_WithError(t *testing.T) {
