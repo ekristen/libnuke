@@ -113,22 +113,25 @@ func (i *Item) Equals(o resource.Resource) bool {
 		return false
 	}
 
-	iGetter, iOK := i.Resource.(resource.PropertyGetter)
-	oGetter, oOK := o.(resource.PropertyGetter)
-	if iOK != oOK {
-		return false
-	}
+	// Compare unique keys if present
+	iKeyGetter, iOK := i.Resource.(resource.UniqueKeyGetter)
+	oKeyGetter, oOK := o.(resource.UniqueKeyGetter)
 	if iOK && oOK {
-		return iGetter.Properties().Equals(oGetter.Properties())
+		return iKeyGetter.UniqueKey() == oKeyGetter.UniqueKey()
 	}
 
+	// Fall back to legacy string comparison (may not handle case where resource is recreated during nuke)
 	iStringer, iOK := i.Resource.(resource.LegacyStringer)
 	oStringer, oOK := o.(resource.LegacyStringer)
-	if iOK != oOK {
-		return false
-	}
 	if iOK && oOK {
 		return iStringer.String() == oStringer.String()
+	}
+
+	// Fall back to property comparison (does not handle case where properties change during nuke)
+	iPropertyGetter, iOK := i.Resource.(resource.PropertyGetter)
+	oPropertyGetter, oOK := o.(resource.PropertyGetter)
+	if iOK && oOK {
+		return iPropertyGetter.Properties().Equals(oPropertyGetter.Properties())
 	}
 
 	return false
