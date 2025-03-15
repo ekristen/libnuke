@@ -627,6 +627,135 @@ func TestPropertiesSetFromStruct(t *testing.T) {
 	}
 }
 
+func TestPropertiesSetFromStructNonRepeatableKey(t *testing.T) {
+	type testStruct struct {
+		Name string
+		Age  int
+		Tags map[string]string
+	}
+
+	type testStruct2 struct {
+		ID    string `libnuke:"nonRepeatableKey"`
+		State string
+	}
+
+	type testStruct3 struct {
+		ID    string `property:"name=id" libnuke:"nonRepeatableKey,futureValue"`
+		State string `property:"name=state"`
+	}
+
+	type testStruct4 struct {
+		ID         string `libnuke:"nonRepeatableKey"`
+		State      string
+		unexported string `libnuke:"nonRepeatableKey"`
+	}
+
+	type testStruct5 struct {
+		Name         string    `libnuke:"nonRepeatableKey"`
+		CreationTime time.Time `libnuke:"nonRepeatableKey"`
+		LastEvent    time.Time
+	}
+
+	type testStruct6 struct {
+		Name         *string    `libnuke:"nonRepeatableKey"`
+		CreationTime *time.Time `libnuke:"nonRepeatableKey"`
+		LastEvent    *time.Time
+	}
+
+	now := time.Now()
+
+	cases := []struct {
+		name  string
+		s     interface{}
+		want  types.Properties
+		error bool
+	}{
+		{
+			name: "empty",
+			s:    testStruct{},
+			want: types.NewProperties(),
+		},
+		{
+			name: "struct-pointer",
+			s:    &testStruct{},
+			want: types.NewProperties(),
+		},
+		{
+			name: "single-key",
+			s: testStruct2{
+				ID:    "i-01b489457a60298dd",
+				State: "running",
+			},
+			want: types.NewProperties().Set("ID", "i-01b489457a60298dd"),
+		},
+		{
+			name: "single-key-with-tags",
+			s: testStruct3{
+				ID:    "i-01b489457a60298dd",
+				State: "running",
+			},
+			want: types.NewProperties().Set("ID", "i-01b489457a60298dd"),
+		},
+		{
+			name: "single-key-with-unexported",
+			s: testStruct4{
+				ID:         "i-01b489457a60298dd",
+				State:      "running",
+				unexported: "ignored",
+			},
+			want: types.NewProperties().Set("ID", "i-01b489457a60298dd"),
+		},
+		{
+			name: "multi-key",
+			s: testStruct5{
+				Name:         "TestLogGroup",
+				CreationTime: now,
+				LastEvent:    now,
+			},
+			want: types.NewProperties().
+				Set("Name", "TestLogGroup").
+				Set("CreationTime", now),
+		},
+		{
+			name: "multi-key-pointer",
+			s: testStruct6{
+				Name:         ptr.String("TestLogGroup"),
+				CreationTime: &now,
+				LastEvent:    &now,
+			},
+			want: types.NewProperties().
+				Set("Name", "TestLogGroup").
+				Set("CreationTime", now),
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			p := types.NewProperties()
+
+			p.SetFromStructNonRepeatableKey(tc.s)
+
+			assert.Equal(t, tc.want, p)
+		})
+	}
+}
+
+func TestNewNonRepeatableKeyFromStruct(t *testing.T) {
+	type testStruct struct {
+		ID    string `libnuke:"nonRepeatableKey"`
+		State string
+	}
+
+	key := types.NewNonRepeatableKeyFromStruct(testStruct{
+		ID:    "i-01b489457a60298dd",
+		State: "running",
+	})
+
+	want := types.NewProperties().Set("ID", "i-01b489457a60298dd")
+
+	assert.Equal(t, want, key)
+}
+
 func BenchmarkNewProperties(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = types.NewProperties().
