@@ -485,6 +485,7 @@ func TestFilter_NewExactFilter(t *testing.T) {
 	f := filter.NewExactFilter("testing")
 
 	assert.Equal(t, f.Type, filter.Exact)
+	assert.Equal(t, f.Group, "default")
 
 	b1, err := f.Match("testing")
 	assert.NoError(t, err)
@@ -523,6 +524,7 @@ func TestFilter_Validation(t *testing.T) {
 			if tc.error {
 				assert.Error(t, errValidate)
 			} else {
+				assert.Equal(t, "default", f.Group)
 				assert.NoError(t, errValidate)
 			}
 		})
