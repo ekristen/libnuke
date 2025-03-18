@@ -308,6 +308,7 @@ func (f *Filter) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	if unmarshal(&value) == nil {
 		f.Type = Exact
 		f.Value = value
+		f.Group = "default"
 		return nil
 	}
 
@@ -378,6 +379,7 @@ func NewExactFilter(value string) Filter {
 	return Filter{
 		Type:  Exact,
 		Value: value,
+		Group: "default",
 	}
 }
 
