@@ -13,6 +13,12 @@ import (
 	"github.com/ekristen/libnuke/pkg/registry"
 )
 
+func Test_NewScannerWithoutOwner(t *testing.T) {
+	scanner, err := New(&Config{})
+	assert.Error(t, err)
+	assert.Nil(t, scanner)
+}
+
 func Test_NewScannerWithMorphOpts(t *testing.T) {
 	registry.ClearRegistry()
 	registry.Register(testResourceRegistration)
@@ -27,13 +33,18 @@ func Test_NewScannerWithMorphOpts(t *testing.T) {
 		return o1
 	}
 
-	scanner := New("Owner", []string{testResourceType}, opts)
+	scanner, err := New(&Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{testResourceType},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 	mutateErr := scanner.RegisterMutateOptsFunc(morphOpts)
 	assert.NoError(t, mutateErr)
 
 	scanner.SetParallelQueries(8)
 
-	err := scanner.Run(context.TODO())
+	err = scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 1)
@@ -59,7 +70,12 @@ func Test_NewScannerWithDuplicateMorphOpts(t *testing.T) {
 		return o1
 	}
 
-	scanner := New("Owner", []string{testResourceType}, opts)
+	scanner, err := New(&Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{testResourceType},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 	optErr := scanner.RegisterMutateOptsFunc(morphOpts)
 	assert.NoError(t, optErr)
 
@@ -91,8 +107,14 @@ func Test_NewScannerWithResourceListerError(t *testing.T) {
 		ThrowError: true,
 	}
 
-	scanner := New("Owner", []string{testResourceType}, opts)
-	err := scanner.Run(context.TODO())
+	scanner, err := New(&Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{testResourceType},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
+
+	err = scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 0)
@@ -122,8 +144,14 @@ func Test_NewScannerWithInvalidResourceListerError(t *testing.T) {
 		ThrowError: true,
 	}
 
-	scanner := New("Owner", []string{"does-not-exist"}, opts)
-	err := scanner.Run(context.TODO())
+	scanner, err := New(&Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{"does-not-exist"},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
+
+	err = scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 0)
@@ -155,8 +183,14 @@ func Test_NewScannerWithResourceListerErrorSkip(t *testing.T) {
 		ThrowSkipError: true,
 	}
 
-	scanner := New("Owner", []string{testResourceType}, opts)
-	err := scanner.Run(context.TODO())
+	scanner, err := New(&Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{testResourceType},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
+
+	err = scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 0)
@@ -188,8 +222,14 @@ func Test_NewScannerWithResourceListerErrorUnknownEndpoint(t *testing.T) {
 		ThrowEndpointError: true,
 	}
 
-	scanner := New("Owner", []string{testResourceType}, opts)
-	err := scanner.Run(context.TODO())
+	scanner, err := New(&Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{testResourceType},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
+
+	err = scanner.Run(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Len(t, scanner.Items, 0)
@@ -197,7 +237,12 @@ func Test_NewScannerWithResourceListerErrorUnknownEndpoint(t *testing.T) {
 
 func TestRunSemaphoreFirstAcquireError(t *testing.T) {
 	// Create a new scanner
-	scanner := New("owner", []string{testResourceType}, nil)
+	scanner, err := New(&Config{
+		Owner:         "owner",
+		ResourceTypes: []string{testResourceType},
+	})
+	assert.NoError(t, err)
+
 	scanner.SetParallelQueries(0)
 
 	// Create a context that will be canceled immediately
@@ -205,7 +250,7 @@ func TestRunSemaphoreFirstAcquireError(t *testing.T) {
 	defer cancel()
 
 	// Run the scanner
-	err := scanner.Run(ctx)
+	err = scanner.Run(ctx)
 	assert.Error(t, err)
 }
 
@@ -213,16 +258,21 @@ func TestRunSemaphoreSecondAcquireError(t *testing.T) {
 	registry.ClearRegistry()
 	registry.Register(testResourceRegistration)
 	// Create a new scanner
-	scanner := New("owner", []string{testResourceType}, TestOpts{
-		Sleep: 45 * time.Second,
+	scanner, err := New(&Config{
+		Owner:         "owner",
+		ResourceTypes: []string{testResourceType},
+		Opts: TestOpts{
+			Sleep: 45 * time.Second,
+		},
 	})
+	assert.NoError(t, err)
 
 	// Create a context that will be canceled immediately
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
 	// Run the scanner
-	err := scanner.Run(ctx)
+	err = scanner.Run(ctx)
 	assert.Error(t, err)
 }
 
@@ -264,7 +314,13 @@ func Test_NewScannerWithResourceListerPanic(t *testing.T) {
 		Panic:      true,
 	}
 
-	scanner := New("Owner", []string{testResourceType}, opts)
+	scanner, err := New(&Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{testResourceType},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
+
 	scanner.SetLogger(logrus.StandardLogger())
 	_ = scanner.Run(context.TODO())
 
