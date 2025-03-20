@@ -72,6 +72,7 @@ func Test_NukeFiltersMatch(t *testing.T) {
 		ResourceTypes: []string{TestResourceType2},
 		Opts:          opts,
 	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -116,6 +117,7 @@ func Test_NukeFiltersMatchGroups_Match(t *testing.T) {
 		ResourceTypes: []string{TestResourceType2},
 		Opts:          opts,
 	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -160,6 +162,7 @@ func Test_NukeFiltersMatchGroups_NoMatch(t *testing.T) {
 		ResourceTypes: []string{TestResourceType2},
 		Opts:          opts,
 	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -204,6 +207,7 @@ func Test_NukeFiltersMatchGroups_NoMatch_WithError(t *testing.T) {
 		ResourceTypes: []string{TestResourceType2},
 		Opts:          opts,
 	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -241,6 +245,7 @@ func Test_NukeFiltersMatchInverted(t *testing.T) {
 		ResourceTypes: []string{TestResourceType2},
 		Opts:          opts,
 	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -278,6 +283,7 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 		ResourceTypes: []string{TestResourceType2},
 		Opts:          opts,
 	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
@@ -314,6 +320,7 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 		ResourceTypes: []string{TestResourceType},
 		Opts:          opts,
 	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)

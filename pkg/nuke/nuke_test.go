@@ -398,6 +398,7 @@ func Test_Nuke_Run_Error(t *testing.T) {
 		ResourceTypes: []string{TestResourceType2},
 		Opts:          opts,
 	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
