@@ -23,6 +23,9 @@ import (
 // DefaultParallelQueries is the number of parallel queries to run at any given time for a scanner.
 const DefaultParallelQueries = 16
 
+// DefaultQueueSize is the default size of the item queue for a scanner.
+const DefaultQueueSize = 50000
+
 // Scanner is collection of resource types that will be scanned for existing resources and added to the
 // item queue for processing. These items will be filtered and then processed.
 type Scanner struct {
@@ -57,7 +60,7 @@ func New(cfg *Config) (*Scanner, error) {
 		return nil, fmt.Errorf("owner must be set")
 	}
 	if cfg.QueueSize == 0 {
-		cfg.QueueSize = 50000
+		cfg.QueueSize = DefaultQueueSize
 	}
 	if cfg.ParallelQueries == 0 {
 		cfg.ParallelQueries = DefaultParallelQueries
