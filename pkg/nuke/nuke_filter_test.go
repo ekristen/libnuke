@@ -66,12 +66,18 @@ func Test_NukeFiltersMatch(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
+
+	newScanner, err := scanner.New(&scanner.Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{TestResourceType2},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan(context.TODO())
+	err = n.Scan(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, n.Queue.Total())
 	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFiltered))
@@ -106,12 +112,17 @@ func Test_NukeFiltersMatchGroups_Match(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
+	newScanner, err := scanner.New(&scanner.Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{TestResourceType2},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan(context.TODO())
+	err = n.Scan(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, n.Queue.Total())
 	assert.Equal(t, 1, n.Queue.Count(queue.ItemStateFiltered))
@@ -146,12 +157,17 @@ func Test_NukeFiltersMatchGroups_NoMatch(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
+	newScanner, err := scanner.New(&scanner.Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{TestResourceType2},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan(context.TODO())
+	err = n.Scan(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, n.Queue.Total())
 	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFiltered))
@@ -186,12 +202,17 @@ func Test_NukeFiltersMatchGroups_NoMatch_WithError(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
+	newScanner, err := scanner.New(&scanner.Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{TestResourceType2},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan(context.TODO())
+	err = n.Scan(context.TODO())
 	assert.Error(t, err)
 	assert.Equal(t, "error parsing regexp: missing closing ): `^(testing$`", err.Error())
 }
@@ -219,12 +240,17 @@ func Test_NukeFiltersMatchInverted(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
+	newScanner, err := scanner.New(&scanner.Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{TestResourceType2},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan(context.TODO())
+	err = n.Scan(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, n.Queue.Total())
 	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFiltered))
@@ -252,12 +278,17 @@ func Test_Nuke_Filters_NoMatch(t *testing.T) {
 		SessionOne:     "testing",
 		SecondResource: true,
 	}
-	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
+	newScanner, err := scanner.New(&scanner.Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{TestResourceType2},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan(context.TODO())
+	err = n.Scan(context.TODO())
 	assert.NoError(t, err)
 	assert.Equal(t, 1, n.Queue.Total())
 	assert.Equal(t, 0, n.Queue.Count(queue.ItemStateFiltered))
@@ -284,12 +315,17 @@ func Test_Nuke_Filters_ErrorCustomProps(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	newScanner := scanner.New("Owner", []string{TestResourceType}, opts)
+	newScanner, err := scanner.New(&scanner.Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{TestResourceType},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan(context.TODO())
+	err = n.Scan(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, n.Queue.Total())

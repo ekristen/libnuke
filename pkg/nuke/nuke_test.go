@@ -165,9 +165,14 @@ func Test_Nuke_Scanners(t *testing.T) {
 		name: "test",
 	}
 
-	s := scanner.New("test", []string{"TestResource"}, opts)
+	s, err := scanner.New(&scanner.Config{
+		Owner:         "test",
+		ResourceTypes: []string{"TestResource"},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
-	err := n.RegisterScanner(testScope, s)
+	err = n.RegisterScanner(testScope, s)
 	assert.NoError(t, err)
 
 	assert.Len(t, n.Scanners[testScope], 1)
@@ -184,9 +189,14 @@ func Test_Nuke_Scanners_Duplicate(t *testing.T) {
 		name: "test",
 	}
 
-	s := scanner.New("test", []string{"TestResource"}, opts)
+	s, err := scanner.New(&scanner.Config{
+		Owner:         "test",
+		ResourceTypes: []string{"TestResource"},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
-	err := n.RegisterScanner(testScope, s)
+	err = n.RegisterScanner(testScope, s)
 	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, s)
@@ -210,10 +220,20 @@ func TestNuke_RegisterMultipleScanners(t *testing.T) {
 		return o
 	}
 
-	s := scanner.New("test", []string{"TestResource"}, opts)
+	s, err := scanner.New(&scanner.Config{
+		Owner:         "test",
+		ResourceTypes: []string{"TestResource"},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 	assert.NoError(t, s.RegisterMutateOptsFunc(mutateOpts))
 
-	s2 := scanner.New("test2", []string{"TestResource"}, opts)
+	s2, err := scanner.New(&scanner.Config{
+		Owner:         "test2",
+		ResourceTypes: []string{"TestResource"},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 	assert.NoError(t, s2.RegisterMutateOptsFunc(mutateOpts))
 
 	assert.NoError(t, n.RegisterScanner(testScope, s))
@@ -255,12 +275,17 @@ func Test_Nuke_Scan(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	newScanner := scanner.New("Owner", []string{TestResourceType, TestResourceType2}, opts)
+	newScanner, err := scanner.New(&scanner.Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{TestResourceType, TestResourceType2},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
-	err := n.Scan(context.TODO())
+	err = n.Scan(context.TODO())
 	assert.NoError(t, err)
 
 	assert.Equal(t, 2, n.Queue.Total())
@@ -331,12 +356,17 @@ func Test_Nuke_Run(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	newScanner := scanner.New("Owner", []string{TestResourceType}, opts)
+	newScanner, err := scanner.New(&scanner.Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{TestResourceType},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
-	err := n.Run(context.TODO())
+	err = n.Run(context.TODO())
 	assert.NoError(t, err)
 }
 
@@ -363,12 +393,17 @@ func Test_Nuke_Run_Error(t *testing.T) {
 	opts := TestOpts{
 		SessionOne: "testing",
 	}
-	newScanner := scanner.New("Owner", []string{TestResourceType2}, opts)
+	newScanner, err := scanner.New(&scanner.Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{TestResourceType2},
+		Opts:          opts,
+	})
+	assert.NoError(t, err)
 
 	sErr := n.RegisterScanner(testScope, newScanner)
 	assert.NoError(t, sErr)
 
-	err := n.Run(context.TODO())
+	err = n.Run(context.TODO())
 	assert.NoError(t, err)
 }
 
@@ -444,7 +479,14 @@ func Test_Nuke_Run_ItemStateHold(t *testing.T) {
 		Lister: &TestResource4Lister{},
 	})
 
-	scannerErr := n.RegisterScanner(testScope, scanner.New("Owner", []string{"TestResource4"}, nil))
+	s, err := scanner.New(&scanner.Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{"TestResource4"},
+		Opts:          nil,
+	})
+	assert.NoError(t, err)
+
+	scannerErr := n.RegisterScanner(testScope, s)
 	assert.NoError(t, scannerErr)
 
 	runErr := n.Run(context.TODO())

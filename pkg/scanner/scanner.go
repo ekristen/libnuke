@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"runtime/debug"
 
 	"github.com/sirupsen/logrus"
@@ -23,6 +22,9 @@ import (
 
 // DefaultParallelQueries is the number of parallel queries to run at any given time for a scanner.
 const DefaultParallelQueries = 16
+
+// DefaultQueueSize is the default size of the item queue for a scanner.
+const DefaultQueueSize = 50000
 
 // Scanner is collection of resource types that will be scanned for existing resources and added to the
 // item queue for processing. These items will be filtered and then processed.
@@ -42,17 +44,40 @@ type Scanner struct {
 // populate the region and session for a given resource type give that it might only exist in us-east-1.
 type MutateOptsFunc func(opts interface{}, resourceType string) interface{}
 
+// Config is the configuration for a scanner.
+type Config struct {
+	Owner           string
+	ResourceTypes   []string
+	Opts            interface{}
+	QueueSize       int
+	ParallelQueries int64
+	Logger          *logrus.Logger
+}
+
 // New creates a new scanner for the given resource types.
-func New(owner string, resourceTypes []string, opts interface{}) *Scanner {
-	return &Scanner{
-		Items:           make(chan *queue.Item, 10000),
-		semaphore:       semaphore.NewWeighted(DefaultParallelQueries),
-		ResourceTypes:   resourceTypes,
-		Options:         opts,
-		Owner:           owner,
-		parallelQueries: DefaultParallelQueries,
-		logger:          logrus.StandardLogger(),
+func New(cfg *Config) (*Scanner, error) {
+	if cfg.Owner == "" {
+		return nil, fmt.Errorf("owner must be set")
 	}
+	if cfg.QueueSize == 0 {
+		cfg.QueueSize = DefaultQueueSize
+	}
+	if cfg.ParallelQueries == 0 {
+		cfg.ParallelQueries = DefaultParallelQueries
+	}
+	if cfg.Logger == nil {
+		cfg.Logger = logrus.StandardLogger()
+	}
+
+	return &Scanner{
+		Items:           make(chan *queue.Item, cfg.QueueSize),
+		semaphore:       semaphore.NewWeighted(cfg.ParallelQueries),
+		ResourceTypes:   cfg.ResourceTypes,
+		Options:         cfg.Opts,
+		Owner:           cfg.Owner,
+		parallelQueries: cfg.ParallelQueries,
+		logger:          cfg.Logger,
+	}, nil
 }
 
 type IScanner interface {
