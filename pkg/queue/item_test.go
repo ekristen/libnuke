@@ -229,24 +229,39 @@ func Test_ItemPrint(t *testing.T) {
 
 // ------------------------------------------------------------------------
 
-type TestItemResourceProperties struct{}
+type TestItemResourceNonRepeatableKey struct {
+	ID    string
+	State string
+}
 
-func (r *TestItemResourceProperties) Remove(_ context.Context) error {
+func (r *TestItemResourceNonRepeatableKey) Remove(_ context.Context) error {
 	return nil
 }
-func (r *TestItemResourceProperties) Properties() types.Properties {
-	return types.NewProperties().Set("test", "testing")
+
+func (r *TestItemResourceNonRepeatableKey) NonRepeatableKey() types.Properties {
+	return types.NewProperties().Set("ID", r.ID)
 }
 
-func Test_ItemEqualProperties(t *testing.T) {
-	i := &Item{
-		Resource: &TestItemResourceProperties{},
-		State:    ItemStateNew,
-		Reason:   "brand new",
-		Type:     "TestResource",
+func Test_ItemEqualNonRepeatableKey(t *testing.T) {
+	r1 := &TestItemResourceNonRepeatableKey{
+		ID:    "i-01b489457a60298dd",
+		State: "running",
 	}
 
-	assert.True(t, i.Equals(i.Resource))
+	r2 := &TestItemResourceNonRepeatableKey{
+		ID:    "i-01b489457a60298dd", // Same ID
+		State: "stopping",            // Different state (should be ignored)
+	}
+
+	i := &Item{Resource: r1}
+	assert.True(t, i.Equals(r2), "Resources with same NonRepeatableKey should be equal")
+
+	r3 := &TestItemResourceNonRepeatableKey{
+		ID:    "i-1234567890abcdef0", // Different ID
+		State: "running",             // Same state (should be ignored)
+	}
+
+	assert.False(t, i.Equals(r3), "Resources with different NonRepeatableKey should not be equal")
 }
 
 // ------------------------------------------------------------------------
