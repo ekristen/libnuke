@@ -113,20 +113,16 @@ func (i *Item) Equals(o resource.Resource) bool {
 		return false
 	}
 
-	iGetter, iOK := i.Resource.(resource.PropertyGetter)
-	oGetter, oOK := o.(resource.PropertyGetter)
-	if iOK != oOK {
-		return false
-	}
+	// First check if the resources have non-repeatable keys to compare
+	iGetter, iOK := i.Resource.(resource.NonRepeatableKeyGetter)
+	oGetter, oOK := o.(resource.NonRepeatableKeyGetter)
 	if iOK && oOK {
-		return iGetter.Properties().Equals(oGetter.Properties())
+		return iGetter.NonRepeatableKey().Equals(oGetter.NonRepeatableKey())
 	}
 
+	// Fall back to legacy string comparison (does not handle case when resource is recreated during nuke)
 	iStringer, iOK := i.Resource.(resource.LegacyStringer)
 	oStringer, oOK := o.(resource.LegacyStringer)
-	if iOK != oOK {
-		return false
-	}
 	if iOK && oOK {
 		return iStringer.String() == oStringer.String()
 	}

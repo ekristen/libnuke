@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 )
@@ -20,6 +21,11 @@ func NewProperties() Properties {
 // NewPropertiesFromStruct creates a new Properties map from a struct.
 func NewPropertiesFromStruct(data interface{}) Properties {
 	return NewProperties().SetFromStruct(data)
+}
+
+// NewNonRepeatableKeyFromStruct creates a new Properties map from non-repeatable key struct fields
+func NewNonRepeatableKeyFromStruct(data interface{}) Properties {
+	return NewProperties().SetFromStructNonRepeatableKey(data)
 }
 
 func (p Properties) SetTagPrefix(prefix string) Properties {
@@ -308,6 +314,52 @@ func (p Properties) SetFromStruct(data interface{}) Properties { //nolint:funlen
 		default:
 			p.SetWithPrefix(prefix, name, value.Interface())
 		}
+	}
+
+	return p
+}
+
+// SetFromStructNonRepeatableKey sets the Properties map from a struct by reading the structs fields tagged with libnuke:"nonRepeatableKey"
+func (p Properties) SetFromStructNonRepeatableKey(data interface{}) Properties {
+	v := reflect.ValueOf(data)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
+	}
+	t := v.Type()
+
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		value := v.Field(i)
+
+		if !field.IsExported() {
+			continue
+		}
+
+		isSet := false
+
+		switch value.Kind() {
+		case reflect.Ptr, reflect.Slice, reflect.Map, reflect.Interface, reflect.Chan:
+			isSet = !value.IsNil()
+		default:
+			isSet = value.Interface() != reflect.Zero(value.Type()).Interface()
+		}
+
+		if !isSet {
+			continue
+		}
+
+		libnukeTag := field.Tag.Get("libnuke")
+		options := strings.Split(libnukeTag, ",")
+
+		if !slices.Contains(options, "nonRepeatableKey") {
+			continue
+		}
+
+		if value.Kind() == reflect.Ptr && !value.IsNil() {
+			value = value.Elem()
+		}
+
+		p.Set(field.Name, value.Interface())
 	}
 
 	return p

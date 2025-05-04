@@ -33,6 +33,11 @@ type SettingsGetter interface {
 	Settings(setting *settings.Setting)
 }
 
+type NonRepeatableKeyGetter interface {
+	Resource
+	NonRepeatableKey() types.Properties
+}
+
 // HandleWaitHook is an interface that allows a resource to handle waiting for a resource to be deleted.
 // This is useful for resources that may take a while to delete, typically where the delete operation happens
 // asynchronously from the initial delete command. This allows libnuke to not block during the delete operation.
