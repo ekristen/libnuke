@@ -8,6 +8,7 @@ require (
 	github.com/mb0/glob v0.0.0-20160210091149-1eb79d2de6c4
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stevenle/topsort v0.2.0
+	github.com/stevenle/topsort/v2 v2.0.0
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/sync v0.11.0
 	gopkg.in/yaml.v2 v2.4.0
