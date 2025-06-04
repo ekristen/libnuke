@@ -1,7 +1,19 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
     "config:best-practices"
+  ],
+  "osvVulnerabilityAlerts": true,
+  "vulnerabilityAlerts": {
+    "labels": [
+      "security"
+    ],
+    "automerge": true,
+    "assignees": [
+      "@ekristen"
+    ]
+  },
+  "postUpdateOptions": [
+    "gomodUpdateImportPaths",
+    "gomodTidy"
   ]
 }
