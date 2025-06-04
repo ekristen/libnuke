@@ -61,6 +61,7 @@ linters:
     rules:
       - linters:
           - funlen
+          - gocyclo
         path: _test\.go
     paths:
       - third_party$
