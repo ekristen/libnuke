@@ -27,6 +27,10 @@ func (r *TestResource) String() string {
 	return "just-a-string"
 }
 
+func (r *TestResource) UniqueKey() string {
+	return "unique-key"
+}
+
 func (r *TestResource) Properties() types.Properties {
 	props := types.NewProperties()
 	props.Set("test", "example")
@@ -73,4 +77,10 @@ func TestInterface_SettingsGetter(t *testing.T) {
 	r.Settings(s.Get("TestResource"))
 
 	assert.Equal(t, true, r.settings.Get("DisableDeletionProtection"))
+}
+
+func TestInterfaceUniqueKeyGetter(t *testing.T) {
+	r := TestResource{}
+	key := r.UniqueKey()
+	assert.Equal(t, "unique-key", key)
 }
