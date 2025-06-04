@@ -281,6 +281,45 @@ func Test_ItemEqualStringer(t *testing.T) {
 
 // ------------------------------------------------------------------------
 
+type TestItemResourceUniqueKey struct {
+	ID    string
+	State string
+}
+
+func (r *TestItemResourceUniqueKey) Remove(_ context.Context) error {
+	return nil
+}
+func (r *TestItemResourceUniqueKey) Properties() types.Properties {
+	return types.NewProperties().Set("ID", r.ID).Set("State", r.State)
+}
+func (r *TestItemResourceUniqueKey) UniqueKey() string {
+	return r.ID
+}
+
+func Test_ItemEqualUniqueKey(t *testing.T) {
+	r1 := &TestItemResourceUniqueKey{
+		ID:    "i-01b489457a60298dd",
+		State: "running",
+	}
+
+	r2 := &TestItemResourceUniqueKey{
+		ID:    "i-01b489457a60298dd", // Same ID
+		State: "stopping",            // Different state (should be ignored)
+	}
+
+	i := &Item{Resource: r1}
+	assert.True(t, i.Equals(r2), "Resources with same UniqueKey should be equal")
+
+	r3 := &TestItemResourceUniqueKey{
+		ID:    "i-1234567890abcdef0", // Different ID
+		State: "running",             // Same state (should be ignored)
+	}
+
+	assert.False(t, i.Equals(r3), "Resources with different UniqueKey should not be equal")
+}
+
+// ------------------------------------------------------------------------
+
 type TestItemResourceNothing struct{}
 
 func (r *TestItemResourceNothing) Remove(_ context.Context) error {
