@@ -71,10 +71,7 @@ func TestFromStruct(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			key, err := FromStruct(tt.input)
-			if err != nil {
-				t.Errorf("unexpected error: %v", err)
-			}
+			key := FromStruct(tt.input)
 			if tt.unique && (key == nil || *key == "") {
 				t.Errorf("expected unique key, got nil or empty string")
 			}
@@ -91,10 +88,7 @@ func TestFromStruct(t *testing.T) {
 			Name  string
 			Other string
 		}
-		key, err := FromStruct(noTagStruct{ID: "1", Name: "2", Other: "3"})
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
+		key := FromStruct(noTagStruct{ID: "1", Name: "2", Other: "3"})
 		if key != nil {
 			t.Errorf("expected nil for struct with no uniqueKey tags, got: %v", *key)
 		}
@@ -106,10 +100,7 @@ func TestFromStruct(t *testing.T) {
 			Name  string
 			Other string
 		}
-		key, err := FromStruct(testStructNoTags{ID: "1", Name: "2", Other: "3"})
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
+		key := FromStruct(testStructNoTags{ID: "1", Name: "2", Other: "3"})
 		if key != nil {
 			t.Errorf("expected nil for struct with no uniqueKey tags, got: %v", *key)
 		}
@@ -142,30 +133,21 @@ func TestFromStruct_Pointer(t *testing.T) {
 		ID string `libnuke:"uniqueKey"`
 	}
 	val := &testStruct{ID: "abc"}
-	key, err := FromStruct(val)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
+	key := FromStruct(val)
 	if key == nil || *key == "" {
 		t.Error("expected unique key for pointer struct, got nil or empty string")
 	}
 }
 
 func TestFromStruct_NonStruct(t *testing.T) {
-	key, err := FromStruct(123)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
+	key := FromStruct(123)
 	if key != nil {
 		t.Errorf("expected nil for non-struct, got: %v", *key)
 	}
 }
 
 func TestFromStruct_Nil(t *testing.T) {
-	key, err := FromStruct(nil)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
+	key := FromStruct(nil)
 	if key != nil {
 		t.Errorf("expected nil for nil, got: %v", *key)
 	}

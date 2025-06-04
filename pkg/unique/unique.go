@@ -7,9 +7,23 @@ import (
 	"strings"
 )
 
-func FromStruct(data interface{}) (*string, error) {
+// Generate creates a unique hash from a slice of interface{} values.
+func Generate(data ...interface{}) string {
+	var values []string
+
+	for d := range data {
+		values = append(values, toString(d))
+	}
+
+	combined := strings.Join(values, ",")
+	hash := sha256.Sum256([]byte(combined))
+	return hex.EncodeToString(hash[:])
+}
+
+// FromStruct generates a unique key from a struct based on fields tagged with "libnuke:uniqueKey".
+func FromStruct(data interface{}) *string {
 	if data == nil {
-		return nil, nil
+		return nil
 	}
 
 	v := reflect.ValueOf(data)
@@ -18,10 +32,10 @@ func FromStruct(data interface{}) (*string, error) {
 	}
 
 	if v.Kind() != reflect.Struct {
-		return nil, nil
+		return nil
 	}
 
-	var values []string
+	var values []interface{}
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Type().Field(i)
 		tag := field.Tag.Get("libnuke")
@@ -34,18 +48,15 @@ func FromStruct(data interface{}) (*string, error) {
 			continue
 		}
 
-		value := valueField.Interface()
-		values = append(values, toString(value))
+		values = append(values, valueField.Interface())
 	}
 
 	if len(values) == 0 {
-		return nil, nil
+		return nil
 	}
 
-	combined := strings.Join(values, ",")
-	hash := sha256.Sum256([]byte(combined))
-	result := hex.EncodeToString(hash[:])
-	return &result, nil
+	hash := Generate(values)
+	return &hash
 }
 
 // toString converts interface{} to string for basic types
