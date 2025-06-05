@@ -125,7 +125,7 @@ func (i *Item) Equals(o resource.Resource) bool {
 	iUniqueKey := unique.FromStruct(i.Resource)
 	oUniqueKey := unique.FromStruct(o)
 	if iUniqueKey != nil && oUniqueKey != nil {
-		return iUniqueKey == oUniqueKey
+		return *iUniqueKey == *oUniqueKey
 	}
 
 	// Fall back to legacy string comparison (may not handle case where resource is recreated during nuke)
