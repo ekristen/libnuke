@@ -12,6 +12,7 @@ import (
 	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
 	"github.com/ekristen/libnuke/pkg/types"
+	"github.com/ekristen/libnuke/pkg/unique"
 )
 
 func init() {
@@ -443,4 +444,92 @@ func Test_ItemLoggerCustom(t *testing.T) {
 	i.Print()
 
 	assert.True(t, hookCalled)
+}
+
+// BenchmarkResource for single, double, and triple uniqueKey fields
+
+type BenchmarkResourceOne struct {
+	ID string `libnuke:"uniqueKey"`
+}
+
+func (r *BenchmarkResourceOne) UniqueKey() string {
+	return r.ID
+}
+
+func (r *BenchmarkResourceOne) Remove(_ context.Context) error { return nil }
+
+type BenchmarkResourceTwo struct {
+	ID  string `libnuke:"uniqueKey"`
+	Env string `libnuke:"uniqueKey"`
+}
+
+func (r *BenchmarkResourceTwo) Remove(_ context.Context) error { return nil }
+
+func (r *BenchmarkResourceTwo) UniqueKey() string {
+	return unique.Generate(r.ID, r.Env)
+}
+
+type BenchmarkResourceThree struct {
+	ID   string `libnuke:"uniqueKey"`
+	Env  string `libnuke:"uniqueKey"`
+	Zone string `libnuke:"uniqueKey"`
+}
+
+func (r *BenchmarkResourceThree) UniqueKey() string {
+	return unique.Generate(r.ID, r.Env, r.Zone)
+}
+
+func (r *BenchmarkResourceThree) Remove(_ context.Context) error { return nil }
+
+func BenchmarkItemEquals(b *testing.B) {
+	// 1 field uniqueKey
+	r1 := &BenchmarkResourceOne{ID: "id-1"}
+	r2 := &BenchmarkResourceOne{ID: "id-1"}
+	r3 := &BenchmarkResourceOne{ID: "id-2"}
+	item1 := &Item{Resource: r1}
+
+	b.Run("Equals_OneField_Same", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			item1.Equals(r2)
+		}
+	})
+	b.Run("Equals_OneField_Different", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			item1.Equals(r3)
+		}
+	})
+
+	// 2 fields uniqueKey
+	r4 := &BenchmarkResourceTwo{ID: "id-1", Env: "prod"}
+	r5 := &BenchmarkResourceTwo{ID: "id-1", Env: "prod"}
+	r6 := &BenchmarkResourceTwo{ID: "id-1", Env: "dev"}
+	item2 := &Item{Resource: r4}
+
+	b.Run("Equals_TwoField_Same", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			item2.Equals(r5)
+		}
+	})
+	b.Run("Equals_TwoField_Different", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			item2.Equals(r6)
+		}
+	})
+
+	// 3 fields uniqueKey
+	r7 := &BenchmarkResourceThree{ID: "id-1", Env: "prod", Zone: "us-east-1a"}
+	r8 := &BenchmarkResourceThree{ID: "id-1", Env: "prod", Zone: "us-east-1a"}
+	r9 := &BenchmarkResourceThree{ID: "id-1", Env: "prod", Zone: "us-east-1b"}
+	item3 := &Item{Resource: r7}
+
+	b.Run("Equals_ThreeField_Same", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			item3.Equals(r8)
+		}
+	})
+	b.Run("Equals_ThreeField_Different", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			item3.Equals(r9)
+		}
+	})
 }
