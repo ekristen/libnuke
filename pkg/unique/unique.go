@@ -3,20 +3,23 @@ package unique
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
 	"reflect"
-	"strings"
 )
 
 // Generate creates a unique hash from a slice of interface{} values.
 func Generate(data ...interface{}) string {
-	var values []string
-
-	for d := range data {
-		values = append(values, toString(d))
+	var allBytes []byte
+	for _, d := range data {
+		b, err := json.Marshal(d)
+		if err != nil {
+			// fallback: use fmt.Sprintf if marshal fails
+			b = []byte(fmt.Sprintf("%v", d))
+		}
+		allBytes = append(allBytes, b...)
 	}
-
-	combined := strings.Join(values, ",")
-	hash := sha256.Sum256([]byte(combined))
+	hash := sha256.Sum256(allBytes)
 	return hex.EncodeToString(hash[:])
 }
 

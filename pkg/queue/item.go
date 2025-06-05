@@ -11,6 +11,7 @@ import (
 	"github.com/ekristen/libnuke/pkg/log"
 	"github.com/ekristen/libnuke/pkg/registry"
 	"github.com/ekristen/libnuke/pkg/resource"
+	"github.com/ekristen/libnuke/pkg/unique"
 )
 
 type ItemState int
@@ -118,6 +119,13 @@ func (i *Item) Equals(o resource.Resource) bool {
 	oKeyGetter, oOK := o.(resource.UniqueKeyGetter)
 	if iOK && oOK {
 		return iKeyGetter.UniqueKey() == oKeyGetter.UniqueKey()
+	}
+
+	// Compare unique keys from struct if available, if either are nil, move to next
+	iUniqueKey := unique.FromStruct(i.Resource)
+	oUniqueKey := unique.FromStruct(o)
+	if iUniqueKey != nil && oUniqueKey != nil {
+		return *iUniqueKey == *oUniqueKey
 	}
 
 	// Fall back to legacy string comparison (may not handle case where resource is recreated during nuke)
