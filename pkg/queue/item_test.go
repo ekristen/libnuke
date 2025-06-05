@@ -533,3 +533,20 @@ func BenchmarkItemEquals(b *testing.B) {
 		}
 	})
 }
+
+type StructUniqueKeyResource struct {
+	ID string `libnuke:"uniqueKey"`
+}
+
+// Add Remove method to satisfy interface
+func (r *StructUniqueKeyResource) Remove(_ context.Context) error { return nil }
+
+func Test_ItemEquals_UniqueKeyFromStruct(t *testing.T) {
+	r1 := &StructUniqueKeyResource{ID: "abc123"}
+	r2 := &StructUniqueKeyResource{ID: "abc123"}
+	r3 := &StructUniqueKeyResource{ID: "def456"}
+
+	i := &Item{Resource: r1}
+	assert.True(t, i.Equals(r2), "Resources with same struct unique key should be equal")
+	assert.False(t, i.Equals(r3), "Resources with different struct unique key should not be equal")
+}
