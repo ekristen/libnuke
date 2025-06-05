@@ -190,3 +190,16 @@ func TestGenerate_HashDeterminism(t *testing.T) {
 		})
 	}
 }
+
+func TestGenerate_JSONMarshalError(t *testing.T) {
+	type Unmarshalable struct {
+		Ch chan int
+	}
+	// Channels cannot be marshaled by encoding/json
+	input := Unmarshalable{Ch: make(chan int)}
+	// Should not panic, should fallback to fmt.Sprintf
+	hash := Generate(input)
+	if hash == "" {
+		t.Error("expected non-empty hash even if JSON marshal fails")
+	}
+}
