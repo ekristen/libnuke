@@ -34,6 +34,14 @@ var (
 		Scope:  "account",
 		Lister: &TestResourceLister{},
 	}
+
+	testResourceRegistration2 = &registry.Registration{
+		Name:  testResourceType,
+		Scope: "account",
+		Lister: &TestResourceLister{
+			ResourceCount: 5,
+		},
+	}
 )
 
 type TestResource struct {
@@ -92,8 +100,9 @@ func (r *TestResource2) Properties() types.Properties {
 }
 
 type TestResourceLister struct {
-	Filtered    bool
-	RemoveError bool
+	Filtered      bool
+	RemoveError   bool
+	ResourceCount int
 }
 
 func (l TestResourceLister) List(_ context.Context, o interface{}) ([]resource.Resource, error) {
@@ -128,12 +137,19 @@ func (l TestResourceLister) List(_ context.Context, o interface{}) ([]resource.R
 		}, nil
 	}
 
-	return []resource.Resource{
-		&TestResource{
+	if l.ResourceCount == 0 {
+		l.ResourceCount = 1
+	}
+
+	resources := make([]resource.Resource, l.ResourceCount)
+	for i := 0; i < l.ResourceCount; i++ {
+		resources[i] = &TestResource{
 			Filtered:    l.Filtered,
 			RemoveError: l.RemoveError,
-		},
-	}, nil
+		}
+	}
+
+	return resources, nil
 }
 
 type TestOpts struct {

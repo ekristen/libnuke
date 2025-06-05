@@ -345,3 +345,47 @@ func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 		return true // timed out
 	}
 }
+
+func Test_ScannerQueueFull(t *testing.T) {
+	registry.ClearRegistry()
+
+	// Register a lister that returns 3 resources
+	registry.Register(testResourceRegistration2)
+
+	// Setup a logger to capture warnings
+	var logMu sync.Mutex
+	var warningFound bool
+	logrus.AddHook(&TestGlobalHook{
+		t: t,
+		tf: func(t *testing.T, e *logrus.Entry) {
+			logMu.Lock()
+			defer logMu.Unlock()
+			if strings.Contains(e.Message, "item queue is full") {
+				warningFound = true
+			}
+		},
+	})
+	defer logrus.StandardLogger().ReplaceHooks(make(logrus.LevelHooks))
+
+	scanner, err := New(&Config{
+		Owner:         "Owner",
+		ResourceTypes: []string{testResourceType},
+		QueueSize:     1, // Small queue to force full
+		Opts: TestOpts{
+			SessionOne: "testing",
+		},
+	})
+	assert.NoError(t, err)
+
+	err = scanner.Run(context.TODO())
+	assert.NoError(t, err)
+
+	// Only one item should be in the channel
+	count := 0
+	for range scanner.Items {
+		count++
+	}
+	assert.Equal(t, 1, count, "only one item should be enqueued due to queue size limit")
+
+	assert.True(t, warningFound, "should log a warning when queue is full")
+}
