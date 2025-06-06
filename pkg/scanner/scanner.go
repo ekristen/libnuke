@@ -180,6 +180,7 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 
 	logger.WithField("count", len(rs)).Debugf("listing complete")
 
+	queueFullWarned := false
 	for _, r := range rs {
 		i := &queue.Item{
 			Resource: r,
@@ -195,7 +196,19 @@ func (s *Scanner) list(ctx context.Context, owner, resourceType string, opts int
 			itemHook.BeforeEnqueue(i)
 		}
 
-		s.Items <- i
+		select {
+		case s.Items <- i:
+			// successfully enqueued
+		default:
+			if !queueFullWarned {
+				logger.Warn("item queue is full, not all resources will be enqueued")
+				queueFullWarned = true
+			}
+			break
+		}
+		if queueFullWarned {
+			break
+		}
 	}
 
 	logger.Debugf("resources enqueue complete")
