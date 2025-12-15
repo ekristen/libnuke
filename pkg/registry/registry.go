@@ -9,7 +9,7 @@ import (
 
 	"github.com/mb0/glob"
 	"github.com/sirupsen/logrus"
-	"github.com/stevenle/topsort"
+	"github.com/stevenle/topsort/v2"
 
 	"github.com/ekristen/libnuke/pkg/resource"
 )
