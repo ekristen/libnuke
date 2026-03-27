@@ -76,7 +76,7 @@ func TestInterface_SettingsGetter(t *testing.T) {
 	r := TestResource{}
 	r.Settings(s.Get("TestResource"))
 
-	assert.Equal(t, true, r.settings.Get("DisableDeletionProtection"))
+	assert.Equal(t, true, r.settings.GetBool("DisableDeletionProtection"))
 }
 
 func TestInterfaceUniqueKeyGetter(t *testing.T) {

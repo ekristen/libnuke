@@ -563,6 +563,13 @@ func (n *Nuke) HandleQueue(ctx context.Context) {
 	listCache := make(map[string]map[string][]resource.Resource)
 
 	for _, item := range n.Queue.GetItems() {
+		// Check if this resource uses the phased removal flow
+		phased, isPhased := item.Resource.(resource.PhasedResource)
+		if isPhased && len(phased.Phases()) > 0 {
+			n.handlePhasedItem(ctx, item, phased, listCache)
+			continue
+		}
+
 		switch item.GetState() {
 		case queue.ItemStateNew, queue.ItemStateHold:
 			n.HandleRemove(ctx, item)
@@ -629,7 +636,8 @@ func (n *Nuke) HandleRemove(ctx context.Context, item *queue.Item) {
 }
 
 // HandleWaitDependency is used to handle the waiting of a resource. It will check if the resource has any dependencies
-// and if it does, it will check if the dependencies have been removed. If they have, it will trigger the remove handler.
+// and if it does, it will check if the dependencies have been removed. If they have, it will trigger the remove handler
+// or the phase handler for phased resources.
 func (n *Nuke) HandleWaitDependency(ctx context.Context, item *queue.Item) {
 	reg := registry.GetRegistration(item.Type)
 	depCount := 0
@@ -642,6 +650,13 @@ func (n *Nuke) HandleWaitDependency(ctx context.Context, item *queue.Item) {
 	}
 
 	if depCount == 0 {
+		// If the resource is phased, start the phase flow instead of Remove
+		if phased, ok := item.Resource.(resource.PhasedResource); ok && len(phased.Phases()) > 0 {
+			cache := make(ListCache)
+			n.HandlePhase(ctx, item, phased, cache)
+			return
+		}
+
 		n.HandleRemove(ctx, item)
 		return
 	}
@@ -709,4 +724,87 @@ func (n *Nuke) HandleWait(ctx context.Context, item *queue.Item, cache ListCache
 
 	item.State = queue.ItemStateFinished
 	item.Reason = ""
+}
+
+// handlePhasedItem handles resources that implement PhasedResource. It routes the item through its phase lifecycle
+// while respecting dependency ordering and existing state transitions.
+func (n *Nuke) handlePhasedItem(ctx context.Context, item *queue.Item, phased resource.PhasedResource, cache ListCache) {
+	switch item.GetState() {
+	case queue.ItemStateNewDependency, queue.ItemStatePendingDependency:
+		n.HandleWaitDependency(ctx, item)
+		item.Print()
+	case queue.ItemStateNew, queue.ItemStateHold, queue.ItemStateFailed:
+		n.HandlePhase(ctx, item, phased, cache)
+		item.Print()
+	case queue.ItemStatePending:
+		n.HandlePhase(ctx, item, phased, cache)
+		item.Print()
+	case queue.ItemStateWaiting:
+		n.HandlePhase(ctx, item, phased, cache)
+		item.Print()
+	case queue.ItemStateFiltered, queue.ItemStateFinished:
+		// no-op
+	}
+}
+
+// HandlePhase advances a phased resource through its next phase. It is called on each queue iteration for resources
+// that implement PhasedResource. When all phases complete, it falls through to the list-check to verify removal.
+func (n *Nuke) HandlePhase(ctx context.Context, item *queue.Item, phased resource.PhasedResource, cache ListCache) {
+	phases := phased.Phases()
+
+	// All phases complete — verify resource is actually gone via list-check
+	if item.PhaseIndex >= len(phases) {
+		n.HandleWait(ctx, item, cache)
+		return
+	}
+
+	current := phases[item.PhaseIndex]
+	item.Phase = current.Name
+
+	err := current.Run(ctx)
+	if err == nil {
+		// Phase completed, advance to next
+		item.PhaseIndex++
+
+		if item.PhaseIndex >= len(phases) {
+			// All phases done, move to pending for list-check on next iteration
+			item.State = queue.ItemStatePending
+			item.Phase = ""
+		} else {
+			// More phases remain, stay pending
+			item.State = queue.ItemStatePending
+			item.Phase = phases[item.PhaseIndex].Name
+		}
+
+		item.Reason = ""
+		return
+	}
+
+	// Handle specific error types
+	var waitErr liberrors.ErrWaitResource
+	if errors.As(err, &waitErr) {
+		item.State = queue.ItemStateWaiting
+		item.Reason = waitErr.Error()
+		return
+	}
+
+	var holdErr liberrors.ErrHoldResource
+	if errors.As(err, &holdErr) {
+		item.State = queue.ItemStateHold
+		item.Reason = holdErr.Error()
+		return
+	}
+
+	var resetErr liberrors.ErrResetPhases
+	if errors.As(err, &resetErr) {
+		item.PhaseIndex = 0
+		item.State = queue.ItemStateFailed
+		item.Phase = phases[0].Name
+		item.Reason = resetErr.Error()
+		return
+	}
+
+	// Any other error — failed, will retry current phase
+	item.State = queue.ItemStateFailed
+	item.Reason = err.Error()
 }

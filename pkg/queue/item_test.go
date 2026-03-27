@@ -402,6 +402,35 @@ func (r *TestItemResourceLogger) Remove(_ context.Context) error {
 	return nil
 }
 
+func Test_ItemPrintWithPhase(t *testing.T) {
+	logger := logrus.New()
+	defer func() {
+		logger.ReplaceHooks(make(logrus.LevelHooks))
+	}()
+
+	hookCalled := false
+	logger.AddHook(&TestGlobalHook{
+		t: t,
+		tf: func(t *testing.T, e *logrus.Entry) {
+			hookCalled = true
+			assert.Equal(t, "disable-protection", e.Data["phase"])
+			assert.Equal(t, "triggered remove", e.Message)
+		},
+	})
+
+	i := &Item{
+		Resource: &TestItemResourceLogger{},
+		State:    ItemStatePending,
+		Type:     "TestResource",
+		Owner:    "us-east-1",
+		Phase:    "disable-protection",
+		Logger:   logger,
+	}
+
+	i.Print()
+	assert.True(t, hookCalled)
+}
+
 func Test_ItemLoggerDefault(t *testing.T) {
 	i := &Item{
 		Resource: &TestItemResourceLogger{},

@@ -70,6 +70,9 @@ type Item struct {
 	Owner    string // region/subscription
 	Opts     interface{}
 	Logger   *logrus.Logger
+
+	Phase      string // Phase is the current phase name for logging (used by PhasedResource)
+	PhaseIndex int    // PhaseIndex is the current position in the phase list (used by PhasedResource)
 }
 
 // GetState returns the current State of the Item
@@ -167,6 +170,10 @@ func (i *Item) Print() {
 	rProp, ok := i.Resource.(resource.PropertyGetter)
 	if ok {
 		itemLog = itemLog.WithFields(sorted(rProp.Properties()))
+	}
+
+	if i.Phase != "" {
+		itemLog = itemLog.WithField("phase", i.Phase)
 	}
 
 	switch i.State {

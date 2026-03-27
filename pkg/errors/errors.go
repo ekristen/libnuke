@@ -39,6 +39,12 @@ func (err ErrDeprecatedResourceType) Error() string {
 	return string(err)
 }
 
+type ErrResetPhases string
+
+func (err ErrResetPhases) Error() string {
+	return string(err)
+}
+
 var ErrNoBlocklistDefined = errors.New("no blocklist defined")
 var ErrBlocklistAccount = errors.New("account is in blocklist")
 var ErrAccountNotConfigured = errors.New("account is not configured")

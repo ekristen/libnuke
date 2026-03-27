@@ -88,7 +88,7 @@ func TestNuke_Settings(t *testing.T) {
 
 	testResourceSettings := n.Settings.Get("TestResource")
 	assert.NotNil(t, testResourceSettings)
-	assert.Equal(t, true, testResourceSettings.Get("DisableDeletionProtection"))
+	assert.Equal(t, true, testResourceSettings.GetBool("DisableDeletionProtection"))
 }
 
 func Test_Nuke_Validators_Default(t *testing.T) {
