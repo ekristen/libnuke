@@ -72,6 +72,7 @@ Most of this code originated from the original [aws-nuke](https://github.com/reb
   - was originally a managed fork, it's now been split entirely from the original project, too much divergence
 - [aws-nuke original](https://github.com/rebuy-de/aws-nuke)
 - [azure-nuke](https://github.com/ekristen/azure-nuke)
+- [stackit-nuke](https://github.com/qaiser42/stackit-nuke)
 
 ## Versioning
 
