@@ -700,6 +700,12 @@ func (n *Nuke) HandleWait(ctx context.Context, item *queue.Item, cache ListCache
 		checker, filterOk := r.(resource.Filter)
 		if filterOk {
 			if filterErr := checker.Filter(); filterErr != nil {
+				var failedErr liberrors.ErrFailedResource
+				if errors.As(filterErr, &failedErr) {
+					item.State = queue.ItemStateFailed
+					item.Reason = filterErr.Error()
+					return
+				}
 				break
 			}
 		}

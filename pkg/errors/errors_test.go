@@ -29,6 +29,7 @@ func TestErrors(t *testing.T) {
 		{liberrors.ErrUnknownEndpoint(testStringValue)},
 		{liberrors.ErrWaitResource(testStringValue)},
 		{liberrors.ErrHoldResource(testStringValue)},
+		{liberrors.ErrFailedResource(testStringValue)},
 		{liberrors.ErrUnknownPreset(testStringValue)},
 		{liberrors.ErrDeprecatedResourceType(testStringValue)},
 	}

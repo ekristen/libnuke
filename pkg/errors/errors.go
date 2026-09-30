@@ -27,6 +27,14 @@ func (err ErrHoldResource) Error() string {
 	return string(err)
 }
 
+// ErrFailedResource is returned by Filter() for a resource that still exists but is stuck in a state it
+// cannot leave, so a wait round marks it failed instead of finished
+type ErrFailedResource string
+
+func (err ErrFailedResource) Error() string {
+	return string(err)
+}
+
 type ErrUnknownPreset string
 
 func (err ErrUnknownPreset) Error() string {

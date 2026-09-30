@@ -525,3 +525,95 @@ func TestNuke_SecondFilterFail(t *testing.T) {
 	runErr := n.Run(context.TODO())
 	assert.NoError(t, runErr)
 }
+
+// ---------------------
+
+// TestResourceStuck is accepted for deletion but then stays listed in a state it never leaves
+type TestResourceStuck struct {
+	removed   *bool
+	state     string
+	filterErr func(string) error
+}
+
+func (r *TestResourceStuck) Remove(_ context.Context) error {
+	*r.removed = true
+	return nil
+}
+func (r *TestResourceStuck) String() string { return "TestResourceStuck" }
+func (r *TestResourceStuck) Filter() error {
+	if r.state == "ACTIVE" {
+		return nil
+	}
+	return r.filterErr(r.state)
+}
+
+type TestResourceStuckLister struct {
+	removed   bool
+	filterErr func(string) error
+}
+
+func (l *TestResourceStuckLister) List(_ context.Context, _ interface{}) ([]resource.Resource, error) {
+	state := "ACTIVE"
+	if l.removed {
+		state = "FAILED"
+	}
+	return []resource.Resource{&TestResourceStuck{removed: &l.removed, state: state, filterErr: l.filterErr}}, nil
+}
+
+// TestNuke_RunWithStuckResource tests that a resource still listed after removal only counts as finished when its
+// filter does not report it as failed
+func TestNuke_RunWithStuckResource(t *testing.T) {
+	cases := []struct {
+		name      string
+		filterErr func(string) error
+		wantErr   bool
+		finished  int
+		failed    int
+	}{
+		{
+			name:      "filtered-counts-as-finished",
+			filterErr: func(state string) error { return fmt.Errorf("resource is %s", state) },
+			finished:  1,
+		},
+		{
+			name:      "failed-resource-fails-run",
+			filterErr: func(state string) error { return errors.ErrFailedResource("resource is " + state) },
+			wantErr:   true,
+			failed:    1,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			n := New(testParametersRemove, nil, nil)
+			n.SetLogger(logrus.WithField("test", true))
+			n.SetRunSleep(time.Millisecond * 5)
+
+			registry.ClearRegistry()
+			registry.Register(&registry.Registration{
+				Name:   "TestResourceStuck",
+				Lister: &TestResourceStuckLister{filterErr: tc.filterErr},
+			})
+
+			newScanner, err := scanner.New(&scanner.Config{
+				Owner:         "Owner",
+				ResourceTypes: []string{"TestResourceStuck"},
+				Opts:          nil,
+			})
+			assert.NoError(t, err)
+
+			scannerErr := n.RegisterScanner(testScope, newScanner)
+			assert.NoError(t, scannerErr)
+
+			runErr := n.Run(context.TODO())
+			if tc.wantErr {
+				assert.Error(t, runErr)
+			} else {
+				assert.NoError(t, runErr)
+			}
+
+			assert.Equal(t, tc.finished, n.Queue.Count(queue.ItemStateFinished))
+			assert.Equal(t, tc.failed, n.Queue.Count(queue.ItemStateFailed))
+		})
+	}
+}
