@@ -73,6 +73,13 @@ Most of this code originated from the original [aws-nuke](https://github.com/reb
 - [aws-nuke original](https://github.com/rebuy-de/aws-nuke)
 - [azure-nuke](https://github.com/ekristen/azure-nuke)
 
+## Tools built on libnuke
+
+- [aws-nuke](https://github.com/ekristen/aws-nuke)
+- [azure-nuke](https://github.com/ekristen/azure-nuke)
+- [gcp-nuke](https://github.com/ekristen/gcp-nuke)
+- [oci-nuke](https://github.com/naviteq/oci-nuke) - Oracle Cloud Infrastructure, maintained by Naviteq
+
 ## Versioning
 
 This library will follow the semver model. However, it is still in alpha/beta and as such the API is subject to change
