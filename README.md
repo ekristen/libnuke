@@ -79,6 +79,7 @@ Most of this code originated from the original [aws-nuke](https://github.com/reb
 - [azure-nuke](https://github.com/ekristen/azure-nuke)
 - [gcp-nuke](https://github.com/ekristen/gcp-nuke)
 - [oci-nuke](https://github.com/naviteq/oci-nuke) - Oracle Cloud Infrastructure, maintained by Naviteq
+- [stackit-nuke](https://github.com/qaiser42/stackit-nuke) - STACKIT, maintained by qaiser42
 
 ## Versioning
 
