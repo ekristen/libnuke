@@ -31,6 +31,7 @@ func TestErrors(t *testing.T) {
 		{liberrors.ErrHoldResource(testStringValue)},
 		{liberrors.ErrUnknownPreset(testStringValue)},
 		{liberrors.ErrDeprecatedResourceType(testStringValue)},
+		{liberrors.ErrResetPhases(testStringValue)},
 	}
 
 	for _, c := range cases {

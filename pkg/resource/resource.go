@@ -60,3 +60,25 @@ type QueueItemHook interface {
 	Resource
 	BeforeEnqueue(interface{})
 }
+
+// PhaseFunc is a function that executes a single phase of a resource's removal process.
+// Return nil to advance to the next phase.
+// Return ErrWaitResource to stay on this phase and be polled again next iteration.
+// Return ErrHoldResource to hold the resource.
+// Return ErrResetPhases to reset to phase 0 and start over.
+// Return any other error to move the resource to failed state (retries current phase).
+type PhaseFunc func(ctx context.Context) error
+
+// Phase represents a single named step in a resource's removal process.
+type Phase struct {
+	Name string
+	Run  PhaseFunc
+}
+
+// PhasedResource is an interface that allows a resource to define a multi-step removal process.
+// Each phase can be synchronous or asynchronous. When implemented, libnuke calls phases sequentially
+// instead of calling Remove(). The resource's Remove() method should be a no-op when Phases() is used.
+type PhasedResource interface {
+	Resource
+	Phases() []Phase
+}

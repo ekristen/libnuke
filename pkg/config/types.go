@@ -50,12 +50,14 @@ type ResourceTypes struct {
 
 	// Targets is a list of resource types that are to be included during the nuke process. If a resource type is
 	// listed in both the Targets and Excludes fields then the Excludes field will take precedence.
+	//
 	// Deprecated: Use Includes instead.
 	Targets types.Collection `yaml:"targets"`
 
 	// CloudControl is a list of resource types that are to be used with the Cloud Control API. This is a Resource
 	// level alternative. This was left in place to make the transition to libnuke and ekristen/aws-nuke@v3 easier
 	// for existing users.
+	//
 	// Deprecated: Use Alternatives instead.
 	CloudControl types.Collection `yaml:"cloud-control"`
 }

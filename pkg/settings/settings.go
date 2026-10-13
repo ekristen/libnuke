@@ -32,6 +32,7 @@ func (s *Settings) Set(key string, value *Setting) {
 type Setting map[string]interface{}
 
 // Get returns the value of a key in the Setting
+//
 // Deprecated: use GetBool, GetString, or GetInt instead
 func (s *Setting) Get(key string) interface{} {
 	value, ok := (*s)[key]
